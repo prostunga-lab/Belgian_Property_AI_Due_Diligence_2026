@@ -21,7 +21,7 @@ from .report import build_pdf
 from .rules import RULESET_VERSION
 
 app = FastAPI(title="Belgian Property Due Diligence")
-app.add_middleware(SessionMiddleware, secret_key=config.SECRET_KEY, same_site="lax", https_only=False, max_age=60 * 60 * 12)
+app.add_middleware(SessionMiddleware, secret_key=config.SECRET_KEY, same_site="lax", https_only=config.COOKIE_SECURE, max_age=60 * 60 * 12)
 templates = Jinja2Templates(directory=str(Path(__file__).parent / "templates"))
 init_db()
 

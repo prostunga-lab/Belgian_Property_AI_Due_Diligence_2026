@@ -1,0 +1,18 @@
+# One-click test deployment on Render (https://render.com): New + > Blueprint > pick this repo.
+# Free plan = ephemeral disk: accounts and uploaded files are lost on redeploy/restart. Fine for a demo, not for real client data.
+services:
+  - type: web
+    name: belgian-property-dd
+    runtime: docker
+    plan: free
+    healthCheckPath: /health
+    envVars:
+      - key: SECRET_KEY
+        generateValue: true
+      - key: COOKIE_SECURE
+        value: "1"
+      - key: DATA_DIR
+        value: /data
+      # Optional: set in the Render dashboard to enable LLM extraction on missing fields
+      - key: ANTHROPIC_API_KEY
+        sync: false
