@@ -14,6 +14,7 @@ from starlette.middleware.sessions import SessionMiddleware
 
 from . import config
 from .analysis import analyze_case, process_document
+from .ingest import supported_extensions
 from .auth import current_user, get_db, hash_password, verify_password
 from .models import AuditLog, Case, Comment, Document, Finding, Org, User, init_db
 from .report import build_pdf
@@ -25,7 +26,7 @@ templates = Jinja2Templates(directory=str(Path(__file__).parent / "templates"))
 init_db()
 
 PLAN_QUOTAS = {"trial": 10, "agent": 40, "agency": 200}
-ALLOWED_EXT = {".pdf", ".txt"}
+ALLOWED_EXT = supported_extensions()
 
 
 def audit(db: Session, user: User, action: str, case_id: int | None = None, detail: str = "") -> None:
@@ -127,7 +128,7 @@ async def upload(case_id: int, files: list[UploadFile] = File(...), user: User =
     for up in files:
         ext = Path(up.filename or "").suffix.lower()
         if ext not in ALLOWED_EXT:
-            raise HTTPException(400, f"Unsupported file type {ext}: PDF or TXT only")
+            raise HTTPException(400, f"Unsupported file type {ext}: PDF, TXT or image (PNG/JPG/TIFF) only")
         data = await up.read()
         if len(data) > config.MAX_UPLOAD_MB * 1024 * 1024:
             raise HTTPException(413, "File too large")

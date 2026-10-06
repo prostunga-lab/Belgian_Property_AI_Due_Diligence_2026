@@ -62,6 +62,8 @@ class Document(Base):
     classification_confidence: Mapped[float] = mapped_column(default=0.0)
     pages: Mapped[list] = mapped_column(JSON, default=list)  # [text per page]
     fields: Mapped[dict] = mapped_column(JSON, default=dict)  # name -> {value, page, excerpt}
+    ocr_pages: Mapped[list] = mapped_column(JSON, default=list)  # [{"page": n, "confidence": c}]
+    warnings: Mapped[list] = mapped_column(JSON, default=list)
     created_at: Mapped[dt.datetime] = mapped_column(DateTime(timezone=True), default=now)
     case: Mapped[Case] = relationship(back_populates="documents")
 

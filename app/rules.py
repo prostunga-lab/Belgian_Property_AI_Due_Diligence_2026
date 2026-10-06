@@ -20,6 +20,8 @@ class DocView:
     doc_type: str
     pages: list[str]
     fields: dict
+    ocr_pages: list = field(default_factory=list)
+    warnings: list = field(default_factory=list)
 
 
 @dataclass
@@ -84,16 +86,32 @@ def r_missing_docs(docs, ctx):
                     "seller" if t != "deed" else "notary")
 
 
+OCR_LOW_CONFIDENCE = 75.0
+
+
 def r_unreadable(docs, ctx):
     for d in docs:
+        whole = [{"doc_id": d.id, "filename": d.filename, "page": 1, "excerpt": ""}]
         if sum(len(p) for p in d.pages) < 80:
-            yield F("DOC-OCR", "documentation", "medium", "risk", f"Document niet leesbaar: {d.filename}",
-                    "Geen of nauwelijks tekst gevonden (gescand document zonder OCR).",
-                    "Lever een doorzoekbare PDF aan of activeer OCR.", "", [{"doc_id": d.id, "filename": d.filename, "page": 1, "excerpt": ""}])
-        elif d.doc_type == "unknown":
+            why = " ".join(d.warnings) or "Geen of nauwelijks tekst gevonden."
+            yield F("DOC-OCR", "documentation", "medium", "risk", f"Document niet leesbaar: {d.filename}", why,
+                    "Lever een scherpere scan of een doorzoekbare PDF aan.", "", whole)
+            continue
+        if d.ocr_pages:
+            low = [o for o in d.ocr_pages if o["confidence"] < OCR_LOW_CONFIDENCE]
+            pages = ", ".join(str(o["page"]) for o in d.ocr_pages)
+            if low:
+                yield F("DOC-OCR-LOWQ", "documentation", "medium", "risk", f"Slechte scankwaliteit: {d.filename}",
+                        f"OCR-vertrouwen onder {OCR_LOW_CONFIDENCE:.0f}% op p.{', '.join(str(o['page']) for o in low)}; extracties kunnen fout zijn.",
+                        "Controleer de geëxtraheerde velden manueel of vraag een betere scan.", "", whole)
+            else:
+                yield F("DOC-OCR-USED", "documentation", "info", "fact", f"Gescand document (OCR): {d.filename}",
+                        f"Tekst van p.{pages} werd via OCR gelezen; verifieer cruciale waarden.", "", "", whole)
+        for w in d.warnings:
+            yield F("DOC-WARN", "documentation", "low", "action", f"Leeswaarschuwing: {d.filename}", w, "", "", whole)
+        if d.doc_type == "unknown":
             yield F("DOC-UNK", "documentation", "low", "action", f"Documenttype niet herkend: {d.filename}",
-                    "Het document kon niet automatisch geklasseerd worden.", "Controleer manueel of het relevant is.", "",
-                    [{"doc_id": d.id, "filename": d.filename, "page": 1, "excerpt": ""}])
+                    "Het document kon niet automatisch geklasseerd worden.", "Controleer manueel of het relevant is.", "", whole)
 
 
 # --- energy ---------------------------------------------------------------------------------
@@ -175,14 +193,23 @@ def r_electrical(docs, ctx):
 # --- cross-document -------------------------------------------------------------------------
 
 def r_address(docs, ctx):
+    """One finding listing every distinct address, rather than one per document pair."""
     items = [(d, d.fields["address"]["value"]) for d in docs if "address" in d.fields]
-    for i in range(len(items)):
-        for j in range(i + 1, len(items)):
-            a, b = _norm_addr(items[i][1]), _norm_addr(items[j][1])
-            if a and b and len(a & b) / min(len(a), len(b)) < 0.6:
-                yield F("X-ADDRESS", "legal", "high", "inference", "Adressen komen niet overeen tussen documenten",
-                        f"'{items[i][1]}' ({items[i][0].filename}) vs '{items[j][1]}' ({items[j][0].filename}).",
-                        "Controleer of alle documenten bij hetzelfde pand horen.", "notary", [src(items[i][0], "address"), src(items[j][0], "address")])
+    groups: list[list] = []
+    for d, addr in items:
+        tokens = _norm_addr(addr)
+        for g in groups:
+            ref = g[0][2]
+            if tokens and ref and len(tokens & ref) / min(len(tokens), len(ref)) >= 0.6:
+                g.append((d, addr, tokens))
+                break
+        else:
+            groups.append([(d, addr, tokens)])
+    if len(groups) > 1:
+        detail = " ; ".join(f"'{g[0][1]}' ({', '.join(x[0].filename for x in g)})" for g in groups)
+        yield F("X-ADDRESS", "legal", "high", "inference", "Adressen komen niet overeen tussen documenten", detail,
+                "Controleer of alle documenten bij hetzelfde pand horen.", "notary",
+                [src(x[0], "address") for g in groups for x in g])
 
 
 def r_surface(docs, ctx):
