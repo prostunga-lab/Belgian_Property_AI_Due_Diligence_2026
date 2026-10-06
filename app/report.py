@@ -48,7 +48,7 @@ def build_pdf(case: Case) -> bytes:
         if f.review_status == "dismissed":
             continue
         color = SEV_COLOR[f.severity].hexval()[2:]
-        status = {"confirmed": " ✔ gevalideerd door professional", "pending": " (nog niet gevalideerd)"}.get(f.review_status, "")
+        status = {"confirmed": " [GEVALIDEERD door professional]", "pending": " (nog niet gevalideerd)"}.get(f.review_status, "")
         story.append(Paragraph(f'<font color="#{color}"><b>[{f.severity.upper()}]</b></font> <b>{escape(f.title)}</b> — '
                                f'<i>{KIND.get(f.kind, f.kind)} · {f.domain}</i>{status}', ss["BodyText"]))
         story.append(Paragraph(escape(f.detail), small))
