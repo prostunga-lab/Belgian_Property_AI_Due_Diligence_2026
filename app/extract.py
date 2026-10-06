@@ -80,17 +80,23 @@ def _iso(s: str) -> str | None:
     return d.isoformat() if d else None
 
 
-SURF = r"(\d[\d.\s]*(?:,\d+)?)\s*(?:m²|m2|m\s*2)"
+SURF = r"(\d[\d.\s]*(?:,\d+)?)\s*(?:m²|m2|m\s*2|m\?)"
 ADDR = (
     r"((?:[A-Z][\w'’\-]+\s){1,4}(?:straat|laan|weg|plein|lei|steenweg|dreef|rue|avenue|boulevard|chaussée)"
     r"\w*\s+\d+\w?(?:\s*,?\s*\d{4}\s+[A-Z][\w\-]+)?)"
+)
+ADDR_FR = (
+    r"((?:Rue|Avenue|Boulevard|Chaussée|Place|Chemin|Quai|Allée)\s+(?:de la |du |des |de l'|d')?[A-ZÉ][\w'’\-]+(?:\s+[A-ZÉ][\w\-]+)*"
+    r"\s*,?\s*\d+\w?(?:\s*,?\s*\d{4}\s+[A-ZÉ][\w\-]+)?)"
 )
 ADDR_ALT = r"((?:[A-Z][\w'’\-]*(?:straat|laan|weg|plein|lei|steenweg|dreef))\s+\d+\w?(?:\s*,?\s*\d{4}\s+[A-Z][\w\-]+)?)"
 
 
 def _common(pages: list[str], f: dict) -> None:
-    _put(f, "address", find(pages, r"(?:adres|adresse|address|gelegen te|situé à|pand)\s*:?\s*" + ADDR_ALT, flags=0)
-         or find(pages, ADDR_ALT, flags=0))
+    _put(f, "address", find(pages, r"(?i:adres|adresse|address|gelegen te|situé à|pand)\s*:?\s*" + ADDR_ALT, flags=0)
+         or find(pages, ADDR_ALT, flags=0)
+         or find(pages, r"(?i:adresse|situé à|sis à|situé)\s*:?\s*" + ADDR_FR, flags=0)
+         or find(pages, ADDR_FR, flags=0))
     _put(f, "build_year", find(pages, r"(?:bouwjaar|jaar van bouw|année de construction|built in|construit en)\D{0,15}((?:18|19|20)\d{2})"), int)
 
 
@@ -100,7 +106,7 @@ def extract_epc(pages: list[str]) -> dict:
     _put(f, "epc_score", find(pages, r"(?:energiescore|spec\w*\s+energieverbruik|score|consommation)\D{0,40}?(\d{2,4})\s*kWh/m²"), float)
     if "epc_score" not in f:
         _put(f, "epc_score", find(pages, r"(\d{2,4})\s*kWh/m²"), float)
-    _put(f, "epc_label", find(pages, r"(?:energielabel|label|classe)\s*:?\s*([A-F]\+{0,2})\b", flags=0), str.upper)
+    _put(f, "epc_label", find(pages, r"(?i:energielabel|label|classe(?: énergétique)?)\s*:?\s*([A-F]\+{0,2})\b", flags=0), str.upper)
     _put(f, "epc_number", find(pages, r"(\d{8}-\d{7})"))
     _put(f, "epc_valid_until", find(pages, r"(?:geldig tot|valable jusqu'au|valid until)\s*:?\s*" + DATE_RE), _iso)
     _put(f, "epc_issue_date", find(pages, r"(?:opgesteld op|datum van opmaak|date d'établissement|issued on|datum)\s*:?\s*" + DATE_RE), _iso)
@@ -115,8 +121,8 @@ def extract_deed(pages: list[str]) -> dict:
     _put(f, "surface_m2", find(pages, r"(?:bewoonbare oppervlakte|woonoppervlakte|oppervlakte van|superficie (?:habitable )?de|surface de)\D{0,20}?" + SURF), parse_number)
     _put(f, "cadastral_ref", find(pages, r"(?:sectie|section)\s+([A-Z]\s+(?:nummer|numéro|n°|nr\.?)\s*\d+(?:/\w+)?)"), lambda s: " ".join(s.upper().split()))
     _put(f, "deed_date", find(pages, r"(?:verleden op|passé le|dd\.|datum van de akte|date)\s*:?\s*" + DATE_RE), _iso)
-    _put(f, "seller", find(pages, r"(?:verkoper|vendeur)\s*:?\s*([A-ZÉ][^\n,;.]{3,60})", flags=0))
-    _put(f, "buyer", find(pages, r"(?:koper|acquéreur)\s*:?\s*([A-ZÉ][^\n,;.]{3,60})", flags=0))
+    _put(f, "seller", find(pages, r"(?i:\b(?:verkoper|vendeur)\b)\s*:?\s*([A-ZÉ][^\n,;.]{3,60})", flags=0))
+    _put(f, "buyer", find(pages, r"(?i:\b(?:koper|acquéreur)\b)\s*:?\s*([A-ZÉ][^\n,;.]{3,60})", flags=0))
     _put(f, "extension_mentioned", find(pages, r"((?:uitbreiding|aanbouw|extension|verbouwing|transformation)[^\n.]{0,80})"), lambda s: True)
     _put(f, "extension_m2", find(pages, r"(?:uitbreiding|extension|aanbouw)\D{0,40}?" + SURF), parse_number)
     _put(f, "permit_mentioned", find(pages, r"((?:stedenbouwkundige vergunning|bouwvergunning|omgevingsvergunning|permis d'urbanisme|vergunning)[^\n.]{0,80})"), lambda s: True)
@@ -125,17 +131,35 @@ def extract_deed(pages: list[str]) -> dict:
     return f
 
 
+ASB_NEG = re.compile(r"\b(geen|niet|zonder|pas de|aucun\w*|sans|no|not|free of)\b|asbestveilig|asbestvrij", re.I)
+ASB_POS = re.compile(
+    r"asbest\w*\s+(?:werd\s+)?(?:aangetroffen|aanwezig|vastgesteld|gevonden)|asbestverdacht\w*|"
+    r"asbesthoudende\s+\w+(?:\s+\w+)?\s+(?:aangetroffen|aanwezig|vastgesteld)|aanwezigheid van asbest|"
+    r"(?:werd|werden)\s+asbest\w*\s+\w*\s*(?:aangetroffen|vastgesteld)|"
+    r"amiante\s+(?:présent|détecté|décelé|identifié)|présence d'amiante|asbestos\s+(?:was\s+)?(?:found|present|detected)",
+    re.I,
+)
+
+
 def extract_asbestos(pages: list[str]) -> dict:
+    """Decide per sentence so that 'geen asbest aangetroffen' is never read as a positive finding."""
     f: dict = {}
     _common(pages, f)
-    _put(f, "attest_number", find(pages, r"(?:attestnummer|nummer|numéro)\s*:?\s*([A-Z0-9\-/]{6,})", flags=0))
+    _put(f, "attest_number", find(pages, r"(?:attestnummer|numéro)\s*:?\s*([A-Z0-9\-/]{6,})", flags=0))
     _put(f, "attest_date", find(pages, r"(?:datum|date|opgesteld op)\s*:?\s*" + DATE_RE), _iso)
-    neg = find(pages, r"(geen asbest\w*|asbestveilig|pas de matériaux (?:contenant de l')?amiante|no asbestos|geen asbesthoudende\w*)")
-    pos = find(pages, r"(asbest\w*\s+(?:aangetroffen|aanwezig|vastgesteld)|asbestverdacht\w*|asbesthoudende (?:materialen|toepassingen)\s+(?:aangetroffen|aanwezig)|amiante (?:présent|détecté)|aanwezigheid van asbest)")
-    if pos and not (neg and neg[1] <= pos[1] and re.search(r"geen|pas de|no ", neg[0], re.I) and not re.search(r"aangetroffen|aanwezig|verdacht", pos[0], re.I)):
-        _put(f, "asbestos_present", pos, lambda s: True)
-    elif neg:
-        _put(f, "asbestos_present", neg, lambda s: False)
+    pos = neg = None
+    for i, text in enumerate(pages):
+        for sent in re.split(r"(?<=[.!?])\s+|\n", text):
+            if not re.search(r"asbest|amiante|asbestos", sent, re.I):
+                continue
+            hit = (True, i + 1, " ".join(sent.split()))
+            if ASB_POS.search(sent) and not ASB_NEG.search(sent):
+                pos = pos or hit
+            elif ASB_NEG.search(sent) and not pos:
+                neg = neg or (False, i + 1, " ".join(sent.split()))
+    chosen = pos or neg
+    if chosen:
+        f["asbestos_present"] = {"value": chosen[0], "page": chosen[1], "excerpt": chosen[2]}
     return f
 
 

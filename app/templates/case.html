@@ -7,10 +7,10 @@
 <form method="post" action="/cases/{{ case.id }}/documents/{{ d.id }}/type" class="row">
 <select name="doc_type" onchange="this.form.submit()">{% for k,l in {"epc":"EPC","deed":"Akte","asbestos":"Asbestattest","electrical":"Elektriciteit","unknown":"Onbekend"}.items() %}
 <option value="{{ k }}" {{ "selected" if d.doc_type==k }}>{{ l }}</option>{% endfor %}</select>
-<span class="mut">{{ (d.classification_confidence*100)|round|int }}% · {{ d.fields|length }} velden</span></form></td></tr>
+<span class="mut">{{ (d.classification_confidence*100)|round|int }}% · {{ d.fields|length }} velden{% if d.ocr_pages %} · OCR p.{{ d.ocr_pages|map(attribute="page")|join(", ") }}{% endif %}</span></form></td></tr>
 {% else %}<tr><td class="mut">Nog geen documenten.</td></tr>{% endfor %}</table>
 <form method="post" action="/cases/{{ case.id }}/documents" enctype="multipart/form-data" class="row" style="margin-top:8px">
-<input type="file" name="files" multiple accept=".pdf,.txt" required><button class="sec">Uploaden</button></form>
+<input type="file" name="files" multiple accept=".pdf,.txt,.png,.jpg,.jpeg,.tif,.tiff" required><button class="sec">Uploaden</button></form>
 <form method="post" action="/cases/{{ case.id }}/analyze" style="margin-top:8px"><button>Analyseer dossier</button></form></div>
 
 {% if case.status == "analyzed" %}
