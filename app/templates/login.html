@@ -7,5 +7,6 @@
 <form method="post" action="/register" class="card" style="flex:1;min-width:260px"><h3>Account aanmaken</h3>
 <p><input name="org_name" placeholder="Kantoor / bedrijf" required style="width:100%"></p>
 <p><input name="email" type="email" placeholder="E-mail" required style="width:100%"></p>
+{% if invite %}<p><input name="invite_code" placeholder="Uitnodigingscode" required style="width:100%"></p>{% endif %}
 <p><input name="password" type="password" minlength="10" placeholder="Wachtwoord (min. 10)" required style="width:100%"></p><button>Registreren</button></form>
 </div>{% endblock %}

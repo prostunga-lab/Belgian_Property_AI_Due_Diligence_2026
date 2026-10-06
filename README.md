@@ -13,6 +13,9 @@ SaaS construit à partir de `docs/strategy.md` (§9 « MVP recommandé »): **Fl
 - Rapport PDF exportable avec sources, règles utilisées, questions par partie (notaire/vendeur), disclaimer.
 - Rétention configurable (`python -m app.purge`).
 
+## Déploiement avec données persistantes
+Voir [`docs/DEPLOY.md`](docs/DEPLOY.md) : PostgreSQL + disque persistant chiffré, migrations Alembic, inscription sur invitation, protection cross-site, limitation des connexions, suppression RGPD, `render.yaml`.
+
 ## Lancer
 ```
 pip install -r requirements.txt
@@ -27,4 +30,4 @@ Variables: `DATA_DIR`, `DATABASE_URL`, `SECRET_KEY`, `ANTHROPIC_API_KEY`, `LLM_M
 ## Limites connues / prochaines étapes
 - OCR Tesseract testé sur scans synthétiques seulement : à valider sur de vrais scans (photos, manuscrits, tampons). Le schéma SQLite a changé (`ocr_pages`, `warnings`) : pas de migration encore, recréer la base de dev.
 - Les règles réglementaires (durées de validité, seuils) sont des **points de départ à faire valider par un juriste/notaire** avant mise en production.
-- À faire: Postgres + migrations (Alembic), stockage objet chiffré, paiement (Stripe), export Word, plans/urbanisme/copropriété, Bruxelles/Wallonie, API publique, file de tâches pour l'analyse asynchrone, protection CSRF dédiée, rate limiting.
+- À faire: paiement (Stripe), export Word, plans/urbanisme/copropriété, Bruxelles/Wallonie, API publique, file de tâches pour l'analyse asynchrone, réinitialisation de mot de passe/2FA, rôles par organisation, traitement asynchrone.

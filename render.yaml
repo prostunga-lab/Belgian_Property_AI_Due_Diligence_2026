@@ -1,18 +1,42 @@
-# One-click test deployment on Render (https://render.com): New + > Blueprint > pick this repo.
-# Free plan = ephemeral disk: accounts and uploaded files are lost on redeploy/restart. Fine for a demo, not for real client data.
+# Production-like deployment on Render (https://render.com): New + > Blueprint > pick this repo.
+# Persistent: managed PostgreSQL (accounts, cases, findings) + persistent disk (uploaded files, encrypted at rest).
+# Paid plans are required for persistence. Check current plan names/prices in the Render dashboard before applying.
+databases:
+  - name: belgian-property-db
+    plan: basic-256mb
+    region: frankfurt          # EU data residency (GDPR)
+    databaseName: dd
+    user: dd
+
 services:
   - type: web
     name: belgian-property-dd
     runtime: docker
-    plan: free
+    plan: starter
+    region: frankfurt
     healthCheckPath: /health
+    disk:                      # a disk pins the service to one instance (fine: login throttling is per-process)
+      name: uploads
+      mountPath: /data
+      sizeGB: 5
     envVars:
-      - key: SECRET_KEY
-        generateValue: true
-      - key: COOKIE_SECURE
-        value: "1"
+      - key: APP_ENV
+        value: production      # app refuses to start without the secrets below
+      - key: DATABASE_URL
+        fromDatabase:
+          name: belgian-property-db
+          property: connectionString
       - key: DATA_DIR
         value: /data
-      # Optional: set in the Render dashboard to enable LLM extraction on missing fields
-      - key: ANTHROPIC_API_KEY
+      - key: COOKIE_SECURE
+        value: "1"
+      - key: SECRET_KEY
+        generateValue: true
+      - key: FILE_ENCRYPTION_KEY   # BACK THIS UP (password manager): without it uploaded files are unrecoverable
+        generateValue: true
+      - key: INVITE_CODE           # share only with people who may create an account
+        generateValue: true
+      - key: RETENTION_DAYS
+        value: "365"
+      - key: ANTHROPIC_API_KEY     # optional: LLM fills fields the regex extractors miss
         sync: false

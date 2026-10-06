@@ -1,6 +1,7 @@
 {% extends "base.html" %}{% block content %}
 <p><a href="/">← Dossiers</a></p>
-<h2>{{ case.title }}</h2><p class="mut">{{ case.address or "Adres onbekend" }} · regio {{ case.region }} · regelset {{ version }}</p>
+<div class="row" style="justify-content:space-between"><h2>{{ case.title }}</h2>
+<form method="post" action="/cases/{{ case.id }}/delete" onsubmit="return confirm('Dossier en alle bestanden definitief wissen?')"><button class="sec">🗑 Dossier wissen</button></form></div><p class="mut">{{ case.address or "Adres onbekend" }} · regio {{ case.region }} · regelset {{ version }}</p>
 
 <div class="card"><b>Documenten</b>
 <table>{% for d in case.documents %}<tr><td>{{ d.filename }}</td><td>
