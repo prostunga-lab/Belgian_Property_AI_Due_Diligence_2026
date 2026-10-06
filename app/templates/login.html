@@ -1,0 +1,11 @@
+{% extends "base.html" %}{% block content %}
+{% if error %}<p class="high">{{ error }}</p>{% endif %}
+<div class="row" style="align-items:flex-start">
+<form method="post" action="/login" class="card" style="flex:1;min-width:260px"><h3>Inloggen</h3>
+<p><input name="email" type="email" placeholder="E-mail" required style="width:100%"></p>
+<p><input name="password" type="password" placeholder="Wachtwoord" required style="width:100%"></p><button>Inloggen</button></form>
+<form method="post" action="/register" class="card" style="flex:1;min-width:260px"><h3>Account aanmaken</h3>
+<p><input name="org_name" placeholder="Kantoor / bedrijf" required style="width:100%"></p>
+<p><input name="email" type="email" placeholder="E-mail" required style="width:100%"></p>
+<p><input name="password" type="password" minlength="10" placeholder="Wachtwoord (min. 10)" required style="width:100%"></p><button>Registreren</button></form>
+</div>{% endblock %}

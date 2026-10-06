@@ -1,0 +1,9 @@
+{% extends "base.html" %}{% block content %}
+<div class="card"><div class="row" style="justify-content:space-between"><b>{{ org.name }}</b>
+<span class="mut">Plan {{ org.plan }} · {{ used }}/{{ org.case_quota }} dossiers deze maand</span></div>
+<form method="post" action="/cases" class="row" style="margin-top:10px"><input name="title" placeholder="Nieuw dossier (bv. Kerkstraat 12, Gent)" required style="flex:1"><button>Dossier aanmaken</button></form></div>
+<table><tr><th>Dossier</th><th>Adres</th><th>Status</th><th>Risico</th></tr>
+{% for c in cases %}<tr><td><a href="/cases/{{ c.id }}">{{ c.title }}</a></td><td>{{ c.address }}</td><td>{{ c.status }}</td>
+<td>{% if c.scores %}<span class="{{ c.scores.level }}">{{ c.scores.overall }}/100</span>{% endif %}</td></tr>
+{% else %}<tr><td colspan="4" class="mut">Nog geen dossiers.</td></tr>{% endfor %}</table>
+{% endblock %}

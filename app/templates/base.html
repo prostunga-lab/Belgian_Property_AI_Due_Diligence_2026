@@ -1,0 +1,24 @@
+<!doctype html>
+<html lang="nl"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>{% block title %}Property Due Diligence{% endblock %}</title>
+<style>
+:root{--bg:#f8fafc;--fg:#0f172a;--mut:#64748b;--card:#fff;--bd:#e2e8f0;--acc:#1d4ed8;--high:#b91c1c;--medium:#c2410c;--low:#a16207;--info:#475569}
+@media (prefers-color-scheme:dark){:root{--bg:#0b1120;--fg:#e2e8f0;--mut:#94a3b8;--card:#111a2e;--bd:#25314d;--acc:#60a5fa;--high:#f87171;--medium:#fb923c;--low:#facc15;--info:#94a3b8}}
+body{margin:0;background:var(--bg);color:var(--fg);font:15px/1.5 system-ui,sans-serif}
+main{max-width:980px;margin:0 auto;padding:16px}
+header{display:flex;justify-content:space-between;align-items:center;padding:12px 16px;border-bottom:1px solid var(--bd)}
+a{color:var(--acc)} .card{background:var(--card);border:1px solid var(--bd);border-radius:10px;padding:14px;margin:12px 0}
+input,select,textarea,button{font:inherit;padding:7px 10px;border-radius:7px;border:1px solid var(--bd);background:var(--card);color:var(--fg)}
+button{background:var(--acc);color:#fff;border:0;cursor:pointer} button.sec{background:transparent;color:var(--fg);border:1px solid var(--bd)}
+.mut{color:var(--mut);font-size:13px} .row{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
+.badge{padding:1px 8px;border-radius:99px;font-size:12px;border:1px solid currentColor}
+.high{color:var(--high)}.medium{color:var(--medium)}.low{color:var(--low)}.info{color:var(--info)}
+.bar{height:8px;background:var(--bd);border-radius:4px;overflow:hidden}.bar>i{display:block;height:100%;background:var(--acc)}
+blockquote{margin:4px 0;padding:2px 10px;border-left:3px solid var(--bd);color:var(--mut);font-size:13px}
+table{width:100%;border-collapse:collapse}td,th{padding:5px 8px;border-bottom:1px solid var(--bd);text-align:left;font-size:14px}
+</style></head><body>
+<header><b>🏠 Belgian Property Due Diligence</b>
+{% if user is defined and user %}<form method="post" action="/logout" class="row"><span class="mut">{{ user.email }}</span><button class="sec">Uitloggen</button></form>{% endif %}</header>
+<main>{% block content %}{% endblock %}</main>
+<footer><main class="mut">Beslissingsondersteunend hulpmiddel — geen juridisch, notarieel of technisch advies. Conclusies moeten door een professional gevalideerd worden.</main></footer>
+</body></html>
