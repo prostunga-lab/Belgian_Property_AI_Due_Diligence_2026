@@ -1,18 +1,22 @@
 from __future__ import annotations
 
 import datetime as dt
-import re
-import uuid
+import hmac
+import os
+import shutil
+import time
+from collections import defaultdict, deque
 from pathlib import Path
+from urllib.parse import urlparse
 
 from fastapi import Depends, FastAPI, File, Form, HTTPException, Request, UploadFile
 from fastapi.responses import RedirectResponse, Response
 from fastapi.templating import Jinja2Templates
-from sqlalchemy import func, select
+from sqlalchemy import func, select, text
 from sqlalchemy.orm import Session
 from starlette.middleware.sessions import SessionMiddleware
 
-from . import config
+from . import config, storage
 from .analysis import analyze_case, process_document
 from .ingest import supported_extensions
 from .auth import current_user, get_db, hash_password, verify_password
@@ -24,6 +28,30 @@ app = FastAPI(title="Belgian Property Due Diligence")
 app.add_middleware(SessionMiddleware, secret_key=config.SECRET_KEY, same_site="lax", https_only=config.COOKIE_SECURE, max_age=60 * 60 * 12)
 templates = Jinja2Templates(directory=str(Path(__file__).parent / "templates"))
 init_db()
+
+
+@app.middleware("http")
+async def csrf_origin_check(request: Request, call_next):
+    """Reject cross-site state-changing requests: Origin (or Referer) host must match the Host header."""
+    if request.method in {"POST", "PUT", "PATCH", "DELETE"}:
+        src = request.headers.get("origin") or request.headers.get("referer")
+        if src and urlparse(src).netloc != request.headers.get("host"):
+            return Response('{"detail": "Cross-site request rejected"}', status_code=403, media_type="application/json")
+    return await call_next(request)
+
+
+_attempts: dict[str, deque] = defaultdict(deque)
+LOGIN_WINDOW_S, LOGIN_MAX = 15 * 60, int(os.environ.get("LOGIN_MAX_ATTEMPTS", "8"))
+
+
+def throttle(key: str) -> None:
+    """In-memory login rate limit (per process; adequate for a single instance)."""
+    now, q = time.monotonic(), _attempts[key]
+    while q and now - q[0] > LOGIN_WINDOW_S:
+        q.popleft()
+    if len(q) >= LOGIN_MAX:
+        raise HTTPException(429, "Too many attempts, try again later")
+    q.append(now)
 
 PLAN_QUOTAS = {"trial": 10, "agent": 40, "agency": 200}
 ALLOWED_EXT = supported_extensions()
@@ -48,7 +76,8 @@ async def http_exc(request: Request, exc: HTTPException):
 
 
 @app.get("/health")
-def health():
+def health(db: Session = Depends(get_db)):
+    db.execute(text("SELECT 1"))
     return {"status": "ok", "ruleset": RULESET_VERSION}
 
 
@@ -56,14 +85,18 @@ def health():
 
 @app.get("/login")
 def login_page(request: Request):
-    return templates.TemplateResponse(request, "login.html", {"error": None})
+    return templates.TemplateResponse(request, "login.html", {"error": None, "invite": bool(config.INVITE_CODE)})
 
 
 @app.post("/register")
-def register(request: Request, org_name: str = Form(...), email: str = Form(...), password: str = Form(...), db: Session = Depends(get_db)):
+def register(request: Request, org_name: str = Form(...), email: str = Form(...), password: str = Form(...),
+             invite_code: str = Form(""), db: Session = Depends(get_db)):
     email = email.strip().lower()
+    throttle(f"reg:{request.client.host if request.client else '?'}")
+    if config.INVITE_CODE and not hmac.compare_digest(invite_code.encode(), config.INVITE_CODE.encode()):
+        return templates.TemplateResponse(request, "login.html", {"error": "Ongeldige uitnodigingscode.", "invite": True}, status_code=403)
     if len(password) < 10 or db.scalar(select(User).where(User.email == email)):
-        return templates.TemplateResponse(request, "login.html", {"error": "Wachtwoord < 10 tekens of e-mail bestaat al."}, status_code=400)
+        return templates.TemplateResponse(request, "login.html", {"error": "Wachtwoord < 10 tekens of e-mail bestaat al.", "invite": bool(config.INVITE_CODE)}, status_code=400)
     org = Org(name=org_name.strip(), case_quota=PLAN_QUOTAS["trial"])
     db.add(org)
     db.flush()
@@ -76,9 +109,10 @@ def register(request: Request, org_name: str = Form(...), email: str = Form(...)
 
 @app.post("/login")
 def login(request: Request, email: str = Form(...), password: str = Form(...), db: Session = Depends(get_db)):
+    throttle(f"login:{request.client.host if request.client else '?'}:{email.strip().lower()}")
     user = db.scalar(select(User).where(User.email == email.strip().lower()))
     if not user or not verify_password(password, user.password_hash):
-        return templates.TemplateResponse(request, "login.html", {"error": "Ongeldige gegevens."}, status_code=400)
+        return templates.TemplateResponse(request, "login.html", {"error": "Ongeldige gegevens.", "invite": bool(config.INVITE_CODE)}, status_code=400)
     request.session["uid"] = user.id
     return RedirectResponse("/", status_code=303)
 
@@ -132,11 +166,8 @@ async def upload(case_id: int, files: list[UploadFile] = File(...), user: User =
         data = await up.read()
         if len(data) > config.MAX_UPLOAD_MB * 1024 * 1024:
             raise HTTPException(413, "File too large")
-        safe = re.sub(r"[^A-Za-z0-9._-]", "_", Path(up.filename).name)
-        folder = config.UPLOAD_DIR / str(case.org_id) / str(case.id)
-        folder.mkdir(parents=True, exist_ok=True)
-        path = folder / f"{uuid.uuid4().hex}_{safe}"
-        path.write_bytes(data)
+        path = storage.save(case.org_id, case.id, up.filename, data)
+        safe = path.name.split("_", 1)[1]
         doc = Document(case_id=case.id, filename=safe, stored_path=str(path))
         try:
             process_document(doc)
@@ -197,6 +228,18 @@ def comment(case_id: int, finding_id: int, body: str = Form(...), user: User = D
     audit(db, user, "finding.comment", case.id, f.rule_id)
     db.commit()
     return RedirectResponse(f"/cases/{case.id}#f{f.id}", status_code=303)
+
+
+@app.post("/cases/{case_id}/delete")
+def delete_case(case_id: int, user: User = Depends(current_user), db: Session = Depends(get_db)):
+    """Erase a case and its stored files (GDPR). The audit trail keeps the fact of deletion, not the content."""
+    case = get_case(db, user, case_id)
+    folder = config.UPLOAD_DIR / str(case.org_id) / str(case.id)
+    audit(db, user, "case.delete", case.id, case.title)
+    db.delete(case)
+    db.commit()
+    shutil.rmtree(folder, ignore_errors=True)
+    return RedirectResponse("/", status_code=303)
 
 
 @app.get("/cases/{case_id}/report.pdf")

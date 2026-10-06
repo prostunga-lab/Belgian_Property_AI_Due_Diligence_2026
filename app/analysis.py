@@ -1,18 +1,17 @@
 from __future__ import annotations
 
 import datetime as dt
-from pathlib import Path
-
 from sqlalchemy.orm import Session
 
-from . import classify, extract, ingest
+from . import classify, extract, ingest, storage
 from .models import Case, Document, Finding
 from .rules import DocView, run_rules
 from .scoring import score
 
 
 def process_document(doc: Document) -> None:
-    res = ingest.extract_pages(Path(doc.stored_path))
+    with storage.plaintext(doc.stored_path) as plain:
+        res = ingest.extract_pages(plain)
     pages = res.pages
     doc.pages, doc.ocr_pages, doc.warnings = pages, res.ocr_pages, res.warnings
     doc.doc_type, doc.classification_confidence = classify.classify(pages, doc.filename)

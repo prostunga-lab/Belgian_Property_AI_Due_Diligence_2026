@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import datetime as dt
+from pathlib import Path
 
 from sqlalchemy import JSON, DateTime, ForeignKey, Integer, String, Text, create_engine
 from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column, relationship, sessionmaker
@@ -108,9 +109,22 @@ class AuditLog(Base):
     created_at: Mapped[dt.datetime] = mapped_column(DateTime(timezone=True), default=now)
 
 
-engine = create_engine(config.DB_URL, connect_args={"check_same_thread": False} if config.DB_URL.startswith("sqlite") else {})
+engine = create_engine(
+    config.DB_URL,
+    pool_pre_ping=True,
+    connect_args={"check_same_thread": False} if config.DB_URL.startswith("sqlite") else {},
+)
 SessionLocal = sessionmaker(engine, expire_on_commit=False)
 
 
 def init_db() -> None:
-    Base.metadata.create_all(engine)
+    """Apply Alembic migrations (schema is owned by migrations/, not create_all)."""
+    if not config.AUTO_MIGRATE:
+        return
+    from alembic import command
+    from alembic.config import Config
+
+    root = Path(__file__).resolve().parent.parent
+    cfg = Config(str(root / "alembic.ini"))
+    cfg.set_main_option("script_location", str(root / "migrations"))
+    command.upgrade(cfg, "head")
