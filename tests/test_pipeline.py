@@ -25,14 +25,14 @@ def test_extraction_has_sources():
     assert v["epc"].fields["extension_m2"]["value"] == 32
     assert v["asbestos"].fields["asbestos_present"]["value"] is True
     assert v["electrical"].fields["electrical_conform"]["value"] is False
-    assert v["deed"].fields["cadastral_ref"]["value"] == "A NUMMER 123/B"
+    assert v["deed"].fields["cadastral_ref"]["value"] == "A 123/B"
     assert all(f["page"] == 1 and f["excerpt"] for d in v.values() for f in d.fields.values())
 
 
 def test_rules_detect_known_issues():
     ids = {f.rule_id for f in run_rules(views())}
     assert {"X-SURFACE", "ASB-PRESENT", "ELEC-NONCONFORM", "ELEC-OLD", "EPC-POOR", "URB-EXT-NOPERMIT"} <= ids
-    assert not any(i.startswith("DOC-") for i in ids)
+    assert ids & {"DOC-EPC", "DOC-ASBESTOS", "DOC-ELECTRICAL", "DOC-DEED"} == set()  # only the soil attest is absent here
 
 
 def test_missing_docs_and_score():

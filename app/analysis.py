@@ -3,7 +3,7 @@ from __future__ import annotations
 import datetime as dt
 from sqlalchemy.orm import Session
 
-from . import classify, extract, ingest, storage
+from . import classify, extract, ingest, llm, storage
 from .models import Case, Document, Finding
 from .rules import DocView, run_rules
 from .scoring import score
@@ -48,5 +48,19 @@ def analyze_case(db: Session, case: Case) -> None:
     case.scores = score(case.findings)
     case.status = "analyzed"
     case.analyzed_at = dt.datetime.now(dt.timezone.utc)
+    _ai_reading(case)
     if not case.address:
         case.address = next((d.fields["address"]["value"] for d in case.documents if "address" in d.fields), "")
+
+
+def _ai_reading(case: Case) -> None:
+    """Optional advisory LLM pass; failures never affect the deterministic analysis."""
+    if not llm.enabled():
+        return
+    done = []
+    for d in case.documents:
+        if d.ai_analysis is None and d.doc_type in llm.PROMPTS and any(d.pages):
+            d.ai_analysis = llm.analyze(d.doc_type, "\n\n".join(f"[page {i + 1}]\n{t}" for i, t in enumerate(d.pages)))
+        if d.ai_analysis:
+            done.append(d.ai_analysis | {"type": d.doc_type})
+    case.ai_summary = llm.cross_check(done)

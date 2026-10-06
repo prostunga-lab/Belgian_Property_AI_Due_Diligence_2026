@@ -68,6 +68,8 @@ REQUIRED = {
                  "In Vlaanderen verplicht bij verkoop van gebouwen met bouwvergunning van vóór 2001."),
     "electrical": ("Keuringsverslag elektrische installatie", "technical", "medium",
                    "Keuring (AREI) is vereist bij verkoop van een woning; ontbreken bemoeilijkt de onderhandeling."),
+    "soil": ("Bodemattest", "environmental", "medium",
+             "In Vlaanderen verplicht bij overdracht van grond (te verifiëren); bevat de bodemstatus van het perceel."),
     "deed": ("Akte / compromis", "legal", "medium", "Basisdocument voor eigendom, oppervlakte en vergunningsverklaringen."),
 }
 
@@ -190,6 +192,40 @@ def r_electrical(docs, ctx):
                 f"Keuring van {ins}; een conforme keuring blijft 25 jaar geldig (te verifiëren).", "Vraag een nieuwe keuring.", "seller", [src(d, "inspection_date")])
 
 
+def r_soil(docs, ctx):
+    d = by_type(docs, "soil")
+    if not d:
+        return
+    pol = val(d, "soil_pollution_mentioned")
+    if pol is True:
+        yield F("SOIL-POLLUTION", "environmental", "high", "risk", "Bodemverontreiniging of risico vermeld",
+                "Het bodemattest vermeldt verontreiniging, sanering of een risicogrond. Dit kan onderzoeks- en saneringsplichten en kosten meebrengen; de wettelijke gevolgen hangen af van de exacte bodemstatus.",
+                "Lees het volledige attest, vraag het bodemonderzoek op en bespreek wie de kosten draagt.", "notary", [src(d, "soil_pollution_mentioned")])
+    elif pol is False:
+        yield F("SOIL-CLEAR", "environmental", "info", "fact", "Geen bodemverontreiniging vermeld in het attest",
+                "Het attest vermeldt geen verontreiniging.", "", "", [src(d, "soil_pollution_mentioned")])
+    else:
+        yield F("SOIL-UNCLEAR", "environmental", "medium", "risk", "Bodemstatus niet eenduidig herkend",
+                "De bodemstatus kon niet betrouwbaar uit het attest gehaald worden.", "Manuele controle van het attest vereist.", "",
+                [{"doc_id": d.id, "filename": d.filename, "page": 1, "excerpt": ""}])
+
+
+def r_cadastre(docs, ctx):
+    cad, deed = by_type(docs, "cadastre"), by_type(docs, "deed")
+    if cad and val(cad, "unbuilt_plot"):
+        by = next((val(d, "build_year") for d in docs if d is not cad and val(d, "build_year")), None)
+        if by or by_type(docs, "epc"):
+            yield F("CAD-UNBUILT", "urbanistic", "high", "inference", "Kadaster vermeldt een onbebouwd perceel",
+                    "Het kadastraal uittreksel beschrijft het perceel als onbebouwd, terwijl andere documenten een gebouw beschrijven. Mogelijk is de kadastrale toestand niet bijgewerkt of het gebouw niet aangegeven.",
+                    "Vraag een recent uittreksel en controleer de bijwerking van de kadastrale legger.", "notary", [src(cad, "unbuilt_plot")])
+    if cad and deed and val(cad, "cadastral_ref") and val(deed, "cadastral_ref"):
+        a, b = val(cad, "cadastral_ref"), val(deed, "cadastral_ref")
+        if a.split("/")[0] != b.split("/")[0] or a != b:
+            yield F("X-CADASTRE", "legal", "high", "inference", "Kadastrale referentie verschilt tussen akte en uittreksel",
+                    f"Akte: {b}; uittreksel: {a}.", "Controleer of beide documenten hetzelfde perceel betreffen.", "notary",
+                    [src(deed, "cadastral_ref"), src(cad, "cadastral_ref")])
+
+
 # --- cross-document -------------------------------------------------------------------------
 
 def r_address(docs, ctx):
@@ -290,7 +326,7 @@ def r_deed_after_docs(docs, ctx):
 RULES = [
     r_missing_docs, r_unreadable, r_epc_validity, r_epc_label, r_asbestos, r_electrical, r_address,
     r_surface, r_extension_permit, r_urbanism_info, r_build_year, r_old_house_asbestos,
-    r_cadastre_owner_facts, r_deed_after_docs,
+    r_cadastre_owner_facts, r_deed_after_docs, r_soil, r_cadastre,
 ]
 
 

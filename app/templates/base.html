@@ -1,5 +1,5 @@
 <!doctype html>
-<html lang="nl"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<html lang="fr"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
 <title>{% block title %}Property Due Diligence{% endblock %}</title>
 <style>
 :root{--bg:#f8fafc;--fg:#0f172a;--mut:#64748b;--card:#fff;--bd:#e2e8f0;--acc:#1d4ed8;--high:#b91c1c;--medium:#c2410c;--low:#a16207;--info:#475569}
@@ -13,12 +13,13 @@ button{background:var(--acc);color:#fff;border:0;cursor:pointer} button.sec{back
 .mut{color:var(--mut);font-size:13px} .row{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
 .badge{padding:1px 8px;border-radius:99px;font-size:12px;border:1px solid currentColor}
 .high{color:var(--high)}.medium{color:var(--medium)}.low{color:var(--low)}.info{color:var(--info)}
-.bar{height:8px;background:var(--bd);border-radius:4px;overflow:hidden}.bar>i{display:block;height:100%;background:var(--acc)}
+.ok{color:#15803d}.warn{background:#fef3c7;color:#78350f;border-color:#fcd34d}@media (prefers-color-scheme:dark){.ok{color:#4ade80}.warn{background:#3b2f0b;color:#fde68a;border-color:#92400e}}code{background:var(--bd);padding:1px 5px;border-radius:4px;word-break:break-all}.bar{height:8px;background:var(--bd);border-radius:4px;overflow:hidden}.bar>i{display:block;height:100%;background:var(--acc)}
 blockquote{margin:4px 0;padding:2px 10px;border-left:3px solid var(--bd);color:var(--mut);font-size:13px}
 table{width:100%;border-collapse:collapse}td,th{padding:5px 8px;border-bottom:1px solid var(--bd);text-align:left;font-size:14px}
 </style></head><body>
-<header><b>🏠 Belgian Property Due Diligence</b>
-{% if user is defined and user %}<form method="post" action="/logout" class="row"><span class="mut">{{ user.email }}</span><button class="sec">Uitloggen</button></form>{% endif %}</header>
+<header><a href="/" style="text-decoration:none;color:inherit"><b>🏠 Belgian Property Due Diligence</b></a>
+{% if user is defined and user %}<div class="row"><a href="/account">{{ user.email }}</a>{% if org is defined and org %}<span class="badge info">{{ org.credits }} crédit{{ "s" if org.credits != 1 }}</span>{% endif %}
+<form method="post" action="/logout"><button class="sec">Déconnexion</button></form></div>{% endif %}</header>
 <main>{% block content %}{% endblock %}</main>
-<footer><main class="mut">Beslissingsondersteunend hulpmiddel — geen juridisch, notarieel of technisch advies. Conclusies moeten door een professional gevalideerd worden.</main></footer>
+<footer><main class="mut">Outil d'aide à la lecture de dossier — ne constitue ni un avis juridique, notarial ou technique. Les conclusions doivent être validées par un professionnel.</main></footer>
 </body></html>

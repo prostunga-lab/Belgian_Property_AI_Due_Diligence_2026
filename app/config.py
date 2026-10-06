@@ -27,6 +27,19 @@ MAX_UPLOAD_MB = int(os.environ.get("MAX_UPLOAD_MB", "25"))
 # Configurable retention (GDPR): cases older than this are purged by `python -m app.purge`.
 RETENTION_DAYS = int(os.environ.get("RETENTION_DAYS", "365"))
 
+# Accounts, credits, billing, e-mail
+# Render exposes the public URL as RENDER_EXTERNAL_URL; used in e-mailed links and Stripe redirects.
+BASE_URL = (os.environ.get("BASE_URL") or os.environ.get("RENDER_EXTERNAL_URL") or "http://localhost:8000").rstrip("/")
+FREE_CREDITS = int(os.environ.get("FREE_CREDITS", "6"))  # granted to each new organisation; 1 credit = 1 document
+PACK_CREDITS = int(os.environ.get("PACK_CREDITS", "20"))
+STRIPE_SECRET_KEY = os.environ.get("STRIPE_SECRET_KEY", "")
+STRIPE_PRICE_ID = os.environ.get("STRIPE_PRICE_ID", "")
+STRIPE_WEBHOOK_SECRET = os.environ.get("STRIPE_WEBHOOK_SECRET", "")
+SMTP_HOST = os.environ.get("SMTP_HOST")
+# E-mail confirmation is enforced only when mail can actually be delivered (otherwise nobody could ever confirm).
+REQUIRE_EMAIL_VERIFICATION = os.environ.get("REQUIRE_EMAIL_VERIFICATION", "1" if SMTP_HOST else "0") == "1"
+MAX_FILES_PER_REQUEST = int(os.environ.get("MAX_FILES_PER_REQUEST", "10"))
+
 # OCR (Tesseract). Pages with fewer than OCR_MIN_CHARS extracted characters are treated as scans.
 OCR_ENABLED = os.environ.get("OCR_ENABLED", "1") != "0"
 OCR_LANGS = os.environ.get("OCR_LANGS", "nld+fra+eng")

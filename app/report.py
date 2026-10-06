@@ -42,6 +42,17 @@ def build_pdf(case: Case) -> bytes:
     for d in case.documents:
         story.append(Paragraph(escape(f"• {d.filename} → {d.doc_type} (vertrouwen {d.classification_confidence:.0%})"), small))
 
+    ai = case.ai_summary
+    if ai or any(d.ai_analysis for d in case.documents):
+        story.append(Paragraph("AI-lezing (indicatief, niet gevalideerd, niet in de score)", ss["Heading3"]))
+        if ai:
+            story.append(Paragraph(escape(f"Globaal risico (AI): {ai.get('risque_global', 'n/b')}. {ai.get('synthese', '')}"), small))
+            for item in list(ai.get("incoherences") or []) + list(ai.get("budget_travaux_a_negocier") or []):
+                story.append(Paragraph(escape(f"• {item}"), small))
+        for d in case.documents:
+            if d.ai_analysis and d.ai_analysis.get("synthese"):
+                story.append(Paragraph(escape(f"{d.filename}: {d.ai_analysis['synthese']}"), small))
+
     story.append(Paragraph("Bevindingen", ss["Heading3"]))
     findings = sorted(case.findings, key=lambda f: ["high", "medium", "low", "info"].index(f.severity))
     for f in findings:

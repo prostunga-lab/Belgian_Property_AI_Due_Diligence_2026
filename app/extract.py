@@ -45,6 +45,8 @@ def parse_date(s: str) -> dt.date | None:
 
 def parse_number(s: str) -> float | None:
     s = s.replace(" ", "").replace(" ", "")
+    if re.fullmatch(r"\d{1,3}(?:\.\d{3})+", s):  # Belgian thousands separator: 1.250 -> 1250
+        s = s.replace(".", "")
     if "," in s and "." in s:
         s = s.replace(".", "").replace(",", ".")
     elif "," in s:
@@ -100,6 +102,18 @@ def _common(pages: list[str], f: dict) -> None:
     _put(f, "build_year", find(pages, r"(?:bouwjaar|jaar van bouw|année de construction|built in|construit en)\D{0,15}((?:18|19|20)\d{2})"), int)
 
 
+def _cadastral_ref(pages: list[str], f: dict) -> None:
+    """Canonical form 'A 123/B' so a deed and a cadastral extract can be compared."""
+    hit = find(pages, r"(?:sectie|section|division)\s*:?\s*([A-Z])\b[^\n]{0,25}?(?:nummer|numéro|n°|nr\.?|perceel|parcelle)\s*:?\s*(\d+(?:\s*/\s*\w+)?)", flags=re.I)
+    if not hit:
+        return
+    for i, text in enumerate(pages):
+        m = re.search(r"(?:sectie|section|division)\s*:?\s*([A-Za-z])\b[^\n]{0,25}?(?:nummer|numéro|n°|nr\.?|perceel|parcelle)\s*:?\s*(\d+(?:\s*/\s*\w+)?)", text, re.I)
+        if m:
+            f["cadastral_ref"] = {"value": f"{m[1].upper()} {re.sub(r'\\s+', '', m[2]).upper()}", "page": i + 1, "excerpt": _excerpt(text, m)}
+            return
+
+
 def extract_epc(pages: list[str]) -> dict:
     f: dict = {}
     _common(pages, f)
@@ -119,7 +133,7 @@ def extract_deed(pages: list[str]) -> dict:
     f: dict = {}
     _common(pages, f)
     _put(f, "surface_m2", find(pages, r"(?:bewoonbare oppervlakte|woonoppervlakte|oppervlakte van|superficie (?:habitable )?de|surface de)\D{0,20}?" + SURF), parse_number)
-    _put(f, "cadastral_ref", find(pages, r"(?:sectie|section)\s+([A-Z]\s+(?:nummer|numéro|n°|nr\.?)\s*\d+(?:/\w+)?)"), lambda s: " ".join(s.upper().split()))
+    _cadastral_ref(pages, f)
     _put(f, "deed_date", find(pages, r"(?:verleden op|passé le|dd\.|datum van de akte|date)\s*:?\s*" + DATE_RE), _iso)
     _put(f, "seller", find(pages, r"(?i:\b(?:verkoper|vendeur)\b)\s*:?\s*([A-ZÉ][^\n,;.]{3,60})", flags=0))
     _put(f, "buyer", find(pages, r"(?i:\b(?:koper|acquéreur)\b)\s*:?\s*([A-ZÉ][^\n,;.]{3,60})", flags=0))
@@ -177,13 +191,58 @@ def extract_electrical(pages: list[str]) -> dict:
     return f
 
 
-EXTRACTORS = {"epc": extract_epc, "deed": extract_deed, "asbestos": extract_asbestos, "electrical": extract_electrical}
+def extract_cadastre(pages: list[str]) -> dict:
+    f: dict = {}
+    _common(pages, f)
+    _cadastral_ref(pages, f)
+    # Plot area, NOT dwelling area: kept under another name so it never gets compared with surfaces from the deed/EPC.
+    _put(f, "plot_m2", find(pages, r"(?:superficie|oppervlakte|contenance|grootte)\D{0,25}?" + SURF), parse_number)
+    _put(f, "cadastral_income", find(pages, r"(?:kadastraal inkomen|revenu cadastral)\D{0,20}?(\d[\d.\s]*(?:,\d+)?)\s*(?:€|eur)?", flags=re.I), parse_number)
+    _put(f, "extract_date", find(pages, r"(?:datum|date|opgemaakt op|situation au)\s*:?\s*" + DATE_RE), _iso)
+    _put(f, "unbuilt_plot", find(pages, r"(onbebouwd\w*|niet[- ]bebouwd\w*|terrain non bâti|non bâti|grond zonder gebouw)"), lambda s: True)
+    return f
+
+
+SOIL_NEG = re.compile(r"\b(geen|niet|zonder|pas de|aucun\w*|sans|no)\b|onverdacht|niet verdacht|vrij van", re.I)
+SOIL_POS = re.compile(
+    r"bodemverontreiniging|verontreinigd\w*|verontreiniging|bodemsanering|risicogrond|"
+    r"pollution du sol|sol pollué|polluée?|assainissement|terrain à risque|sanering",
+    re.I,
+)
+
+
+def extract_soil(pages: list[str]) -> dict:
+    """Sentence-level so 'geen bodemverontreiniging vastgesteld' is not read as pollution. Never deduces a legal status."""
+    f: dict = {}
+    _common(pages, f)
+    _put(f, "soil_attest_date", find(pages, r"(?:datum|date|afgeleverd op|délivré le|opgemaakt op)\s*:?\s*" + DATE_RE), _iso)
+    _cadastral_ref(pages, f)
+    pos = neg = None
+    for i, text in enumerate(pages):
+        for sent in re.split(r"(?<=[.!?])\s+|\n", text):
+            if not SOIL_POS.search(sent) and not re.search(r"bodem|\bsol\b", sent, re.I):
+                continue
+            hit = (i + 1, " ".join(sent.split()))
+            if SOIL_POS.search(sent) and not SOIL_NEG.search(sent):
+                pos = pos or hit
+            elif SOIL_NEG.search(sent) and re.search(r"verontreinig|pollu|sanering|assainiss|risico|à risque|gekend|connu|vastgesteld|constat", sent, re.I):
+                neg = neg or hit
+    chosen = (True, pos) if pos else (False, neg) if neg else None
+    if chosen:
+        f["soil_pollution_mentioned"] = {"value": chosen[0], "page": chosen[1][0], "excerpt": chosen[1][1]}
+    return f
+
+
+EXTRACTORS = {"epc": extract_epc, "deed": extract_deed, "asbestos": extract_asbestos, "electrical": extract_electrical,
+              "cadastre": extract_cadastre, "soil": extract_soil}
 
 LLM_FIELDS = {
     "epc": ["address", "epc_score", "epc_label", "epc_valid_until", "surface_m2", "build_year"],
     "deed": ["address", "surface_m2", "cadastral_ref", "deed_date", "seller", "buyer", "build_year"],
     "asbestos": ["address", "attest_date", "asbestos_present"],
     "electrical": ["address", "inspection_date", "electrical_conform"],
+    "cadastre": ["address", "cadastral_ref", "plot_m2", "build_year"],
+    "soil": ["address", "soil_attest_date"],
 }
 
 

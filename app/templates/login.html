@@ -1,12 +1,15 @@
 {% extends "base.html" %}{% block content %}
-{% if error %}<p class="high">{{ error }}</p>{% endif %}
+{% if error %}<p class="high" role="alert">{{ error }}</p>{% endif %}{% if info %}<p class="ok">{{ info }}</p>{% endif %}
 <div class="row" style="align-items:flex-start">
-<form method="post" action="/login" class="card" style="flex:1;min-width:260px"><h3>Inloggen</h3>
-<p><input name="email" type="email" placeholder="E-mail" required style="width:100%"></p>
-<p><input name="password" type="password" placeholder="Wachtwoord" required style="width:100%"></p><button>Inloggen</button></form>
-<form method="post" action="/register" class="card" style="flex:1;min-width:260px"><h3>Account aanmaken</h3>
-<p><input name="org_name" placeholder="Kantoor / bedrijf" required style="width:100%"></p>
-<p><input name="email" type="email" placeholder="E-mail" required style="width:100%"></p>
-{% if invite %}<p><input name="invite_code" placeholder="Uitnodigingscode" required style="width:100%"></p>{% endif %}
-<p><input name="password" type="password" minlength="10" placeholder="Wachtwoord (min. 10)" required style="width:100%"></p><button>Registreren</button></form>
+<form method="post" action="/login" class="card" style="flex:1;min-width:260px"><h3>Connexion</h3>
+<p><input name="email" type="email" placeholder="E-mail" autocomplete="username" required style="width:100%"></p>
+<p><input name="password" type="password" placeholder="Mot de passe" autocomplete="current-password" required style="width:100%"></p>
+<div class="row"><button>Se connecter</button><a href="/forgot" class="mut">Mot de passe oublié ?</a></div></form>
+<form method="post" action="/register" class="card" style="flex:1;min-width:260px"><h3>Créer un compte</h3>
+<p class="mut">Crédits de test offerts à l'inscription. 1 crédit = 1 document analysé.</p>
+<p><input name="org_name" placeholder="Agence / cabinet / société" required style="width:100%"></p>
+<p><input name="email" type="email" placeholder="E-mail" autocomplete="username" required style="width:100%"></p>
+{% if invite %}<p><input name="invite_code" placeholder="Code d'invitation" required style="width:100%"></p>{% endif %}
+<p><input name="password" type="password" minlength="10" placeholder="Mot de passe (10 caractères min.)" autocomplete="new-password" required style="width:100%"></p>
+<button>S'inscrire</button></form>
 </div>{% endblock %}

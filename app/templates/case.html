@@ -1,35 +1,48 @@
 {% extends "base.html" %}{% block content %}
 <p><a href="/">← Dossiers</a></p>
 <div class="row" style="justify-content:space-between"><h2>{{ case.title }}</h2>
-<form method="post" action="/cases/{{ case.id }}/delete" onsubmit="return confirm('Dossier en alle bestanden definitief wissen?')"><button class="sec">🗑 Dossier wissen</button></form></div><p class="mut">{{ case.address or "Adres onbekend" }} · regio {{ case.region }} · regelset {{ version }}</p>
+<form method="post" action="/cases/{{ case.id }}/delete" onsubmit="return confirm('Supprimer définitivement le dossier et tous ses fichiers ?')"><button class="sec">🗑 Supprimer le dossier</button></form></div>
+<p class="mut">{{ case.address or "Adresse inconnue" }} · région {{ case.region }} · règles {{ version }}</p>
 
-<div class="card"><b>Documenten</b>
+<div class="card"><b>Documents</b>
 <table>{% for d in case.documents %}<tr><td>{{ d.filename }}</td><td>
 <form method="post" action="/cases/{{ case.id }}/documents/{{ d.id }}/type" class="row">
-<select name="doc_type" onchange="this.form.submit()">{% for k,l in {"epc":"EPC","deed":"Akte","asbestos":"Asbestattest","electrical":"Elektriciteit","unknown":"Onbekend"}.items() %}
-<option value="{{ k }}" {{ "selected" if d.doc_type==k }}>{{ l }}</option>{% endfor %}</select>
-<span class="mut">{{ (d.classification_confidence*100)|round|int }}% · {{ d.fields|length }} velden{% if d.ocr_pages %} · OCR p.{{ d.ocr_pages|map(attribute="page")|join(", ") }}{% endif %}</span></form></td></tr>
-{% else %}<tr><td class="mut">Nog geen documenten.</td></tr>{% endfor %}</table>
+<select name="doc_type" aria-label="Type de document" onchange="this.form.submit()">{% for k,l in doc_types.items() %}<option value="{{ k }}" {{ "selected" if d.doc_type==k }}>{{ l }}</option>{% endfor %}</select>
+<span class="mut">{{ (d.classification_confidence*100)|round|int }}% · {{ d.fields|length }} champs{% if d.ocr_pages %} · OCR p.{{ d.ocr_pages|map(attribute="page")|join(", ") }}{% endif %}{% if d.billed %} · analysé{% endif %}</span></form></td></tr>
+{% else %}<tr><td class="mut">Aucun document pour l'instant.</td></tr>{% endfor %}</table>
 <form method="post" action="/cases/{{ case.id }}/documents" enctype="multipart/form-data" class="row" style="margin-top:8px">
-<input type="file" name="files" multiple accept=".pdf,.txt,.png,.jpg,.jpeg,.tif,.tiff" required><button class="sec">Uploaden</button></form>
-<form method="post" action="/cases/{{ case.id }}/analyze" style="margin-top:8px"><button>Analyseer dossier</button></form></div>
+<input type="file" name="files" multiple accept=".pdf,.txt,.png,.jpg,.jpeg,.tif,.tiff" required><button class="sec">Téléverser</button></form>
+<form method="post" action="/cases/{{ case.id }}/analyze" class="row" style="margin-top:8px">
+<button {{ "disabled" if needs_verification or not case.documents }}>Analyser le dossier</button>
+<span class="mut">{% if to_charge %}{{ to_charge }} crédit{{ "s" if to_charge != 1 }} seront débités (solde : {{ org.credits }}){% elif case.documents %}Ré-analyse gratuite (documents déjà facturés){% endif %}</span></form></div>
 
 {% if case.status == "analyzed" %}
-<div class="card"><div class="row" style="justify-content:space-between"><b>Property Risk Score:
-<span class="{{ case.scores.level }}">{{ case.scores.overall }}/100 ({{ case.scores.level }})</span></b>
-<a href="/cases/{{ case.id }}/report.pdf"><button class="sec">PDF-rapport</button></a></div>
-{% for dom, v in case.scores.domains.items() %}<div class="row"><span style="width:130px">{{ dom|capitalize }}</span><div class="bar" style="flex:1"><i style="width:{{ v }}%"></i></div><span class="mut">{{ v }}</span></div>{% endfor %}</div>
+<div class="card"><div class="row" style="justify-content:space-between"><b>Property Risk Score :
+<span class="{{ case.scores.level }}">{{ case.scores.overall }}/100 ({{ {"low":"faible","medium":"moyen","high":"élevé"}[case.scores.level] }})</span></b>
+<a href="/cases/{{ case.id }}/report.pdf"><button class="sec" type="button">Rapport PDF</button></a></div>
+{% set names = {"legal":"Juridique","urbanistic":"Urbanisme","energy":"Énergie","technical":"Technique","environmental":"Environnement","documentation":"Documentation"} %}
+{% for dom, v in case.scores.domains.items() %}<div class="row"><span style="width:130px">{{ names[dom] }}</span><div class="bar" style="flex:1"><i style="width:{{ v }}%"></i></div><span class="mut">{{ v }}</span></div>{% endfor %}</div>
 
-{% set kinds = {"fact":"Feit","inference":"AI-inferentie","risk":"Mogelijk risico","action":"Actie"} %}
-{% for f in case.findings|sort(attribute="id") %}
+{% if case.ai_summary or case.documents|selectattr("ai_analysis")|list %}
+<div class="card"><b>Lecture IA</b> <span class="badge warn">indicative, non validée — n'entre pas dans le score</span>
+{% if case.ai_summary %}<p><b>Synthèse croisée</b> — risque global : {{ case.ai_summary.get("risque_global", "n/d") }}<br>{{ case.ai_summary.get("synthese", "") }}</p>
+{% for i in case.ai_summary.get("incoherences", []) %}{% if loop.first %}<p><b>Incohérences relevées</b></p><ul>{% endif %}<li>{{ i }}</li>{% if loop.last %}</ul>{% endif %}{% endfor %}
+{% for i in case.ai_summary.get("budget_travaux_a_negocier", []) %}{% if loop.first %}<p><b>Travaux à négocier</b></p><ul>{% endif %}<li>{{ i }}</li>{% if loop.last %}</ul>{% endif %}{% endfor %}{% endif %}
+{% for d in case.documents if d.ai_analysis %}<details><summary>{{ d.filename }}</summary><p>{{ d.ai_analysis.get("synthese", "") }}</p>
+{% for v in d.ai_analysis.get("points_vigilance", []) %}{% if loop.first %}<ul>{% endif %}<li>{{ v }}</li>{% if loop.last %}</ul>{% endif %}{% endfor %}</details>{% endfor %}</div>
+{% endif %}
+
+{% set kinds = {"fact":"Fait extrait","inference":"Inférence","risk":"Risque potentiel","action":"Action recommandée"} %}
+{% set status = {"pending":"à valider","confirmed":"confirmé","dismissed":"écarté"} %}
+{% for f in findings %}
 <div class="card" id="f{{ f.id }}" {% if f.review_status=="dismissed" %}style="opacity:.5"{% endif %}>
 <div class="row"><span class="badge {{ f.severity }}">{{ f.severity }}</span><b>{{ f.title }}</b><span class="mut">{{ kinds[f.kind] }} · {{ f.domain }} · {{ f.rule_id }}</span></div>
-<p>{{ f.detail }}</p>{% if f.recommendation %}<p><b>Aanbeveling:</b> {{ f.recommendation }}</p>{% endif %}
-{% for s in f.sources %}<blockquote>{{ s.filename }}, p.{{ s.page }}{% if s.excerpt %} — “{{ s.excerpt }}”{% endif %}</blockquote>{% endfor %}
+<p>{{ f.detail }}</p>{% if f.recommendation %}<p><b>Recommandation :</b> {{ f.recommendation }}</p>{% endif %}
+{% for s in f.sources %}<blockquote>{{ s.filename }}, p.{{ s.page }}{% if s.excerpt %} — « {{ s.excerpt }} »{% endif %}</blockquote>{% endfor %}
 <form method="post" action="/cases/{{ case.id }}/findings/{{ f.id }}/review" class="row">
-<span class="mut">Validatie: {{ f.review_status }}</span>
-<button name="status" value="confirmed" class="sec">✔ Bevestigen</button><button name="status" value="dismissed" class="sec">✖ Verwerpen</button><button name="status" value="pending" class="sec">↺</button></form>
+<span class="mut">Validation : {{ status[f.review_status] }}</span>
+<button name="status" value="confirmed" class="sec">✔ Confirmer</button><button name="status" value="dismissed" class="sec">✖ Écarter</button><button name="status" value="pending" class="sec" title="Remettre à valider">↺</button></form>
 {% for c in f.comments %}<p class="mut">💬 {{ c.body }}</p>{% endfor %}
-<form method="post" action="/cases/{{ case.id }}/findings/{{ f.id }}/comments" class="row"><input name="body" placeholder="Opmerking…" style="flex:1" required><button class="sec">Plaatsen</button></form></div>
+<form method="post" action="/cases/{{ case.id }}/findings/{{ f.id }}/comments" class="row"><input name="body" placeholder="Commentaire…" style="flex:1" required><button class="sec">Ajouter</button></form></div>
 {% endfor %}{% endif %}
 {% endblock %}

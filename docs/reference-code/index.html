@@ -1,0 +1,98 @@
+<!DOCTYPE html>
+<html lang="fr"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Analyse immobilière BE</title>
+<style>
+:root{--bg:#f7f6f2;--card:#fff;--tx:#1d1d1b;--mut:#6b6a63;--bd:#e3e1d8;--ac:#1f6f5c;--er:#c92a2a}
+@media (prefers-color-scheme:dark){:root{--bg:#171716;--card:#222220;--tx:#f0efe8;--mut:#a3a199;--bd:#37362f;--ac:#4fb89d;--er:#ff8787}}
+*{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--tx);font:16px/1.5 system-ui,sans-serif}
+main{max-width:820px;margin:0 auto;padding:16px}
+h1{font-size:1.4rem;margin:0}h2{font-size:1rem;margin:0 0 8px}
+.card{background:var(--card);border:1px solid var(--bd);border-radius:12px;padding:16px;margin-bottom:14px}
+.bar{display:flex;justify-content:space-between;align-items:center;gap:8px;flex-wrap:wrap;margin-bottom:14px}
+input,button{font:inherit;padding:9px 12px;border-radius:8px;border:1px solid var(--bd);background:var(--bg);color:var(--tx);max-width:100%}
+input[type=email],input[type=password]{width:100%;margin-bottom:8px}
+button{background:var(--ac);color:#fff;border:0;font-weight:600;cursor:pointer}
+button.s{background:transparent;color:var(--tx);border:1px solid var(--bd);font-weight:400}
+button:disabled{opacity:.5}
+.mut{color:var(--mut);font-size:.85rem}.err{color:var(--er)}
+.kv{display:grid;grid-template-columns:repeat(auto-fit,minmax(190px,1fr));gap:6px 14px;margin:8px 0}
+.kv span{display:block;font-size:.75rem;color:var(--mut)}
+ul{margin:4px 0 8px;padding-left:20px}
+code{word-break:break-all}
+</style></head><body><main id="app"></main>
+<script>
+const app=document.getElementById("app");let notice="";
+const el=(t,x,c)=>{const e=document.createElement(t);if(x!=null)e.textContent=x;if(c)e.className=c;return e};
+const J=(m,b)=>({method:m,headers:{"Content-Type":"application/json"},body:JSON.stringify(b)});
+async function api(p,o={}){const r=await fetch(p,{credentials:"same-origin",...o});let d=null;try{d=await r.json()}catch(e){}
+ if(!r.ok){const e=new Error((d&&d.detail)||"Erreur "+r.status);e.status=r.status;throw e}return d}
+const LAB={classe_energetique:"Classe",consommation_kwh_m2_an:"kWh/m²/an",adresse_bien:"Adresse",region:"Région",date_validite:"Valide jusqu'au",conforme:"Conforme",organisme_agree:"Organisme",date_visite:"Date de visite",delai_mise_en_conformite:"Délai de mise en conformité",commune:"Commune",numero_parcelle:"Parcelle",parcelle:"Parcelle",superficie_m2:"Superficie (m²)",revenu_cadastral:"Revenu cadastral",annee_construction:"Année de construction",date_extrait:"Date de l'extrait",statut_sol:"Statut du sol",pollution_mentionnee:"Pollution mentionnée",reference:"Référence",date_delivrance:"Délivrée le"};
+const TITLE={peb:"PEB",electrique:"Conformité électrique",cadastre:"Extrait cadastral",sol:"Attestation du sol"};
+function list(c,arr){if(!arr||!arr.length)return;const u=el("ul");arr.forEach(x=>u.appendChild(el("li",typeof x==="string"?x:Object.values(x).filter(Boolean).join(" — "))));c.appendChild(u)}
+function docCard(d){const c=el("div",null,"card");c.appendChild(el("h2",(TITLE[d.type]||"Document")+" — "+d.fichier+(d.date?" ("+d.date+")":"")));
+ if(d.erreur){c.appendChild(el("p",d.erreur,"err"));return c}
+ const a=d.analyse||{};const g=el("div",null,"kv");
+ Object.keys(LAB).filter(k=>a[k]!=null).forEach(k=>{const x=el("div");x.appendChild(el("span",LAB[k]));x.appendChild(el("b",String(a[k])));g.appendChild(x)});c.appendChild(g);
+ if(a.points_vigilance&&a.points_vigilance.length){c.appendChild(el("b","Points de vigilance"));list(c,a.points_vigilance)}
+ const w=a.travaux_recommandes||a.infractions||a.obligations;if(w&&w.length){c.appendChild(el("b",a.infractions?"Infractions":a.obligations?"Obligations":"Travaux recommandés"));list(c,w)}
+ for(const k of ["activites_a_risque_mentionnees","restrictions_usage"]){if(a[k]&&a[k].length){c.appendChild(el("b",k==="restrictions_usage"?"Restrictions d'usage":"Activités à risque mentionnées"));list(c,a[k])}}
+ if(a.synthese)c.appendChild(el("p",a.synthese));return c}
+function crossCard(s){const c=el("div",null,"card");c.appendChild(el("h2","Synthèse croisée — risque "+(s.risque_global||"?")));
+ if(s.incoherences&&s.incoherences.length){c.appendChild(el("b","Incohérences"));list(c,s.incoherences)}
+ if(s.budget_travaux_a_negocier&&s.budget_travaux_a_negocier.length){c.appendChild(el("b","Travaux à négocier"));list(c,s.budget_travaux_a_negocier)}
+ c.appendChild(el("p",s.synthese||""));return c}
+function authView(mode){mode=mode||"login";app.textContent="";
+ const c=el("div",null,"card");c.appendChild(el("h1","Analyse immobilière BE"));c.appendChild(el("p","Analysez vos PEB, certificats électriques, extraits cadastraux et attestations du sol.","mut"));
+ const em=el("input");em.type="email";em.placeholder="E-mail";em.autocomplete="email";
+ const pw=el("input");pw.type="password";pw.placeholder="Mot de passe (10 caractères min.)";pw.autocomplete=mode==="login"?"current-password":"new-password";
+ const er=el("p",null,"err");if(notice){er.className="mut";er.textContent=notice;notice=""}const b=el("button",mode==="login"?"Se connecter":"Créer mon compte");
+ const sw=el("button",mode==="login"?"Pas de compte ? S'inscrire":"J'ai déjà un compte","s");sw.style.marginLeft="8px";
+ b.onclick=async()=>{b.disabled=true;er.className="err";er.textContent="";try{await api("/auth/"+(mode==="login"?"login":"register"),J("POST",{email:em.value,password:pw.value}));boot()}catch(e){er.textContent=e.message}b.disabled=false};
+ sw.onclick=()=>authView(mode==="login"?"register":"login");
+ [em,pw,er,b,sw].forEach(x=>c.appendChild(x));
+ if(mode==="login"){const fg=el("button","Mot de passe oublié ?","s");fg.style.marginLeft="8px";
+  fg.onclick=async()=>{er.className="err";if(!em.value.trim()){er.textContent="Saisissez votre e-mail ci-dessus.";return}
+   try{await api("/auth/forgot",J("POST",{email:em.value}));er.className="mut";er.textContent="Si un compte existe, un e-mail vient d'être envoyé."}catch(e){er.textContent=e.message}};c.appendChild(fg)}
+ if(mode==="register")c.appendChild(el("p","Des crédits gratuits sont offerts à l'inscription. Aide à la lecture uniquement : ni avis juridique ni avis technique.","mut"));
+ app.appendChild(c)}
+async function dash(me){app.textContent="";
+ const bar=el("div",null,"bar");bar.appendChild(el("h1","Analyse immobilière BE"));
+ const r=el("div");r.appendChild(el("span",me.email+" · "+me.credits+" crédit(s) ","mut"));
+ const buy=el("button","Acheter des crédits");buy.onclick=async()=>{try{location=(await api("/billing/checkout",{method:"POST"})).url}catch(e){alert(e.message)}};
+ const lo=el("button","Déconnexion","s");lo.style.marginLeft="8px";lo.onclick=async()=>{await api("/auth/logout",{method:"POST"});boot()};
+ [buy,lo].forEach(x=>r.appendChild(x));bar.appendChild(r);app.appendChild(bar);
+ if(notice){app.appendChild(el("div",notice,"card"));notice=""}
+ if(!me.verified){const vb=el("div",null,"card");vb.appendChild(el("p","Confirmez votre adresse e-mail (lien envoyé à l'inscription) pour pouvoir analyser des documents."));
+  const rs=el("button","Renvoyer l'e-mail");rs.onclick=async()=>{try{await api("/auth/resend",{method:"POST"});rs.textContent="E-mail renvoyé";rs.disabled=true}catch(e){alert(e.message)}};vb.appendChild(rs);app.appendChild(vb)}
+ if(location.search.includes("paid=1"))app.appendChild(el("div","Paiement reçu : vos crédits sont ajoutés dans quelques secondes.","card"));
+ const up=el("div",null,"card");up.appendChild(el("h2","Nouveau dossier (1 crédit par document, 6 max)"));
+ const fi=el("input");fi.type="file";fi.multiple=true;fi.accept="application/pdf";const go=el("button","Analyser");go.style.marginLeft="8px";const st=el("p",null,"mut");
+ [fi,go,st].forEach(x=>up.appendChild(x));app.appendChild(up);const out=el("div");app.appendChild(out);
+ go.onclick=async()=>{if(!fi.files.length)return;go.disabled=true;st.className="mut";st.textContent="Analyse en cours (OCR et IA, jusqu'à une minute)…";out.textContent="";
+  const fd=new FormData();[...fi.files].forEach(f=>fd.append("files",f));
+  try{const d=await api("/v1/dossier",{method:"POST",body:fd});st.textContent="";d.documents.forEach(x=>out.appendChild(docCard(x)));if(d.synthese_croisee)out.appendChild(crossCard(d.synthese_croisee));boot(true)}
+  catch(e){st.className="err";st.textContent=e.message}go.disabled=false};
+ const hs=el("div");app.appendChild(hs);
+ try{const h=await api("/me/history");if(h.length){hs.appendChild(el("h2","Historique"));h.forEach(x=>{const c=docCard(x);const d=el("button","Supprimer","s");d.onclick=async()=>{await api("/me/history/"+x.id,{method:"DELETE"});c.remove()};c.appendChild(d);hs.appendChild(c)})}}catch(e){}
+ const kc=el("div",null,"card");kc.appendChild(el("h2","Clés API"));kc.appendChild(el("p","Usage : en-tête X-API-Key sur /v1/analyze et /v1/dossier. Documentation : /docs","mut"));
+ const kl=el("div");const nk=el("button","Créer une clé");const shown=el("p");
+ async function loadKeys(){kl.textContent="";(await api("/me/keys")).forEach(k=>{const row=el("div",k.prefix+"… ");const rv=el("button","Révoquer","s");rv.onclick=async()=>{await api("/me/keys/"+k.id,{method:"DELETE"});loadKeys()};row.appendChild(rv);kl.appendChild(row)})}
+ nk.onclick=async()=>{const k=await api("/me/keys",{method:"POST"});shown.textContent="";shown.appendChild(el("code",k.key));shown.appendChild(el("div",k.note,"mut"));loadKeys()};
+ [kl,nk,shown].forEach(x=>kc.appendChild(x));app.appendChild(kc);loadKeys();
+ const dz=el("p",null,"mut");const da=el("button","Supprimer mon compte et mes données","s");
+ da.onclick=async()=>{if(confirm("Supprimer définitivement votre compte, vos analyses et vos clés ?")){await api("/me",{method:"DELETE"});boot()}};dz.appendChild(da);app.appendChild(dz)}
+let busy=false;
+async function boot(keep){if(busy)return;busy=true;try{const me=await api("/me");if(keep){const o=app.querySelector(".bar span");if(o)o.textContent=me.email+" · "+me.credits+" crédit(s) ";busy=false;return}await dash(me)}catch(e){authView()}busy=false}
+function resetView(token){app.textContent="";const c=el("div",null,"card");c.appendChild(el("h2","Nouveau mot de passe"));
+ const pw=el("input");pw.type="password";pw.placeholder="Nouveau mot de passe (10 caractères min.)";pw.autocomplete="new-password";
+ const er=el("p",null,"err");const b=el("button","Enregistrer");
+ b.onclick=async()=>{er.textContent="";try{await api("/auth/reset",J("POST",{token,password:pw.value}));notice="Mot de passe modifié, vous pouvez vous connecter.";authView()}catch(e){er.textContent=e.message}};
+ [pw,er,b].forEach(x=>c.appendChild(x));app.appendChild(c)}
+async function init(){const q=new URLSearchParams(location.search),v=q.get("verify"),r=q.get("reset");
+ if(v||r)history.replaceState(null,"",location.pathname);
+ if(v){try{await api("/auth/verify",J("POST",{token:v}));notice="Adresse e-mail confirmée, merci !"}catch(e){notice=e.message}}
+ if(r){resetView(r);return}
+ boot()}
+init();
+</script></body></html>

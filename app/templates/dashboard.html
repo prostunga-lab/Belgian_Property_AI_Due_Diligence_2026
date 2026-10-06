@@ -1,9 +1,12 @@
 {% extends "base.html" %}{% block content %}
+{% if msg %}<p class="ok">{{ msg }}</p>{% endif %}
+{% if needs_verification %}<div class="card warn"><div class="row" style="justify-content:space-between"><span>Confirmez votre adresse e-mail pour pouvoir analyser des dossiers (lien envoyé à l'inscription).</span>
+<form method="post" action="/verify/resend"><button class="sec">Renvoyer le lien</button></form></div></div>{% endif %}
 <div class="card"><div class="row" style="justify-content:space-between"><b>{{ org.name }}</b>
-<span class="mut">Plan {{ org.plan }} · {{ used }}/{{ org.case_quota }} dossiers deze maand</span></div>
-<form method="post" action="/cases" class="row" style="margin-top:10px"><input name="title" placeholder="Nieuw dossier (bv. Kerkstraat 12, Gent)" required style="flex:1"><button>Dossier aanmaken</button></form></div>
-<table><tr><th>Dossier</th><th>Adres</th><th>Status</th><th>Risico</th></tr>
-{% for c in cases %}<tr><td><a href="/cases/{{ c.id }}">{{ c.title }}</a></td><td>{{ c.address }}</td><td>{{ c.status }}</td>
+<span class="mut">{{ org.credits }} crédit{{ "s" if org.credits != 1 }} · <a href="/account">compte, API &amp; achat de crédits</a></span></div>
+<form method="post" action="/cases" class="row" style="margin-top:10px"><input name="title" placeholder="Nouveau dossier (ex. Kerkstraat 12, Gand)" required style="flex:1"><button>Créer le dossier</button></form></div>
+<table><tr><th>Dossier</th><th>Adresse</th><th>Statut</th><th>Risque</th></tr>
+{% for c in cases %}<tr><td><a href="/cases/{{ c.id }}">{{ c.title }}</a></td><td>{{ c.address }}</td><td>{{ "analysé" if c.status == "analyzed" else "brouillon" }}</td>
 <td>{% if c.scores %}<span class="{{ c.scores.level }}">{{ c.scores.overall }}/100</span>{% endif %}</td></tr>
-{% else %}<tr><td colspan="4" class="mut">Nog geen dossiers.</td></tr>{% endfor %}</table>
+{% else %}<tr><td colspan="4" class="mut">Aucun dossier pour l'instant.</td></tr>{% endfor %}</table>
 {% endblock %}

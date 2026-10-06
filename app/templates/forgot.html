@@ -1,0 +1,5 @@
+{% extends "base.html" %}{% block content %}
+<div class="card" style="max-width:460px;margin:24px auto"><h3>Mot de passe oublié</h3>
+{% if sent %}<p>Si un compte existe pour cette adresse, un e-mail avec un lien de réinitialisation (valable 1 h, à usage unique) vient d'être envoyé.</p><p><a href="/login">← Connexion</a></p>
+{% else %}<form method="post" action="/forgot"><p><input name="email" type="email" placeholder="Votre e-mail" required style="width:100%"></p><button>Envoyer le lien</button> <a href="/login" class="mut">Annuler</a></form>{% endif %}</div>
+{% endblock %}

@@ -40,7 +40,7 @@ def test_invite_code_required(monkeypatch):
     assert register(c, "i1@x.be").status_code == 403
     assert register(c, "i1@x.be", invite_code="wrong").status_code == 403
     assert register(c, "i1@x.be", invite_code="s3cret-invite").status_code == 303
-    assert "Uitnodigingscode" in TestClient(app).get("/login").text
+    assert "Code d'invitation" in TestClient(app).get("/login").text
 
 
 def test_cross_site_post_rejected():

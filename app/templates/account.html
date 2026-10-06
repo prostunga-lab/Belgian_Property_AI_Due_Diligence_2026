@@ -1,0 +1,19 @@
+{% extends "base.html" %}{% block content %}
+<p><a href="/">← Dossiers</a></p><h2>Compte</h2>
+{% if paid %}<p class="ok">Merci ! Vos crédits sont ajoutés dès que le paiement est confirmé (quelques secondes).</p>{% endif %}
+<div class="card"><b>{{ org.name }}</b> · {{ user.email }} {% if user.email_verified %}<span class="badge ok">e-mail confirmé</span>{% elif verification_on %}<span class="badge warn">e-mail non confirmé</span>{% endif %}
+<p>Solde : <b>{{ org.credits }} crédit{{ "s" if org.credits != 1 }}</b> <span class="mut">(1 crédit = 1 document analysé ; une ré-analyse ne coûte rien)</span></p>
+{% if stripe_ready %}<form method="post" action="/billing/checkout"><button>Acheter {{ pack }} crédits</button></form>{% else %}<p class="mut">Le paiement en ligne n'est pas configuré sur cette installation.</p>{% endif %}</div>
+
+<div class="card"><b>Clés API</b>
+<p class="mut">Pour automatiser l'envoi de dossiers : <code>curl -H "X-API-Key: sk_live_…" -F "files=@epc.pdf" -F "files=@akte.pdf" {{ base_url }}/v1/dossier</code></p>
+{% if new_key %}<p class="ok">Nouvelle clé — copiez-la maintenant, elle ne sera plus affichée :</p><p><code>{{ new_key }}</code></p>{% endif %}
+<table>{% for k in keys %}<tr><td><code>{{ k.prefix }}…</code></td><td class="mut">{{ k.created_at.date() }}</td><td>
+<form method="post" action="/account/keys/{{ k.id }}/revoke"><button class="sec">Révoquer</button></form></td></tr>{% else %}<tr><td class="mut">Aucune clé.</td></tr>{% endfor %}</table>
+<form method="post" action="/account/keys"><button class="sec">Créer une clé</button></form></div>
+
+<div class="card"><b>Supprimer mon compte</b>
+<p class="mut">Efface définitivement l'organisation, ses dossiers, fichiers et clés. Les paiements sont conservés pour la comptabilité.</p>
+<form method="post" action="/account/delete" class="row" onsubmit="return confirm('Supprimer définitivement le compte et toutes les données ?')">
+<input name="password" type="password" placeholder="Mot de passe" autocomplete="current-password" required><button class="sec">Supprimer</button></form></div>
+{% endblock %}
