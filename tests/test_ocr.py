@@ -49,7 +49,7 @@ def test_mixed_text_and_scanned_pages(tmp_path):
 @needs_ocr
 def test_scanned_dossier_end_to_end():
     c = TestClient(app)
-    c.post("/register", data={"org_name": "Scan", "email": "scan@x.be", "password": "supersecret12"})
+    c.post("/register", data={"org_name": "Scan", "email": "scan@x.be", "password": "supersecret12", "accept_terms": "1"})
     cid = int(re.search(r"/cases/(\d+)", c.post("/cases", data={"title": "Scan"}, follow_redirects=False).headers["location"]).group(1))
     files = [("files", (n, scanned_pdf([t], noise=0.01, rotate=1.0), "application/pdf")) for n, t in
              [("akte.pdf", DEED), ("epc.pdf", EPC), ("asbest.pdf", ASB)]]

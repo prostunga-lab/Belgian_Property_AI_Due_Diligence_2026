@@ -485,3 +485,11 @@ MESSAGES.update({
     'legal.todo_decision': 'to be decided',
     'legal.meta': 'Legal information about the Belgian Property Due Diligence service.',
 })
+
+
+MESSAGES.update({
+    'auth.accept_terms': 'I accept the {terms} and the {privacy}.',
+    'auth.err.terms': 'You must accept the terms and the privacy policy.',
+    'landing.promise': 'Our target: a first report in under {minutes} minutes for a standard complete case. AI reading or poor-quality scans may take longer.',
+    'case.duration': 'Analysis done in {seconds} s (target: under {minutes} min).',
+})

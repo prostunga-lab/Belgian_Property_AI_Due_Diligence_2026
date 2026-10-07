@@ -3,7 +3,7 @@
 SaaS construit à partir de `docs/strategy.md` (§9 « MVP recommandé »): **Flandre, 4 documents** – EPC, acte, asbestattest, contrôle électrique.
 
 ## Ce que fait le MVP
-- Comptes / organisations (multi-tenant strict), **confirmation d'e-mail**, **mot de passe oublié** (lien à usage unique, invalide les sessions ouvertes), **clés API**, **crédits** (1 crédit = 1 document, débit atomique) et achat de packs via **Stripe**.
+- Comptes / organisations (multi-tenant strict), **confirmation d'e-mail**, **mot de passe oublié** (lien à usage unique, invalide les sessions ouvertes), **clés API**, **facturation au dossier complet** (crédits ou abonnement agent/agence au mois, semestre ou an, quota mensuel) via **Stripe**, page **Tarifs**, promesse de délai mesurée, pages légales et acceptation des conditions.
 - Upload de dossiers (PDF, TXT, images PNG/JPG/TIFF), classification automatique (NL/FR/EN), correction manuelle du type.
 - **OCR** (Tesseract, NL+FR+EN): les pages sans texte et les images sont lues par OCR, avec score de confiance par page; un scan de mauvaise qualité (< 75 %) ou sans OCR disponible génère un finding « documentation ». Correction automatique de « m² » lu « m? ».
 - Extraction de champs clés, chacun avec **page + extrait source**. Passe LLM optionnelle (`ANTHROPIC_API_KEY`) qui ne comble que les champs manquants et n'est acceptée que si l'extrait cité figure mot pour mot dans la page.
@@ -12,7 +12,7 @@ SaaS construit à partir de `docs/strategy.md` (§9 « MVP recommandé »): **Fl
 - **Lecture IA** facultative (Claude, prompts dans `app/prompts.py`) : synthèse par document et synthèse croisée, affichée à part, **jamais dans le score**.
 - API publique `POST /v1/dossier` (clé `X-API-Key`).
 - **Interface en français, néerlandais et anglais** avec sélecteur de langue (FR | NL | EN) : pages, erreurs, e-mails, rapport PDF et lecture IA. Les constats sont stockés sans texte et rendus dans la langue du lecteur.
-- **Page d'accueil publique** (visiteurs non connectés, FR/NL/EN) : proposition de valeur, fonctionnement, contrôles, exemple fictif, garde-fous, crédits, FAQ ; mention « accès sur invitation » si un `INVITE_CODE` est configuré. Les utilisateurs connectés arrivent sur leur tableau de bord. Bouton **afficher/masquer** sur tous les champs de mot de passe.
+- **Page d'accueil publique** (visiteurs non connectés, FR/NL/EN) : proposition de valeur, fonctionnement, contrôles, exemple, garde-fous, tarifs, FAQ ; mention « accès sur invitation » si un `INVITE_CODE` est configuré. Les utilisateurs connectés arrivent sur leur tableau de bord. Bouton **afficher/masquer** sur tous les champs de mot de passe.
 - Pages **À propos** et **Contact** publiques, pied de page sur toutes les pages ; coordonnées de l'éditeur lues dans la configuration (jamais inventées).
 - Property Risk Score global + 6 domaines (Legal / Urbanistic / Energy / Technical / Environmental / Documentation).
 - Chaque finding distingue **fait / inférence IA / risque / action**; validation humaine (confirmer/rejeter), commentaires, audit log.

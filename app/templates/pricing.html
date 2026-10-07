@@ -22,7 +22,7 @@ ul.notes{margin:10px 0 0;padding-left:18px;color:var(--mut);font-size:14px}ul.no
 @media (prefers-color-scheme:dark){.save{background:#14532d;color:#dcfce7}}</style>
 {% endblock %}
 {% block content %}
-<article class="prose"><h1>{{ _('pricing.h1') }}</h1><p>{{ _('pricing.intro') }}</p></article>
+<article class="prose"><h1>{{ _('pricing.h1') }}</h1><p>{{ _('pricing.intro') }}</p><p class="mut">⏱ {{ _('landing.promise', minutes=promise_minutes) }}</p></article>
 <div class="card" style="max-width:46em"><p style="margin:0">{{ _('pricing.what_is_case', max=max_documents) }}</p></div>
 <p class="mut">{{ _('pricing.vat.' ~ vat) }}{% if free_credits %} {{ _('pricing.free', n=free_credits) }}{% endif %}</p>
 

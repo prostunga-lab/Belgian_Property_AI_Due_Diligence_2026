@@ -84,3 +84,23 @@ def test_cookie_statement_matches_the_cookies_the_app_really_sets():
 def test_terms_state_the_processing_promise_from_config(monkeypatch):
     monkeypatch.setattr(config, "PROCESSING_PROMISE_MINUTES", 3)
     assert "3 minutes" in page_text(get("en", "/terms"))
+
+
+def test_registration_requires_accepting_the_terms_and_records_the_version():
+    from sqlalchemy import select
+    from app.models import SessionLocal, User
+    c = TestClient(app)
+    data = {"org_name": "O", "email": "terms-ok@x.be", "password": "supersecret12"}
+    r = c.post("/register", data=data)
+    assert r.status_code == 400 and "conditions générales" in page_text(r)
+    assert c.post("/register", data=data | {"accept_terms": "0"}).status_code == 400
+    assert c.post("/register", data=data | {"accept_terms": "1"}, follow_redirects=False).status_code == 303
+    with SessionLocal() as db:
+        u = db.scalar(select(User).where(User.email == "terms-ok@x.be"))
+    assert u.terms_accepted_at is not None and u.terms_version == legal.VERSION
+
+
+def test_the_register_form_has_a_required_checkbox_linking_both_documents():
+    body = get("en", "/login").text
+    assert 'name="accept_terms"' in body and "required" in body.split('name="accept_terms"')[1][:120]
+    assert 'href="/terms"' in body and 'href="/privacy"' in body

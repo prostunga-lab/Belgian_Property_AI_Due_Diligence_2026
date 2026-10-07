@@ -10,7 +10,7 @@ from tests.fixtures import DEED, EPC, pdf
 
 
 def register(c, email, **extra):
-    return c.post("/register", data={"org_name": "Org", "email": email, "password": "supersecret12", **extra}, follow_redirects=False)
+    return c.post("/register", data={"org_name": "Org", "email": email, "password": "supersecret12", "accept_terms": "1", **extra}, follow_redirects=False)
 
 
 def new_case(c, title="t"):

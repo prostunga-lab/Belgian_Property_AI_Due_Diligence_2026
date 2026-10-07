@@ -9,7 +9,7 @@ from app.main import app
 def new_client(email: str, password: str = "supersecret12", register: bool = True) -> TestClient:
     c = TestClient(app)
     if register:
-        r = c.post("/register", data={"org_name": "Org", "email": email, "password": password}, follow_redirects=False)
+        r = c.post("/register", data={"org_name": "Org", "email": email, "password": password, "accept_terms": "1"}, follow_redirects=False)
         assert r.status_code == 303, r.text
     return c
 

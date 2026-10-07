@@ -18,7 +18,7 @@
 <p class="mut" style="margin:6px 0 0">{{ _('case.max_documents', max=max_documents) }}</p></div>
 
 {% if case.status == "analyzed" %}
-<div class="card"><div class="row" style="justify-content:space-between"><b>{{ _('case.score') }} :
+<div class="card">{% if case.analysis_seconds is not none %}<p class="mut" style="margin:0 0 8px">⏱ {{ _('case.duration', seconds=case.analysis_seconds|round(1), minutes=promise_minutes) }}</p>{% endif %}<div class="row" style="justify-content:space-between"><b>{{ _('case.score') }} :
 <span class="{{ case.scores.level }}">{{ case.scores.overall }}/100 ({{ _('level.' ~ case.scores.level) }})</span></b>
 <a href="/cases/{{ case.id }}/report.pdf"><button class="sec" type="button">{{ _('case.pdf') }}</button></a></div>
 {% for dom, v in case.scores.domains.items() %}<div class="row"><span style="width:130px">{{ _('domain.' ~ dom) }}</span><div class="bar" style="flex:1"><i style="width:{{ v }}%"></i></div><span class="mut">{{ v }}</span></div>{% endfor %}</div>

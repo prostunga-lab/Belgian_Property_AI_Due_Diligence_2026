@@ -11,7 +11,7 @@ CODE = "K6ZW-VQ8P-VYN5-FH2D"  # what the generator prints (no I, L, O, U)
 
 
 def register(code, email):
-    return TestClient(app).post("/register", data={"org_name": "O", "email": email, "password": "supersecret12", "invite_code": code}, follow_redirects=False)
+    return TestClient(app).post("/register", data={"org_name": "O", "email": email, "password": "supersecret12", "invite_code": code, "accept_terms": "1"}, follow_redirects=False)
 
 
 @pytest.fixture(autouse=True)

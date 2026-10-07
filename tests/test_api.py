@@ -7,7 +7,7 @@ HDR = {"accept": "text/html"}
 
 
 def register(c, email):
-    r = c.post("/register", data={"org_name": "Agence", "email": email, "password": "supersecret12"}, follow_redirects=False)
+    r = c.post("/register", data={"org_name": "Agence", "email": email, "password": "supersecret12", "accept_terms": "1"}, follow_redirects=False)
     assert r.status_code == 303
 
 

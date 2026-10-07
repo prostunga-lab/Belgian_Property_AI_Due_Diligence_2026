@@ -23,6 +23,7 @@ section.block{margin:36px 0}section.block>h2{font-size:22px;margin:0 0 12px}.ste
   <p class="lead">{{ _('landing.lead') }}</p>
   <div class="cta"><a class="btn" href="/login#register">{{ _('landing.cta_register') }}</a><a class="btn sec" href="/login#login">{{ _('landing.cta_login') }}</a></div>
   {% if invite %}<p class="note mut">🔒 {{ _('landing.invite_note') }}</p>{% endif %}
+  <p class="note mut">⏱ {{ _('landing.promise', minutes=promise_minutes) }}</p>
   {% if free_credits %}<p class="note mut">{{ _('landing.free_note', n=free_credits) }}</p>{% endif %}
 </div>
 

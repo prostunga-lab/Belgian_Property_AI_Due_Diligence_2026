@@ -11,5 +11,6 @@
 <p><input name="email" type="email" placeholder="{{ _('auth.email') }}" aria-label="{{ _('auth.email') }}" autocomplete="username" required style="width:100%"></p>
 {% if invite %}<p><input name="invite_code" placeholder="{{ _('auth.invite_code') }}" aria-label="{{ _('auth.invite_code') }}" autocomplete="off" autocapitalize="characters" autocorrect="off" spellcheck="false" required style="width:100%"></p>{% endif %}
 <p>{{ password_field('password', _('auth.password_new'), 'new-password', 10) }}</p>
+<p style="display:flex;gap:8px;align-items:flex-start"><input type="checkbox" name="accept_terms" value="1" id="accept_terms" required style="width:auto;margin-top:3px"><label for="accept_terms">{{ _('auth.accept_terms', terms='@T@', privacy='@P@')|e|replace('@T@', '<a href="/terms" target="_blank" rel="noopener">'|safe ~ _('nav.terms') ~ '</a>'|safe)|replace('@P@', '<a href="/privacy" target="_blank" rel="noopener">'|safe ~ _('nav.privacy') ~ '</a>'|safe) }}</label></p>
 <button>{{ _('auth.register.button') }}</button></form>
 </div>{% endblock %}

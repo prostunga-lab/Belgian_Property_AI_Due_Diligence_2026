@@ -207,7 +207,7 @@ def login_page(request: Request):
 
 @app.post("/register")
 def register(request: Request, bg: BackgroundTasks, org_name: str = Form(...), email: str = Form(...), password: str = Form(...),
-             invite_code: str = Form(""), db: Session = Depends(get_db)):
+             invite_code: str = Form(""), accept_terms: str = Form(""), db: Session = Depends(get_db)):
     email = email.strip().lower()
     throttle(f"reg:{client_ip(request)}")
 
@@ -223,6 +223,8 @@ def register(request: Request, bg: BackgroundTasks, org_name: str = Form(...), e
         return refuse("auth.err.invite", 403)
     if not EMAIL_RE.fullmatch(email) or len(email) > 254:
         return refuse("auth.err.email", 400)
+    if accept_terms != "1":
+        return refuse("auth.err.terms", 400)
     if len(password) < 10:
         return refuse("auth.err.password_short", 400)
     if db.scalar(select(User).where(User.email == email)):
@@ -230,7 +232,8 @@ def register(request: Request, bg: BackgroundTasks, org_name: str = Form(...), e
     org = Org(name=org_name.strip()[:200], credits=config.FREE_CREDITS)
     db.add(org)
     db.flush()
-    user = User(org_id=org.id, email=email, password_hash=hash_password(password), lang=request.state.lang)
+    user = User(org_id=org.id, email=email, password_hash=hash_password(password), lang=request.state.lang,
+                terms_accepted_at=dt.datetime.now(dt.timezone.utc), terms_version=legal.VERSION)
     db.add(user)
     db.flush()
     audit(db, user, "account.register")
@@ -396,7 +399,7 @@ def home(request: Request, user: User | None = Depends(optional_user), db: Sessi
     if user is None:
         return templates.TemplateResponse(request, "landing.html", {
             "invite": bool(config.INVITE_CODE), "free_credits": config.FREE_CREDITS, "max_files": config.MAX_FILES_PER_REQUEST,
-            "max_mb": config.MAX_UPLOAD_MB, "base_url": config.BASE_URL})
+            "max_mb": config.MAX_UPLOAD_MB, "base_url": config.BASE_URL, "promise_minutes": config.PROCESSING_PROMISE_MINUTES})
     cases = db.scalars(select(Case).where(Case.org_id == user.org_id).order_by(Case.id.desc())).all()
     org = db.get(Org, user.org_id)
     return templates.TemplateResponse(request, "dashboard.html", {
@@ -419,7 +422,7 @@ def create_case(title: str = Form(...), user: User = Depends(current_user), db: 
 def case_page(request: Request, case_id: int, user: User = Depends(current_user), db: Session = Depends(get_db)):
     case = get_case(db, user, case_id)
     return templates.TemplateResponse(request, "case.html", {
-        "case": case, "user": user, "org": db.get(Org, user.org_id), "version": RULESET_VERSION, "doc_types": DOC_TYPES,
+        "case": case, "user": user, "org": db.get(Org, user.org_id), "version": RULESET_VERSION, "promise_minutes": config.PROCESSING_PROMISE_MINUTES, "doc_types": DOC_TYPES,
         "findings": [finding_view(f, request.state.lang) | {"comments": f.comments}
                      for f in sorted(case.findings, key=lambda f: (SEVERITY_ORDER.get(f.severity, 9), f.id))],
         "preview": billing_preview(db.get(Org, user.org_id), case), "bal": balance(db.get(Org, user.org_id)),
