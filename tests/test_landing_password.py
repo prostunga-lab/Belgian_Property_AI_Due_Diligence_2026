@@ -129,3 +129,16 @@ def test_password_value_is_never_rendered_back_into_the_page():
 def test_pages_ship_an_inline_favicon_so_browsers_do_not_request_one():
     assert '<link rel="icon" href="data:image/svg+xml' in TestClient(app).get("/").text
     assert 'class="grid trust"' in TestClient(app).get("/").text  # five trust cards laid out as one row on desktop
+
+
+def test_example_is_titled_neutrally_and_never_posed_as_a_real_customer_case():
+    """The sample numbers are invented, so the block is just an 'Example': no 'fictional' label, but no 'real case' claim either."""
+    for lang, title in (("fr", "Exemple"), ("nl", "Voorbeeld"), ("en", "Example")):
+        assert CATALOGS[lang]["landing.example.title"] == title
+        page = page_text(get(lang))
+        assert f">{title}<" in page.replace("</h2>", "<").replace("<h2 style=\"margin-top:0;font-size:20px\">", ">")
+    forbidden = ["fictif", "fictief", "fictional", "cas réel", "echt geval", "real case", "témoignage", "getuigenis", "testimonial", "client"]
+    for lang in LANGS:
+        landing = " ".join(v for k, v in CATALOGS[lang].items() if k.startswith("landing.example")).lower()
+        for word in forbidden:
+            assert word not in landing, f"{lang}: example block contains {word!r}"

@@ -31,7 +31,7 @@ def test_all_languages_have_exactly_the_same_keys_and_placeholders():
 
 def test_translations_are_actually_translated():
     """Guards against a language file that is a copy of another one (identical text only allowed for brand/neutral terms)."""
-    neutral = {"ui.page_abbr", "case.score", "pdf.score", "severity.info", "pdf.rule", "pdf.title", "case.ocr_pages", "doctype.epc"}
+    neutral = {"contact.title", "contact.h1", "nav.contact", "footer.copyright", "ui.page_abbr", "case.score", "pdf.score", "severity.info", "pdf.rule", "pdf.title", "case.ocr_pages", "doctype.epc"}
     for a, b in (("fr", "en"), ("nl", "en"), ("fr", "nl")):
         same = [k for k in CATALOGS[a] if CATALOGS[a][k] == CATALOGS[b][k] and k not in neutral and len(CATALOGS[a][k]) > 25]
         assert same == [], f"{a} and {b} share identical long texts: {same[:5]}"

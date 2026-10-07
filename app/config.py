@@ -1,4 +1,5 @@
 import os
+import re
 from pathlib import Path
 
 DATA_DIR = Path(os.environ.get("DATA_DIR", "data"))
@@ -32,6 +33,14 @@ LLM_MODEL = os.environ.get("LLM_MODEL", "claude-sonnet-5-5")
 MAX_UPLOAD_MB = int(os.environ.get("MAX_UPLOAD_MB", "25"))
 # Configurable retention (GDPR): cases older than this are purged by `python -m app.purge`.
 RETENTION_DAYS = int(os.environ.get("RETENTION_DAYS", "365"))
+
+# Publisher identity shown on /about and /contact and in the footer. Nothing is invented: a field that is not set is not shown.
+COMPANY_NAME = _clean("COMPANY_NAME")
+COMPANY_ADDRESS = _clean("COMPANY_ADDRESS")
+COMPANY_ENTERPRISE_NUMBER = _clean("COMPANY_ENTERPRISE_NUMBER")  # BCE/KBO number and/or VAT number
+COMPANY_PHONE = _clean("COMPANY_PHONE")
+_email = _clean("CONTACT_EMAIL")
+CONTACT_EMAIL = _email if re.fullmatch(r"[A-Za-z0-9._+\-]+@[A-Za-z0-9\-]+(?:\.[A-Za-z0-9\-]+)*\.[A-Za-z]{2,}", _email) else ""  # strict: it ends up in a mailto: link
 
 # Accounts, credits, billing, e-mail
 # Public URL used in e-mailed links and Stripe redirects. Railway/Render expose their public host automatically.

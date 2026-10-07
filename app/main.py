@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import datetime as dt
 import hmac
 import logging
 import os
@@ -52,7 +53,7 @@ def switch_target(request: Request) -> str:
 def template_context(request: Request) -> dict:
     lang = getattr(request.state, "lang", None) or resolve_lang(request)
     return {"_": i18n.translator(lang), "lang": lang, "languages": i18n.LANGS, "lang_names": i18n.LANG_NAMES,
-            "switch_next": switch_target(request)}
+            "switch_next": switch_target(request), "year": dt.date.today().year, "company_name": config.COMPANY_NAME}
 
 
 app = FastAPI(title="Belgian Property Due Diligence")
@@ -133,6 +134,19 @@ async def http_exc(request: Request, exc: StarletteHTTPException):
 def health(db: Session = Depends(get_db)):
     db.execute(text("SELECT 1"))
     return {"status": "ok", "ruleset": RULESET_VERSION}
+
+
+@app.get("/about")
+def about(request: Request):
+    return templates.TemplateResponse(request, "about.html", {"base_url": config.BASE_URL})
+
+
+@app.get("/contact")
+def contact(request: Request):
+    """Public contact page. Only configured details are shown; nothing is invented, and there is no form that could silently lose a message."""
+    return templates.TemplateResponse(request, "contact.html", {
+        "base_url": config.BASE_URL, "contact_email": config.CONTACT_EMAIL, "invite": bool(config.INVITE_CODE),
+        "company_address": config.COMPANY_ADDRESS, "enterprise_number": config.COMPANY_ENTERPRISE_NUMBER, "company_phone": config.COMPANY_PHONE})
 
 
 @app.get("/lang/{code}")
