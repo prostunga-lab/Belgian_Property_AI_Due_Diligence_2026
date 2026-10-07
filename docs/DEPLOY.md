@@ -11,7 +11,8 @@
 3. **Ajouter la base** : dans le projet, **+ New → Database → Add PostgreSQL**.
 4. **Ajouter le volume** : ouvrir le service web → **Settings → Volumes → New Volume**, *mount path* = `/data`.
    Sans volume, les fichiers uploadés sont perdus à chaque redéploiement.
-5. **Variables** (service web → *Variables*) :
+5. **Variables** (service web → *Variables*). Les valeurs secrètes (`SECRET_KEY`, `FILE_ENCRYPTION_KEY`, `INVITE_CODE`) se génèrent **vous-même** : ouvrez [`docs/generer-secrets.html`](generer-secrets.html) dans votre navigateur (hors ligne, rien n'est envoyé) ou lancez `python -m app.gen_secrets`, puis collez le résultat dans *Variables → Raw Editor*.
+   Récapitulatif :
 
    | Variable | Valeur |
    |---|---|
