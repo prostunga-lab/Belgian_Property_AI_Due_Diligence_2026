@@ -108,3 +108,10 @@ def test_comparison_time_does_not_depend_on_how_much_of_the_code_matches():
         return time.perf_counter() - t
     near, far = best("K6ZWVQ8PVYN5FH2E"), best("AAAAAAAAAAAAAAAA")
     assert near < far * 1.5 + 0.05 and far < near * 1.5 + 0.05
+
+
+def test_health_reports_build_and_whether_an_invite_code_is_required(monkeypatch):
+    monkeypatch.setenv("RAILWAY_GIT_COMMIT_SHA", "abcdef1234567")
+    monkeypatch.setattr(config, "INVITE_CODE", "x-y-z")
+    body = TestClient(app).get("/health").json()
+    assert body["build"] == "abcdef1" and body["invite_required"] is True and "x-y-z" not in str(body)

@@ -62,6 +62,9 @@ templates = Jinja2Templates(directory=str(Path(__file__).parent / "templates"), 
 app.include_router(billing.router)
 app.include_router(api_v1_router)
 init_db()
+logging.getLogger("uvicorn.error").info(
+    "startup: build=%s invite_code=%s", (os.environ.get("RAILWAY_GIT_COMMIT_SHA") or "unknown")[:7],
+    f"configured ({len(invite.normalize(config.INVITE_CODE))} chars after normalisation)" if config.INVITE_CODE else "not set (registration open)")
 
 SEVERITY_ORDER = {"high": 0, "medium": 1, "low": 2, "info": 3}
 VERIFY_MAX_AGE = 2 * 86400
@@ -133,7 +136,8 @@ async def http_exc(request: Request, exc: StarletteHTTPException):
 @app.get("/health")
 def health(db: Session = Depends(get_db)):
     db.execute(text("SELECT 1"))
-    return {"status": "ok", "ruleset": RULESET_VERSION}
+    return {"status": "ok", "ruleset": RULESET_VERSION, "build": (os.environ.get("RAILWAY_GIT_COMMIT_SHA") or "unknown")[:7],
+            "invite_required": bool(config.INVITE_CODE), "terms_version": legal.VERSION}
 
 
 @app.get("/about")
