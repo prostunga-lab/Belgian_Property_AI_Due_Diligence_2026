@@ -341,7 +341,12 @@ def delete_account(request: Request, password: str = Form(...), user: User = Dep
 # --- cases ------------------------------------------------------------------------------------------
 
 @app.get("/")
-def dashboard(request: Request, user: User = Depends(current_user), db: Session = Depends(get_db)):
+def home(request: Request, user: User | None = Depends(optional_user), db: Session = Depends(get_db)):
+    """Public landing page for visitors; the case dashboard for signed-in users."""
+    if user is None:
+        return templates.TemplateResponse(request, "landing.html", {
+            "invite": bool(config.INVITE_CODE), "free_credits": config.FREE_CREDITS, "max_files": config.MAX_FILES_PER_REQUEST,
+            "max_mb": config.MAX_UPLOAD_MB, "base_url": config.BASE_URL})
     cases = db.scalars(select(Case).where(Case.org_id == user.org_id).order_by(Case.id.desc())).all()
     return templates.TemplateResponse(request, "dashboard.html", {
         "cases": cases, "org": db.get(Org, user.org_id), "user": user,

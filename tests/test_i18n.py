@@ -119,7 +119,7 @@ def test_switcher_is_visible_and_marks_current_language():
 
 def test_no_free_text_is_reflected_from_the_url():
     c = new_client("msg1@x.be")
-    assert "<script>" not in c.get("/login", params={"msg": "<script>alert(1)</script>"}).text
+    assert "alert(1)" not in c.get("/login", params={"msg": "<script>alert(1)</script>"}).text
     assert "pwned-text" not in c.get("/login", params={"msg": "pwned-text"}).text
     assert "pwned-text" not in c.get("/", params={"msg": "pwned-text"}).text
 

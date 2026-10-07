@@ -1,4 +1,4 @@
-{% extends "base.html" %}{% block content %}
+{% extends "base.html" %}{% from "_macros.html" import password_field with context %}{% block content %}
 <p><a href="/">← {{ _('nav.cases') }}</a></p><h2>{{ _('acct.title') }}</h2>
 {% if paid %}<p class="ok">{{ _('acct.paid_thanks') }}</p>{% endif %}
 <div class="card"><b>{{ org.name }}</b> · {{ user.email }} {% if user.email_verified %}<span class="badge ok">{{ _('acct.verified') }}</span>{% elif verification_on %}<span class="badge warn">{{ _('acct.unverified') }}</span>{% endif %}
@@ -18,5 +18,5 @@
 <div class="card"><b>{{ _('acct.delete_title') }}</b>
 <p class="mut">{{ _('acct.delete_hint') }}</p>
 <form method="post" action="/account/delete" class="row" onsubmit='return confirm({{ _("acct.delete_confirm")|tojson }})'>
-<input name="password" type="password" placeholder="{{ _('auth.password') }}" aria-label="{{ _('auth.password') }}" autocomplete="current-password" required><button class="sec">{{ _('acct.delete_btn') }}</button></form></div>
+{{ password_field('password', _('auth.password'), 'current-password', None, 'min-width:220px') }}<button class="sec">{{ _('acct.delete_btn') }}</button></form></div>
 {% endblock %}
