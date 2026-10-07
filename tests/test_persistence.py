@@ -40,7 +40,8 @@ def test_invite_code_required(monkeypatch):
     assert register(c, "i1@x.be").status_code == 403
     assert register(c, "i1@x.be", invite_code="wrong").status_code == 403
     assert register(c, "i1@x.be", invite_code="s3cret-invite").status_code == 303
-    assert "Code d'invitation" in TestClient(app).get("/login").text
+    import html
+    assert "Code d'invitation" in html.unescape(TestClient(app).get("/login").text)
 
 
 def test_cross_site_post_rejected():
@@ -94,5 +95,21 @@ def test_database_url_normalisation(monkeypatch):
     monkeypatch.setenv("DATABASE_URL", "postgres://u:p@host:5432/db")
     importlib.reload(config)
     assert config.DB_URL == "postgresql+psycopg://u:p@host:5432/db"
+    monkeypatch.undo()
+    importlib.reload(config)
+
+
+def test_public_url_detection(monkeypatch):
+    import importlib
+    for k in ("BASE_URL", "RAILWAY_PUBLIC_DOMAIN", "RENDER_EXTERNAL_URL"):
+        monkeypatch.delenv(k, raising=False)
+    importlib.reload(config)
+    assert config.BASE_URL == "http://localhost:8000"
+    monkeypatch.setenv("RAILWAY_PUBLIC_DOMAIN", "dd.up.railway.app")
+    importlib.reload(config)
+    assert config.BASE_URL == "https://dd.up.railway.app"
+    monkeypatch.setenv("BASE_URL", "https://dd.example.be/")
+    importlib.reload(config)
+    assert config.BASE_URL == "https://dd.example.be"  # explicit wins, trailing slash dropped
     monkeypatch.undo()
     importlib.reload(config)

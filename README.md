@@ -11,17 +11,18 @@ SaaS construit à partir de `docs/strategy.md` (§9 « MVP recommandé »): **Fl
 - Types de documents : EPC, acte, asbestattest, contrôle électrique, **extrait cadastral**, **bodemattest** ; contrôles croisés (adresse, surface, bouwjaar, référence cadastrale acte ↔ cadastre).
 - **Lecture IA** facultative (Claude, prompts dans `app/prompts.py`) : synthèse par document et synthèse croisée, affichée à part, **jamais dans le score**.
 - API publique `POST /v1/dossier` (clé `X-API-Key`).
+- **Interface en français, néerlandais et anglais** avec sélecteur de langue (FR | NL | EN) : pages, erreurs, e-mails, rapport PDF et lecture IA. Les constats sont stockés sans texte et rendus dans la langue du lecteur.
 - Property Risk Score global + 6 domaines (Legal / Urbanistic / Energy / Technical / Environmental / Documentation).
 - Chaque finding distingue **fait / inférence IA / risque / action**; validation humaine (confirmer/rejeter), commentaires, audit log.
 - Rapport PDF exportable avec sources, règles utilisées, questions par partie (notaire/vendeur), disclaimer.
 - Rétention configurable (`python -m app.purge`).
 
 ## Déploiement avec données persistantes
-Voir [`docs/DEPLOY.md`](docs/DEPLOY.md) : PostgreSQL + disque persistant chiffré, migrations Alembic, inscription sur invitation, protection cross-site, limitation des connexions, suppression RGPD, `render.yaml`.
+Voir [`docs/DEPLOY.md`](docs/DEPLOY.md) : **Railway** (PostgreSQL + volume persistant chiffré, `railway.toml`), migrations Alembic, inscription sur invitation, protection cross-site, limitation des connexions, suppression RGPD.
 
 ## Lancer
 ```
-pip install -r requirements.txt
+pip install -r requirements-dev.txt
 SECRET_KEY=... uvicorn app.main:app --reload     # http://localhost:8000
 pytest
 ```
@@ -33,4 +34,4 @@ Variables: `DATA_DIR`, `DATABASE_URL`, `SECRET_KEY`, `ANTHROPIC_API_KEY`, `LLM_M
 ## Limites connues / prochaines étapes
 - OCR Tesseract testé sur scans synthétiques seulement : à valider sur de vrais scans (photos, manuscrits, tampons). Le schéma SQLite a changé (`ocr_pages`, `warnings`) : pas de migration encore, recréer la base de dev.
 - Les règles réglementaires (durées de validité, seuils) sont des **points de départ à faire valider par un juriste/notaire** avant mise en production.
-- À faire: export Word, plans/urbanisme/copropriété, Bruxelles/Wallonie, file de tâches pour l'analyse asynchrone (OCR), 2FA, rôles par organisation, TVA/factures (Stripe Tax), interface FR/NL/EN complète (les textes des règles sont en néerlandais pour la Flandre).
+- À faire: export Word, plans/urbanisme/copropriété, Bruxelles/Wallonie, file de tâches pour l'analyse asynchrone (OCR), 2FA, rôles par organisation, TVA/factures (Stripe Tax), règles Bruxelles/Wallonie (le moteur de règles est calibré sur la Flandre ; les textes existent déjà en FR/NL/EN).

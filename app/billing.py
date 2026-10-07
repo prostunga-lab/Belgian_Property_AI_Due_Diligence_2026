@@ -4,7 +4,7 @@ from __future__ import annotations
 import json
 import logging
 
-from fastapi import APIRouter, Depends, HTTPException, Request
+from fastapi import APIRouter, Depends, Request
 from fastapi.responses import RedirectResponse
 from sqlalchemy import update
 from sqlalchemy.exc import IntegrityError
@@ -12,6 +12,7 @@ from sqlalchemy.orm import Session
 
 from . import config
 from .auth import current_user, get_db
+from .errors import AppError
 from .models import Org, Payment, User
 from .services import audit
 
@@ -27,7 +28,7 @@ def configured() -> bool:
 @router.post("/billing/checkout")
 def checkout(user: User = Depends(current_user), db: Session = Depends(get_db)):
     if not configured():
-        raise HTTPException(503, "Payment is not configured")
+        raise AppError(503, "err.payment_not_configured")
     import stripe
 
     session = stripe.checkout.Session.create(
@@ -50,7 +51,7 @@ async def webhook(request: Request, db: Session = Depends(get_db)):
         stripe.Webhook.construct_event(payload, request.headers.get("stripe-signature", ""), config.STRIPE_WEBHOOK_SECRET)
         event = json.loads(payload)  # ...then read as plain JSON (StripeObject has no dict API in recent versions)
     except Exception:
-        raise HTTPException(400, "Invalid signature")
+        raise AppError(400, "err.invalid_signature")
     if event.get("type") in PAID_EVENTS:
         s = event.get("data", {}).get("object", {})
         ref = s.get("client_reference_id")

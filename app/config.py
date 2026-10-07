@@ -28,8 +28,16 @@ MAX_UPLOAD_MB = int(os.environ.get("MAX_UPLOAD_MB", "25"))
 RETENTION_DAYS = int(os.environ.get("RETENTION_DAYS", "365"))
 
 # Accounts, credits, billing, e-mail
-# Render exposes the public URL as RENDER_EXTERNAL_URL; used in e-mailed links and Stripe redirects.
-BASE_URL = (os.environ.get("BASE_URL") or os.environ.get("RENDER_EXTERNAL_URL") or "http://localhost:8000").rstrip("/")
+# Public URL used in e-mailed links and Stripe redirects. Railway/Render expose their public host automatically.
+def _base_url() -> str:
+    if explicit := os.environ.get("BASE_URL"):
+        return explicit.rstrip("/")
+    if domain := os.environ.get("RAILWAY_PUBLIC_DOMAIN"):  # host only, no scheme
+        return f"https://{domain}"
+    return (os.environ.get("RENDER_EXTERNAL_URL") or "http://localhost:8000").rstrip("/")
+
+
+BASE_URL = _base_url()
 FREE_CREDITS = int(os.environ.get("FREE_CREDITS", "6"))  # granted to each new organisation; 1 credit = 1 document
 PACK_CREDITS = int(os.environ.get("PACK_CREDITS", "20"))
 STRIPE_SECRET_KEY = os.environ.get("STRIPE_SECRET_KEY", "")

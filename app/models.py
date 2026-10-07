@@ -33,6 +33,7 @@ class User(Base):
     org_id: Mapped[int] = mapped_column(ForeignKey("orgs.id"), index=True)
     email: Mapped[str] = mapped_column(String(200), unique=True)
     password_hash: Mapped[str] = mapped_column(String(300))
+    lang: Mapped[str | None] = mapped_column(String(5), nullable=True)  # preferred UI/report/e-mail language
     email_verified: Mapped[bool] = mapped_column(Boolean, default=False, server_default=sa_false())
     created_at: Mapped[dt.datetime] = mapped_column(DateTime(timezone=True), default=now)
 
@@ -83,9 +84,10 @@ class Finding(Base):
     domain: Mapped[str] = mapped_column(String(20))
     severity: Mapped[str] = mapped_column(String(10))  # info|low|medium|high
     kind: Mapped[str] = mapped_column(String(20))  # fact|inference|risk|action
-    title: Mapped[str] = mapped_column(String(300))
+    title: Mapped[str] = mapped_column(String(300))  # English fallback text; display text is rendered from params
     detail: Mapped[str] = mapped_column(Text)
     recommendation: Mapped[str] = mapped_column(Text, default="")
+    params: Mapped[dict | None] = mapped_column(JSON, nullable=True)  # language-neutral values for the i18n templates
     question_for: Mapped[str] = mapped_column(String(40), default="")  # notary|seller|syndic
     sources: Mapped[list] = mapped_column(JSON, default=list)  # [{doc_id, filename, page, excerpt}]
     review_status: Mapped[str] = mapped_column(String(20), default="pending")  # pending|confirmed|dismissed

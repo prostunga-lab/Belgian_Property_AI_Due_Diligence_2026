@@ -9,7 +9,7 @@ from sqlalchemy import select
 from app import config
 from app.models import Org, Payment, SessionLocal
 from tests.fixtures import ASB, DEED, ELEC, EPC, pdf
-from tests.helpers import credits_of, new_case, new_client
+from tests.helpers import credits_of, new_case, new_client, page_text
 
 
 def put(c, cid, *docs):
@@ -174,7 +174,7 @@ def test_webhook_ignores_unpaid_and_unknown_org(stripe_cfg):
 def test_checkout_not_configured_returns_503():
     c = new_client("st4@x.be")
     assert c.post("/billing/checkout").status_code == 503
-    assert "n'est pas configuré" in c.get("/account").text
+    assert "n'est pas configuré" in page_text(c.get("/account"))
 
 
 def test_webhook_works_without_origin_header_but_pages_still_csrf_protected(stripe_cfg):

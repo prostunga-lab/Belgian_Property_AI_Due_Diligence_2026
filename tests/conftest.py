@@ -13,3 +13,15 @@ os.environ.pop("INVITE_CODE", None)
 os.environ.pop("FILE_ENCRYPTION_KEY", None)
 for _k in ("SMTP_HOST", "STRIPE_SECRET_KEY", "STRIPE_PRICE_ID", "STRIPE_WEBHOOK_SECRET"):
     os.environ.pop(_k, None)
+
+
+import pytest  # noqa: E402
+
+
+@pytest.fixture(autouse=True)
+def _reset_rate_limits():
+    """All tests share one client IP; start each one with a clean rate-limit state."""
+    from app import main
+    main._attempts.clear()
+    yield
+    main._attempts.clear()

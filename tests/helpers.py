@@ -1,3 +1,4 @@
+import html
 import re
 
 from fastapi.testclient import TestClient
@@ -25,3 +26,8 @@ def credits_of(c: TestClient) -> int:
 
 def link_in(body: str, path: str) -> str:
     return re.search(rf"(http://testserver{path}\?token=[\w\-.:]+)", body).group(1)
+
+
+def page_text(response) -> str:
+    """Response body with HTML entities decoded (templates escape apostrophes: n&#39;est)."""
+    return html.unescape(response.text)

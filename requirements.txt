@@ -11,6 +11,3 @@ itsdangerous>=2.2
 cryptography>=42
 anthropic>=0.40
 stripe>=10
-pillow>=10.0
-httpx>=0.27
-pytest>=8.0

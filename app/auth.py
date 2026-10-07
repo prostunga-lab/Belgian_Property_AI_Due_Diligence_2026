@@ -5,12 +5,13 @@ import hmac
 import os
 import secrets
 
-from fastapi import Depends, Header, HTTPException, Request
+from fastapi import Depends, Header, Request
 from itsdangerous import BadSignature, SignatureExpired, URLSafeTimedSerializer
 from sqlalchemy import select
 from sqlalchemy.orm import Session
 
 from . import config
+from .errors import AppError
 from .models import ApiKey, SessionLocal, User
 
 
@@ -39,8 +40,16 @@ def current_user(request: Request, db: Session = Depends(get_db)) -> User:
     user = db.get(User, uid) if uid else None
     # The session carries a fingerprint of the password it was opened with: changing/resetting it logs out other sessions.
     if not user or not hmac.compare_digest(str(request.session.get("pwf", "")), pw_fingerprint(user)):
-        raise HTTPException(status_code=401, detail="Not authenticated")
+        raise AppError(401, "err.not_authenticated")
     return user
+
+
+def optional_user(request: Request, db: Session = Depends(get_db)) -> User | None:
+    """Like current_user but returns None instead of failing (for harmless endpoints such as the language switch)."""
+    try:
+        return current_user(request, db)
+    except AppError:
+        return None
 
 
 def open_session(request: Request, user: User) -> None:
@@ -87,5 +96,5 @@ def api_user(x_api_key: str = Header(default=""), db: Session = Depends(get_db))
     k = db.scalar(select(ApiKey).where(ApiKey.key_hash == sha(x_api_key), ApiKey.revoked == False)) if x_api_key else None  # noqa: E712
     user = db.get(User, k.user_id) if k else None
     if not user:
-        raise HTTPException(status_code=401, detail="Invalid API key")
+        raise AppError(401, "err.invalid_api_key")
     return user
