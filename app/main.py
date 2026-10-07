@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import hmac
+import logging
 import os
 import re
 import time
@@ -177,8 +178,14 @@ def register(request: Request, bg: BackgroundTasks, org_name: str = Form(...), e
     def refuse(key: str, status: int):
         return templates.TemplateResponse(request, "login.html", login_context(request, error=key), status_code=status)
 
-    if config.INVITE_CODE and not hmac.compare_digest(invite_code.encode(), config.INVITE_CODE.encode()):
-        return refuse("auth.err.invite", 403)
+    if config.INVITE_CODE:
+        submitted = invite_code.strip().strip("\"'").strip()  # forgive stray spaces/quotes from copy-paste
+        if not hmac.compare_digest(submitted.encode(), config.INVITE_CODE.encode()):
+            # Diagnostic for the operator (Railway logs). Lengths only: the code itself is never logged.
+            logging.getLogger("uvicorn.error").warning(
+                "Registration refused: invite code mismatch (submitted %d chars, configured %d chars). A difference usually means "
+                "the dashboard value changed without a redeploy, or a different value was typed.", len(submitted), len(config.INVITE_CODE))
+            return refuse("auth.err.invite", 403)
     if not EMAIL_RE.fullmatch(email) or len(email) > 254:
         return refuse("auth.err.email", 400)
     if len(password) < 10:

@@ -30,6 +30,13 @@
 
 Le contrôle de santé est `GET /health` (vérifie aussi la base). Un premier build prend plusieurs minutes (installation de Tesseract).
 
+## Dépannage : « Code d'invitation invalide »
+1. **Railway applique les variables au prochain déploiement.** Après avoir modifié `INVITE_CODE`, cliquez sur le bandeau **Deploy** (ou *Apply changes*) et attendez la fin du déploiement.
+2. **Copiez le code depuis Railway, pas depuis le générateur** : la page `generer-secrets.html` produit de **nouvelles** valeurs à chaque clic sur *Générer*. Dans *Variables*, cliquez sur l'œil de `INVITE_CODE` pour voir la valeur réellement en place.
+3. Les espaces et guillemets autour du code (copier-coller) sont ignorés par l'application, des deux côtés.
+4. **Lire les logs** (*Deployments → View logs*) : chaque refus écrit `invite code mismatch (submitted X chars, configured Y chars)` sans révéler le code. `configured` ≠ longueur attendue = la valeur Railway n'est pas celle que vous croyez ; `submitted` ≠ `configured` = ce qui a été saisi diffère.
+5. En dernier recours, définissez vous-même un nouveau `INVITE_CODE` (toute phrase de 12 caractères ou plus), redéployez, et utilisez celui-là.
+
 ## Langues
 - Interface, messages d'erreur, e-mails et rapport PDF existent en **français, néerlandais et anglais**.
 - Ordre de choix : lien FR/NL/EN (cookie, mémorisé sur le compte) > `Accept-Language` du navigateur > français. L'API répond en anglais par défaut ou selon `Accept-Language` / `?lang=`.

@@ -13,14 +13,20 @@ def _db_url() -> str:
 
 
 DB_URL = _db_url()
-APP_ENV = os.environ.get("APP_ENV", "development")  # "production" enforces secrets below
+def _clean(name: str, default: str = "") -> str:
+    """Env value without surrounding whitespace/quotes: values pasted into hosting dashboards often carry an invisible
+    trailing space or newline (or quotes), which would silently turn a setting off or make a code never match."""
+    return os.environ.get(name, default).strip().strip("\"'").strip()
+
+
+APP_ENV = _clean("APP_ENV", "development").lower()  # "production" enforces secrets below
 # Files at rest are encrypted when set. LOSING THIS KEY MAKES UPLOADED FILES UNRECOVERABLE.
 FILE_ENCRYPTION_KEY = os.environ.get("FILE_ENCRYPTION_KEY")
 # Registration: "open" (anyone) or "invite" (requires INVITE_CODE).
-INVITE_CODE = os.environ.get("INVITE_CODE")
+INVITE_CODE = _clean("INVITE_CODE") or None
 AUTO_MIGRATE = os.environ.get("AUTO_MIGRATE", "1") == "1"
 SECRET_KEY = os.environ.get("SECRET_KEY", "dev-only-change-me")
-COOKIE_SECURE = os.environ.get("COOKIE_SECURE", "0") == "1"  # set to 1 behind HTTPS
+COOKIE_SECURE = _clean("COOKIE_SECURE", "0") == "1"  # set to 1 behind HTTPS
 ANTHROPIC_API_KEY = os.environ.get("ANTHROPIC_API_KEY")
 LLM_MODEL = os.environ.get("LLM_MODEL", "claude-sonnet-5-5")
 MAX_UPLOAD_MB = int(os.environ.get("MAX_UPLOAD_MB", "25"))
