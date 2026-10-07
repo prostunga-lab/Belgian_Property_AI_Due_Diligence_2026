@@ -18,7 +18,7 @@ from sqlalchemy.orm import Session
 from starlette.exceptions import HTTPException as StarletteHTTPException
 from starlette.middleware.sessions import SessionMiddleware
 
-from . import billing, config, i18n, invite, mail, pricing
+from . import billing, config, i18n, invite, legal, mail, pricing
 from .api_v1 import router as api_v1_router
 from .auth import (ApiKey, current_user, get_db, hash_password, make_token, new_api_key, open_session, optional_user,
                    pw_fingerprint, read_token, verify_password)
@@ -147,6 +147,28 @@ def contact(request: Request):
     return templates.TemplateResponse(request, "contact.html", {
         "base_url": config.BASE_URL, "contact_email": config.CONTACT_EMAIL, "invite": bool(config.INVITE_CODE),
         "company_address": config.COMPANY_ADDRESS, "enterprise_number": config.COMPANY_ENTERPRISE_NUMBER, "company_phone": config.COMPANY_PHONE})
+
+
+def _legal_page(request: Request, doc: str):
+    lang = request.state.lang
+    return templates.TemplateResponse(request, "legal.html", {
+        "doc": doc, "doc_title": legal.titles(lang)[doc], "sections": legal.render(doc, lang), "version": legal.VERSION,
+        "reviewed": config.LEGAL_REVIEWED, "base_url": config.BASE_URL})
+
+
+@app.get("/legal")
+def legal_notice(request: Request):
+    return _legal_page(request, "legal")
+
+
+@app.get("/privacy")
+def privacy_policy(request: Request):
+    return _legal_page(request, "privacy")
+
+
+@app.get("/terms")
+def terms_page(request: Request):
+    return _legal_page(request, "terms")
 
 
 @app.get("/lang/{code}")

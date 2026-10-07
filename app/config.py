@@ -39,6 +39,9 @@ COMPANY_NAME = _clean("COMPANY_NAME")
 COMPANY_ADDRESS = _clean("COMPANY_ADDRESS")
 COMPANY_ENTERPRISE_NUMBER = _clean("COMPANY_ENTERPRISE_NUMBER")  # BCE/KBO number and/or VAT number
 COMPANY_PHONE = _clean("COMPANY_PHONE")
+HOSTING_PROVIDER = _clean("HOSTING_PROVIDER")  # e.g. "Railway"; shown in the legal pages
+HOSTING_REGION = _clean("HOSTING_REGION")
+LEGAL_REVIEWED = os.environ.get("LEGAL_REVIEWED", "0") == "1"  # hides the "draft" banner once a lawyer has reviewed the texts
 _email = _clean("CONTACT_EMAIL")
 CONTACT_EMAIL = _email if re.fullmatch(r"[A-Za-z0-9._+\-]+@[A-Za-z0-9\-]+(?:\.[A-Za-z0-9\-]+)*\.[A-Za-z]{2,}", _email) else ""  # strict: it ends up in a mailto: link
 

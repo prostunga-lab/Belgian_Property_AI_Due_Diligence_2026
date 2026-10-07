@@ -1,0 +1,18 @@
+{% extends "base.html" %}
+{% block title %}{{ doc_title }}{% endblock %}
+{% block head %}
+<meta name="description" content="{{ _('legal.meta') }}">
+{% for code in languages %}<link rel="alternate" hreflang="{{ code }}" href="{{ base_url }}/{{ doc }}?lang={{ code }}">{% endfor %}
+<style>.prose{max-width:46em}.prose h1{font-size:clamp(26px,4.5vw,36px);margin:28px 0 6px}.prose h2{font-size:19px;margin:26px 0 8px}.prose p{margin:0 0 10px}.prose ul{margin:0 0 10px;padding-left:1.2em}.prose li{margin:3px 0}
+mark.todo{background:transparent;color:var(--warn,#b45309);font-weight:600;border-bottom:1px dashed currentColor}.draftbox{margin:14px 0}</style>
+{% endblock %}
+{% block content %}
+<article class="prose">
+  <h1>{{ doc_title }}</h1>
+  <p class="mut">{{ _('legal.updated', date=version) }}</p>
+  {% if not reviewed %}<div class="card draftbox" role="note">{{ _('legal.draft') }}</div>{% endif %}
+  {% for s in sections %}<h2>{{ s.title }}</h2>
+  {% for kind, content in s.blocks %}{% if kind == "ul" %}<ul>{% for li in content %}<li>{{ li }}</li>{% endfor %}</ul>{% else %}<p>{{ content }}</p>{% endif %}{% endfor %}
+  {% endfor %}
+</article>
+{% endblock %}

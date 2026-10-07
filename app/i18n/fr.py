@@ -476,4 +476,12 @@ MESSAGES.update({
     'err.unknown_period': 'Périodicité de facturation inconnue.',
     'acct.quota_renews': 'Le quota mensuel se renouvelle le {date}.',
     'acct.see_plans': "Voir les formules d'abonnement",
+    'nav.legal': 'Mentions légales',
+    'nav.privacy': 'Confidentialité',
+    'nav.terms': 'Conditions générales',
+    'legal.draft': 'Projet de texte à faire valider par un juriste avant la mise en production. Les mentions « à compléter » sont des informations non encore renseignées.',
+    'legal.updated': 'Version du {date}',
+    'legal.todo': 'à compléter: {what}',
+    'legal.todo_decision': 'à définir',
+    'legal.meta': 'Informations légales du service Belgian Property Due Diligence.',
 })

@@ -476,4 +476,12 @@ MESSAGES.update({
     'err.unknown_period': 'Unknown billing period.',
     'acct.quota_renews': 'The monthly quota renews on {date}.',
     'acct.see_plans': 'See subscription plans',
+    'nav.legal': 'Legal notice',
+    'nav.privacy': 'Privacy',
+    'nav.terms': 'Terms',
+    'legal.draft': 'Draft text to be reviewed by a lawyer before launch. Items marked « to be completed » are details not yet configured.',
+    'legal.updated': 'Version of {date}',
+    'legal.todo': 'to be completed: {what}',
+    'legal.todo_decision': 'to be decided',
+    'legal.meta': 'Legal information about the Belgian Property Due Diligence service.',
 })
