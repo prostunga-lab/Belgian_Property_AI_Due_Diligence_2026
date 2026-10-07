@@ -17,7 +17,7 @@ def get(lang, path="/", **kw):
 # --- landing page -----------------------------------------------------------------------------------
 
 @pytest.mark.parametrize("lang,h1,cta,login", [
-    ("fr", "Téléversez les documents du bien. Découvrez les risques avant l'acheteur.", "Créer un compte", "Se connecter"),
+    ("fr", "Téléchargez les documents du bien. Découvrez les risques avant l'acheteur.", "Créer un compte", "Se connecter"),
     ("nl", "Upload de documenten van het pand. Ontdek de risico's vóór de koper.", "Account aanmaken", "Inloggen"),
     ("en", "Upload the property documents. Get the risks before the buyer does.", "Create an account", "Log in"),
 ])
