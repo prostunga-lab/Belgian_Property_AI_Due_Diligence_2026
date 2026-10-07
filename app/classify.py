@@ -8,6 +8,8 @@ DOC_TYPES = {
     "deed": "Acte / Akte",
     "asbestos": "Asbestattest",
     "electrical": "Contrôle électrique / Keuring",
+    "cadastre": "Extrait cadastral / Kadastraal uittreksel",
+    "soil": "Attestation du sol / Bodemattest",
     "unknown": "Non reconnu",
 }
 
@@ -22,6 +24,18 @@ KEYWORDS: dict[str, list[tuple[str, int]]] = {
         (r"\bacte (authentique|de vente)\b", 5), (r"\bnotaire\b", 2), (r"\bcompromis\b", 3),
         (r"verkoper", 1), (r"koper", 1), (r"vendeur", 1), (r"acquéreur", 1),
         (r"kadastraal|cadastr", 2),
+    ],
+    "cadastre": [
+        (r"kadastraal uittreksel|uittreksel uit (?:de )?kadastrale|kadastrale legger", 6),
+        (r"extrait (?:de la matrice )?cadastral|fiche cadastrale|matrice cadastrale", 6),
+        (r"kadastraal inkomen|revenu cadastral", 3), (r"capakey|perceelnummer|numéro de parcelle", 3),
+        (r"\bperceel\b|\bparcelle\b", 1),
+    ],
+    "soil": [
+        (r"bodemattest", 8), (r"attestation du sol|certificat de contrôle du sol|certificat de qualité du sol", 8),
+        (r"bodemverontreiniging|verontreinigd|pollution du sol|sol pollué", 3),
+        (r"bodemsanering|assainissement du sol|\bovam\b|bruxelles environnement|ibgebim", 1),
+        (r"risicogrond|terrain à risque", 3),
     ],
     "asbestos": [
         (r"asbestattest", 6), (r"asbest", 3), (r"amiante", 3), (r"ovam", 2),

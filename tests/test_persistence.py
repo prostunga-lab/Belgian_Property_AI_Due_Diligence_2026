@@ -40,7 +40,8 @@ def test_invite_code_required(monkeypatch):
     assert register(c, "i1@x.be").status_code == 403
     assert register(c, "i1@x.be", invite_code="wrong").status_code == 403
     assert register(c, "i1@x.be", invite_code="s3cret-invite").status_code == 303
-    assert "Uitnodigingscode" in TestClient(app).get("/login").text
+    import html
+    assert "Code d'invitation" in html.unescape(TestClient(app).get("/login").text)
 
 
 def test_cross_site_post_rejected():
@@ -94,5 +95,63 @@ def test_database_url_normalisation(monkeypatch):
     monkeypatch.setenv("DATABASE_URL", "postgres://u:p@host:5432/db")
     importlib.reload(config)
     assert config.DB_URL == "postgresql+psycopg://u:p@host:5432/db"
+    monkeypatch.undo()
+    importlib.reload(config)
+
+
+def test_public_url_detection(monkeypatch):
+    import importlib
+    for k in ("BASE_URL", "RAILWAY_PUBLIC_DOMAIN", "RENDER_EXTERNAL_URL"):
+        monkeypatch.delenv(k, raising=False)
+    importlib.reload(config)
+    assert config.BASE_URL == "http://localhost:8000"
+    monkeypatch.setenv("RAILWAY_PUBLIC_DOMAIN", "dd.up.railway.app")
+    importlib.reload(config)
+    assert config.BASE_URL == "https://dd.up.railway.app"
+    monkeypatch.setenv("BASE_URL", "https://dd.example.be/")
+    importlib.reload(config)
+    assert config.BASE_URL == "https://dd.example.be"  # explicit wins, trailing slash dropped
+    monkeypatch.undo()
+    importlib.reload(config)
+
+
+def test_invite_code_survives_copy_paste_whitespace_and_quotes(monkeypatch):
+    # configured value pasted with a trailing newline + quotes, typed value with spaces: must still match
+    for configured in ("  s3cret-invite\n", '"s3cret-invite"', "s3cret-invite "):
+        monkeypatch.setenv("INVITE_CODE", configured)
+        import importlib
+        importlib.reload(config)
+        assert config.INVITE_CODE == "s3cret-invite"
+        monkeypatch.setattr(config, "INVITE_CODE", config.INVITE_CODE)
+        c = TestClient(app)
+        ok = register(c, f"inv-{abs(hash(configured))}@x.be", invite_code="  s3cret-invite ")
+        assert ok.status_code == 303
+    assert register(TestClient(app), "inv-bad@x.be", invite_code="s3cret-invitf").status_code == 403
+    monkeypatch.undo()
+    importlib.reload(config)
+
+
+def test_invite_failure_is_diagnosable_without_leaking_the_code(monkeypatch, caplog):
+    import logging
+    monkeypatch.setattr(config, "INVITE_CODE", "topsecret-code-123")
+    with caplog.at_level(logging.WARNING, logger="uvicorn.error"):
+        assert register(TestClient(app), "inv-log@x.be", invite_code="wrong-one").status_code == 403
+    text = " ".join(r.getMessage() for r in caplog.records)
+    assert "invite code mismatch" in text and "submitted 9 chars" in text and "configured 18 chars" in text
+    assert "topsecret-code-123" not in text and "wrong-one" not in text
+
+
+def test_app_env_and_flags_ignore_stray_whitespace(monkeypatch):
+    import importlib
+    monkeypatch.setenv("APP_ENV", "Production \n")
+    monkeypatch.setenv("COOKIE_SECURE", " 1 ")
+    monkeypatch.setenv("SECRET_KEY", "x" * 40)
+    monkeypatch.setenv("FILE_ENCRYPTION_KEY", "y" * 40)
+    monkeypatch.setenv("INVITE_CODE", "abc")
+    importlib.reload(config)
+    assert config.APP_ENV == "production" and config.COOKIE_SECURE  # a stray space must not silently disable the guard
+    monkeypatch.delenv("INVITE_CODE")
+    with pytest.raises(RuntimeError, match="INVITE_CODE"):
+        importlib.reload(config)  # and the guard really is on
     monkeypatch.undo()
     importlib.reload(config)

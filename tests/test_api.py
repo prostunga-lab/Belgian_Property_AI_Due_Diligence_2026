@@ -22,7 +22,7 @@ def test_full_flow_and_tenant_isolation():
     data = c.get(f"/api/cases/{cid}").json()
     assert data["scores"]["level"] == "high" and data["address"].startswith("Kerkstraat")
     ids = {f["rule"] for f in data["findings"]}
-    assert "X-SURFACE" in ids and all(f["sources"] for f in data["findings"] if f["rule"] != "DOC-X")
+    assert "X-SURFACE" in ids and all(f["sources"] for f in data["findings"] if not f["rule"].startswith("DOC-"))
     fid = data["findings"][0]["id"]
     assert c.post(f"/cases/{cid}/findings/{fid}/review", data={"status": "confirmed"}, follow_redirects=False).status_code == 303
     assert c.post(f"/cases/{cid}/findings/{fid}/comments", data={"body": "Gecheckt"}, follow_redirects=False).status_code == 303

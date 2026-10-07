@@ -1,0 +1,5 @@
+{% extends "base.html" %}{% block content %}
+<div class="card" style="max-width:560px;margin:24px auto"><h3>{{ title }}</h3><p role="alert">{{ detail }}</p>
+<div class="row">{% if status == 402 %}<a href="/account"><button type="button">{{ _('err.buy_credits') }}</button></a>{% endif %}
+<a href="javascript:history.back()"><button type="button" class="sec">← {{ _('ui.back') }}</button></a><a href="/">{{ _('nav.cases') }}</a></div></div>
+{% endblock %}

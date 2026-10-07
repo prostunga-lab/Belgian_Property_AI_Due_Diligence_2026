@@ -55,6 +55,7 @@ def test_clean_dossier_has_no_false_positives():
         view(2, "epc.pdf", "Energieprestatiecertificaat\nAdres: Kerkstraat 12, 9000 Gent\nEnergielabel: B\nEnergiescore 180 kWh/m²\n"
                            "Bruikbare vloeroppervlakte 120 m²\nGeldig tot 15/06/2033\nBouwjaar 1985"),
         view(3, "asbest.pdf", "Asbestattest\nAdres: Kerkstraat 12, 9000 Gent\nDatum: 02/02/2026\nEr werd geen asbest aangetroffen."),
+        view(5, "bodem.pdf", "Bodemattest\nKerkstraat 12, 9000 Gent\nDatum: 02/03/2026\nVoor dit perceel is geen bodemverontreiniging gekend."),
         view(4, "keuring.pdf", "Keuringsverslag elektrische installatie\nAdres: Kerkstraat 12, 9000 Gent\nDatum van keuring: 10/10/2024\nDe installatie is conform aan het AREI."),
     ]
     bad = [f.rule_id for f in run_rules(docs) if f.severity in ("medium", "high")]
