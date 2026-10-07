@@ -1,0 +1,55 @@
+{% extends "base.html" %}
+{% block title %}{{ _('landing.title') }}{% endblock %}
+{% block head %}
+<meta name="description" content="{{ _('landing.meta') }}">
+<meta property="og:title" content="{{ _('landing.title') }}"><meta property="og:description" content="{{ _('landing.meta') }}"><meta property="og:type" content="website">
+{% for code in languages %}<link rel="alternate" hreflang="{{ code }}" href="{{ base_url }}/?lang={{ code }}">{% endfor %}
+<style>
+.hero{padding:40px 0 24px}.eyebrow{color:var(--acc);font-weight:600;font-size:13px;letter-spacing:.06em;text-transform:uppercase;margin:0 0 8px}
+.hero h1{font-size:clamp(28px,5vw,42px);line-height:1.15;margin:0 0 14px;max-width:18em}.hero .lead{font-size:17px;max-width:46em;color:var(--mut);margin:0 0 20px}
+.cta{display:flex;flex-wrap:wrap;gap:10px;align-items:center}.cta a.btn{display:inline-block;padding:10px 18px;border-radius:8px;background:var(--btn);color:#fff;text-decoration:none;font-weight:600}
+.cta a.btn.sec{background:var(--card);color:var(--fg);border:1px solid var(--bd)}.cta a.btn:focus-visible{outline:2px solid var(--fg);outline-offset:2px}
+.note{margin:12px 0 0;font-size:14px}.grid{display:grid;gap:12px;grid-template-columns:repeat(auto-fit,minmax(230px,1fr))}
+section.block{margin:36px 0}section.block>h2{font-size:22px;margin:0 0 12px}.step{position:relative}.step .n{display:inline-flex;width:28px;height:28px;border-radius:50%;background:var(--btn);color:#fff;align-items:center;justify-content:center;font-weight:700;margin-bottom:6px}
+.grid.trust{grid-template-columns:repeat(auto-fit,minmax(170px,1fr))}.card h3{margin:0 0 6px;font-size:16px}.card p{margin:0}ul.ticks{list-style:none;padding:0;margin:0;display:grid;gap:8px}ul.ticks li{padding-left:26px;position:relative}ul.ticks li:before{content:"✓";position:absolute;left:0;color:var(--acc);font-weight:700}
+.example{border-left:4px solid var(--acc)}.faq details{border-bottom:1px solid var(--bd);padding:10px 0}.faq summary{cursor:pointer;font-weight:600}.faq p{margin:8px 0 0;color:var(--mut)}
+.final{text-align:center;padding:28px 14px}.final h2{margin:0 0 14px}.two{display:grid;gap:12px;grid-template-columns:repeat(auto-fit,minmax(300px,1fr))}
+</style>
+{% endblock %}
+{% block content %}
+<div class="hero">
+  <p class="eyebrow">{{ _('landing.eyebrow') }}</p>
+  <h1>{{ _('landing.h1') }}</h1>
+  <p class="lead">{{ _('landing.lead') }}</p>
+  <div class="cta"><a class="btn" href="/login#register">{{ _('landing.cta_register') }}</a><a class="btn sec" href="/login#login">{{ _('landing.cta_login') }}</a></div>
+  {% if invite %}<p class="note mut">🔒 {{ _('landing.invite_note') }}</p>{% endif %}
+  {% if free_credits %}<p class="note mut">{{ _('landing.free_note', n=free_credits) }}</p>{% endif %}
+</div>
+
+<section class="block" aria-labelledby="how"><h2 id="how">{{ _('landing.how.title') }}</h2>
+<div class="grid">{% for i in (1, 2, 3) %}<div class="card step"><span class="n" aria-hidden="true">{{ i }}</span><h3>{{ _('landing.how.' ~ i ~ '.title') }}</h3><p class="mut">{{ _('landing.how.' ~ i ~ '.text') }}</p></div>{% endfor %}</div></section>
+
+<section class="block two" aria-labelledby="checks">
+  <div class="card"><h2 id="checks" style="margin-top:0;font-size:20px">{{ _('landing.checks.title') }}</h2>
+  <ul class="ticks">{% for i in (1, 2, 3, 4, 5, 6) %}<li>{{ _('landing.checks.' ~ i) }}</li>{% endfor %}</ul></div>
+  <div class="card example"><h2 style="margin-top:0;font-size:20px">{{ _('landing.example.title') }}</h2>
+  <p class="mut">{{ _('landing.example.text') }}</p>
+  <div class="card" style="margin:12px 0 0"><div class="row"><span class="badge high">{{ _('severity.high') }}</span><b>{{ _('rule.X-SURFACE.title') }}</b></div>
+  <p>{{ _('rule.X-SURFACE.detail', a=185, fa='akte.pdf', pa=1, b=240, fb='epc.pdf', pb=1, diff=30) }}</p>
+  <p><b>{{ _('finding.recommendation') }} :</b> {{ _('rule.X-SURFACE.rec') }}</p></div></div>
+</section>
+
+<section class="block" aria-labelledby="trust"><h2 id="trust">{{ _('landing.trust.title') }}</h2>
+<div class="grid trust">{% for i in (1, 2, 3, 4, 5) %}<div class="card"><h3>{{ _('landing.trust.' ~ i ~ '.title') }}</h3><p class="mut">{{ _('landing.trust.' ~ i ~ '.text') }}</p></div>{% endfor %}</div></section>
+
+<section class="block two">
+  <div class="card"><h2 style="margin-top:0;font-size:20px">{{ _('landing.coverage.title') }}</h2><p class="mut">{{ _('landing.coverage.text') }}</p></div>
+  <div class="card"><h2 style="margin-top:0;font-size:20px">{{ _('landing.pricing.title') }}</h2><p class="mut">{{ _('landing.pricing.text') }}</p><p style="margin:10px 0 0"><a href="/pricing">{{ _('landing.pricing.link') }} →</a></p></div>
+</section>
+
+<section class="block faq" aria-labelledby="faq"><h2 id="faq">{{ _('landing.faq.title') }}</h2>
+{% for i in (1, 2, 3) %}<details><summary>{{ _('landing.faq.' ~ i ~ '.q') }}</summary><p>{{ _('landing.faq.' ~ i ~ '.a', max_files=max_files, max_mb=max_mb) }}</p></details>{% endfor %}</section>
+
+<section class="card final"><h2>{{ _('landing.final.title') }}</h2>
+<div class="cta" style="justify-content:center"><a class="btn" href="/login#register">{{ _('landing.cta_register') }}</a><a class="btn sec" href="/login#login">{{ _('landing.cta_login') }}</a></div></section>
+{% endblock %}

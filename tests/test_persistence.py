@@ -137,7 +137,7 @@ def test_invite_failure_is_diagnosable_without_leaking_the_code(monkeypatch, cap
     with caplog.at_level(logging.WARNING, logger="uvicorn.error"):
         assert register(TestClient(app), "inv-log@x.be", invite_code="wrong-one").status_code == 403
     text = " ".join(r.getMessage() for r in caplog.records)
-    assert "invite code mismatch" in text and "submitted 9 chars" in text and "configured 18 chars" in text
+    assert "invite code mismatch" in text and "submitted 8 chars" in text and "configured 16 chars" in text  # lengths after normalisation
     assert "topsecret-code-123" not in text and "wrong-one" not in text
 
 

@@ -23,7 +23,15 @@ class Org(Base):
     name: Mapped[str] = mapped_column(String(200))
     plan: Mapped[str] = mapped_column(String(30), default="trial")
     case_quota: Mapped[int] = mapped_column(Integer, default=10)  # legacy, unused: billing is credit based
-    credits: Mapped[int] = mapped_column(Integer, default=0, server_default="0")  # 1 credit = 1 document analysed
+    credits: Mapped[int] = mapped_column(Integer, default=0, server_default="0")  # 1 credit = 1 complete dossier (pay-per-dossier)
+    # Subscription (agents): monthly quota of dossiers, managed through Stripe webhooks.
+    stripe_customer_id: Mapped[str | None] = mapped_column(String(64), nullable=True, index=True)
+    stripe_subscription_id: Mapped[str | None] = mapped_column(String(64), nullable=True, index=True)
+    subscription_status: Mapped[str | None] = mapped_column(String(20), nullable=True)  # active|trialing|past_due|unpaid|canceled|...
+    billing_period: Mapped[str | None] = mapped_column(String(12), nullable=True)  # monthly | semiannual | annual (how it is invoiced)
+    cancel_at_period_end: Mapped[bool] = mapped_column(Boolean, default=False, server_default=sa_false())
+    cycle_started_at: Mapped[dt.datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)  # anchor of the MONTHLY quota clock
+    cycle_used: Mapped[int] = mapped_column(Integer, default=0, server_default="0")  # dossiers consumed in the current monthly cycle
     created_at: Mapped[dt.datetime] = mapped_column(DateTime(timezone=True), default=now)
 
 
@@ -34,6 +42,8 @@ class User(Base):
     email: Mapped[str] = mapped_column(String(200), unique=True)
     password_hash: Mapped[str] = mapped_column(String(300))
     lang: Mapped[str | None] = mapped_column(String(5), nullable=True)  # preferred UI/report/e-mail language
+    terms_accepted_at: Mapped[dt.datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
+    terms_version: Mapped[str | None] = mapped_column(String(20), nullable=True)  # version of the legal texts accepted
     email_verified: Mapped[bool] = mapped_column(Boolean, default=False, server_default=sa_false())
     created_at: Mapped[dt.datetime] = mapped_column(DateTime(timezone=True), default=now)
 
@@ -49,6 +59,10 @@ class Case(Base):
     status: Mapped[str] = mapped_column(String(20), default="draft")  # draft|analyzed
     scores: Mapped[dict] = mapped_column(JSON, default=dict)
     ai_summary: Mapped[dict | None] = mapped_column(JSON, nullable=True)  # LLM cross-document synthesis
+    billed: Mapped[bool] = mapped_column(Boolean, default=False, server_default=sa_false())  # a dossier was spent on this case
+    billing_source: Mapped[str | None] = mapped_column(String(10), nullable=True)  # quota | credit | legacy
+    billed_at: Mapped[dt.datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
+    analysis_seconds: Mapped[float | None] = mapped_column(nullable=True)  # wall-clock duration of the last analysis
     analyzed_at: Mapped[dt.datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
     created_at: Mapped[dt.datetime] = mapped_column(DateTime(timezone=True), default=now)
     documents: Mapped[list[Document]] = relationship(back_populates="case", cascade="all, delete-orphan")
@@ -116,11 +130,22 @@ class ApiKey(Base):
 
 
 class Payment(Base):
-    """Kept for accounting. session_id as primary key makes the Stripe webhook idempotent."""
+    """Kept for accounting. session_id (Stripe checkout session or invoice id) as primary key makes the webhook idempotent."""
     __tablename__ = "payments"
     session_id: Mapped[str] = mapped_column(String(200), primary_key=True)
     org_id: Mapped[int] = mapped_column(Integer, index=True)
-    credits: Mapped[int] = mapped_column(Integer)
+    credits: Mapped[int] = mapped_column(Integer)  # dossier credits granted by this payment (0 for subscription invoices)
+    kind: Mapped[str] = mapped_column(String(20), default="credits", server_default="credits")  # credits | subscription
+    plan_id: Mapped[str | None] = mapped_column(String(30), nullable=True)
+    amount_cents: Mapped[int | None] = mapped_column(Integer, nullable=True)
+    created_at: Mapped[dt.datetime] = mapped_column(DateTime(timezone=True), default=now)
+
+
+class StripeEvent(Base):
+    """Every processed webhook event id: Stripe retries and replays must not be applied twice."""
+    __tablename__ = "stripe_events"
+    id: Mapped[str] = mapped_column(String(100), primary_key=True)
+    type: Mapped[str] = mapped_column(String(80))
     created_at: Mapped[dt.datetime] = mapped_column(DateTime(timezone=True), default=now)
 
 

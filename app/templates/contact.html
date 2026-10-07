@@ -1,0 +1,28 @@
+{% extends "base.html" %}
+{% block title %}{{ _('contact.title') }}{% endblock %}
+{% block head %}
+<meta name="description" content="{{ _('contact.meta') }}">
+{% for code in languages %}<link rel="alternate" hreflang="{{ code }}" href="{{ base_url }}/contact?lang={{ code }}">{% endfor %}
+<style>.prose{max-width:46em}.prose h1{font-size:clamp(26px,4.5vw,36px);margin:28px 0 14px}dl.details{display:grid;grid-template-columns:max-content 1fr;gap:6px 18px;margin:0}dl.details dt{color:var(--mut)}dl.details dd{margin:0;white-space:pre-line}
+.mailbtn{display:inline-block;padding:10px 18px;border-radius:8px;background:var(--btn);color:#fff;text-decoration:none;font-weight:600;word-break:break-all}.mailbtn:focus-visible{outline:2px solid var(--fg);outline-offset:2px}</style>
+{% endblock %}
+{% block content %}
+<article class="prose">
+  <h1>{{ _('contact.h1') }}</h1>
+  <p>{{ _('contact.intro') }}</p>
+  {% if contact_email %}
+  <div class="card"><p class="mut" style="margin:0 0 8px">{{ _('contact.email_label') }}</p>
+    <a class="mailbtn" href="mailto:{{ contact_email }}?subject={{ _('contact.mail_subject')|urlencode }}">{{ contact_email }}</a>
+    {% if invite %}<p style="margin:12px 0 0">{{ _('contact.invite') }}</p>{% endif %}
+    <p class="mut" style="margin:12px 0 0">{{ _('contact.privacy') }}</p></div>
+  {% else %}<div class="card"><p style="margin:0">{{ _('contact.unavailable') }}</p></div>{% endif %}
+  {% if company_name or company_address or enterprise_number or company_phone %}
+  <div class="card"><h2 style="margin:0 0 10px;font-size:18px">{{ _('contact.company.title') }}</h2><dl class="details">
+    {% if company_name %}<dt>{{ _('contact.company_name') }}</dt><dd>{{ company_name }}</dd>{% endif %}
+    {% if company_address %}<dt>{{ _('contact.address') }}</dt><dd>{{ company_address }}</dd>{% endif %}
+    {% if enterprise_number %}<dt>{{ _('contact.enterprise') }}</dt><dd>{{ enterprise_number }}</dd>{% endif %}
+    {% if company_phone %}<dt>{{ _('contact.phone') }}</dt><dd>{{ company_phone }}</dd>{% endif %}</dl></div>
+  {% endif %}
+  <p><a href="/">← {{ _('contact.home') }}</a></p>
+</article>
+{% endblock %}

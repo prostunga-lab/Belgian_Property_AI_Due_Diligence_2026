@@ -1,0 +1,22 @@
+{% extends "base.html" %}
+{% block title %}{{ _('about.title') }}{% endblock %}
+{% block head %}
+<meta name="description" content="{{ _('about.meta') }}">
+{% for code in languages %}<link rel="alternate" hreflang="{{ code }}" href="{{ base_url }}/about?lang={{ code }}">{% endfor %}
+<style>.prose{max-width:46em}.prose h1{font-size:clamp(26px,4.5vw,36px);margin:28px 0 18px}.prose h2{font-size:20px;margin:30px 0 8px}.prose p{margin:0 0 10px}
+.principles{display:grid;gap:12px;grid-template-columns:repeat(auto-fit,minmax(230px,1fr));max-width:none}.principles .card h3{margin:0 0 6px;font-size:16px}.principles .card p{margin:0;color:var(--mut)}</style>
+{% endblock %}
+{% block content %}
+<article class="prose">
+  <h1>{{ _('about.h1') }}</h1>
+  <h2>{{ _('about.mission.title') }}</h2><p>{{ _('about.mission.text') }}</p>
+  <h2>{{ _('about.why.title') }}</h2><p>{{ _('about.why.text') }}</p>
+</article>
+<section aria-labelledby="principles" class="prose"><h2 id="principles">{{ _('about.principles.title') }}</h2></section>
+<div class="principles">{% for i in (1, 2, 3, 4) %}<div class="card"><h3>{{ _('about.principles.' ~ i ~ '.title') }}</h3><p>{{ _('about.principles.' ~ i ~ '.text') }}</p></div>{% endfor %}</div>
+<article class="prose">
+  <h2>{{ _('about.status.title') }}</h2><p>{{ _('about.status.text') }}</p>
+  {% if company_name %}<p class="mut">{{ _('about.publisher', name=company_name) }}</p>{% endif %}
+</article>
+<section class="card" style="max-width:46em;margin-top:28px"><p style="margin:0 0 10px"><b>{{ _('about.cta') }}</b></p><a href="/contact"><button type="button">{{ _('about.cta_button') }}</button></a></section>
+{% endblock %}

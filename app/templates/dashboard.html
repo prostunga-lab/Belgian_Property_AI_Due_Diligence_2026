@@ -3,10 +3,10 @@
 {% if needs_verification %}<div class="card warn"><div class="row" style="justify-content:space-between"><span>{{ _('dash.verify_banner') }}</span>
 <form method="post" action="/verify/resend"><button class="sec">{{ _('dash.resend') }}</button></form></div></div>{% endif %}
 <div class="card"><div class="row" style="justify-content:space-between"><b>{{ org.name }}</b>
-<span class="mut">{{ _('ui.credits', n=org.credits) }} · <a href="/account">{{ _('dash.account_link') }}</a></span></div>
+<span class="mut">{{ _('ui.dossiers_available', n=bal.available) }} · <a href="/account">{{ _('dash.account_link') }}</a></span></div>
 <form method="post" action="/cases" class="row" style="margin-top:10px"><input name="title" placeholder="{{ _('dash.new_case_ph') }}" aria-label="{{ _('dash.new_case_ph') }}" required style="flex:1"><button>{{ _('dash.create_case') }}</button></form></div>
-<table><tr><th>{{ _('dash.col_case') }}</th><th>{{ _('dash.col_address') }}</th><th>{{ _('dash.col_status') }}</th><th>{{ _('dash.col_risk') }}</th></tr>
+<div class="card tablecard"><table><tr><th>{{ _('dash.col_case') }}</th><th>{{ _('dash.col_address') }}</th><th>{{ _('dash.col_status') }}</th><th>{{ _('dash.col_risk') }}</th></tr>
 {% for c in cases %}<tr><td><a href="/cases/{{ c.id }}">{{ c.title }}</a></td><td>{{ c.address }}</td><td>{{ _('status.analyzed') if c.status == "analyzed" else _('status.draft') }}</td>
 <td>{% if c.scores %}<span class="{{ c.scores.level }}">{{ c.scores.overall }}/100</span>{% endif %}</td></tr>
-{% else %}<tr><td colspan="4" class="mut">{{ _('dash.empty') }}</td></tr>{% endfor %}</table>
+{% else %}<tr><td colspan="4" class="mut">{{ _('dash.empty') }}</td></tr>{% endfor %}</table></div>
 {% endblock %}

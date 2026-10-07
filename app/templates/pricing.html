@@ -1,0 +1,61 @@
+{% extends "base.html" %}
+{% block title %}{{ _('pricing.title') }}{% endblock %}
+{% block head %}
+<meta name="description" content="{{ _('pricing.meta') }}">
+{% for code in languages %}<link rel="alternate" hreflang="{{ code }}" href="{{ base_url }}/pricing?lang={{ code }}">{% endfor %}
+<style>.prose{max-width:46em}.prose h1{font-size:clamp(26px,4.5vw,36px);margin:28px 0 8px}
+.plans{display:grid;gap:14px;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));align-items:start}.plan h2{margin:0 0 4px;font-size:20px}.plan .lead{margin:0 0 12px;color:var(--mut)}
+.offer{border:1px solid var(--bd);border-radius:10px;padding:12px;margin:10px 0}.offer .price{font-size:26px;font-weight:700;margin:2px 0}.offer .sub{color:var(--mut);font-size:13px;margin:0 0 8px}
+ul.notes{margin:10px 0 0;padding-left:18px;color:var(--mut);font-size:14px}ul.notes li{margin:3px 0}
+.btn{display:inline-block;padding:9px 16px;border-radius:8px;background:var(--btn);color:#fff;text-decoration:none;font-weight:600;border:0;font:inherit;font-weight:600;cursor:pointer}.btn:focus-visible{outline:2px solid var(--fg);outline-offset:2px}
+/* Billing-period selector without JavaScript: the radios precede the plans, :checked picks which price block is shown. */
+.pick{position:relative}.pick>input{position:absolute;opacity:0;width:1px;height:1px}
+.segmented{display:inline-flex;flex-wrap:wrap;gap:0;border:1px solid var(--bd);border-radius:10px;overflow:hidden;background:var(--card);margin:8px 0 14px}
+.segmented label{padding:8px 14px;cursor:pointer;color:var(--fg);border-right:1px solid var(--bd);font-weight:600}.segmented label:last-child{border-right:0}
+.segmented label small{display:block;font-weight:400;color:var(--mut);font-size:12px}
+.pv{display:none}
+#per-monthly:checked ~ .segmented label[for=per-monthly],#per-semiannual:checked ~ .segmented label[for=per-semiannual],#per-annual:checked ~ .segmented label[for=per-annual]{background:var(--btn);color:#fff}
+#per-monthly:checked ~ .segmented label[for=per-monthly] small,#per-semiannual:checked ~ .segmented label[for=per-semiannual] small,#per-annual:checked ~ .segmented label[for=per-annual] small{color:#e6edf9}
+#per-monthly:checked ~ .plans .pv-monthly,#per-semiannual:checked ~ .plans .pv-semiannual,#per-annual:checked ~ .plans .pv-annual{display:block}
+#per-monthly:focus-visible ~ .segmented label[for=per-monthly],#per-semiannual:focus-visible ~ .segmented label[for=per-semiannual],#per-annual:focus-visible ~ .segmented label[for=per-annual]{outline:2px solid var(--fg);outline-offset:2px}
+.save{display:inline-block;margin-left:6px;padding:1px 8px;border-radius:99px;background:#dcfce7;color:#14532d;font-size:12px;font-weight:700}
+@media (prefers-color-scheme:dark){.save{background:#14532d;color:#dcfce7}}</style>
+{% endblock %}
+{% block content %}
+<article class="prose"><h1>{{ _('pricing.h1') }}</h1><p>{{ _('pricing.intro') }}</p></article>
+<div class="card" style="max-width:46em"><p style="margin:0">{{ _('pricing.what_is_case', max=max_documents) }}</p></div>
+<p class="mut">{{ _('pricing.vat.' ~ vat) }}{% if free_credits %} {{ _('pricing.free', n=free_credits) }}{% endif %}</p>
+
+<div class="pick">
+  <input type="radio" name="period" id="per-monthly" checked><input type="radio" name="period" id="per-semiannual"><input type="radio" name="period" id="per-annual">
+  <div class="segmented" role="group" aria-label="{{ _('pricing.billing_label') }}">
+    {% for per in ("monthly", "semiannual", "annual") %}<label for="per-{{ per }}">{{ _('pricing.period.' ~ per) }}{% for o in cards.subscription[0].offers if o.period == per and o.discount_pct %}<small>{{ _('pricing.discount', pct=o.discount_pct) }}</small>{% endfor %}</label>{% endfor %}
+  </div>
+
+  <div class="plans">
+    <section class="card plan" aria-labelledby="investor"><h2 id="investor">{{ _('pricing.investor.title') }}</h2><p class="lead">{{ _('pricing.investor.text') }}</p>
+      {% for c in cards.payg %}<div class="offer"><b>{{ c.name }}</b><p class="price">{{ c.price }}</p>
+        <p class="sub">{% if c.dossiers > 1 %}{{ _('pricing.per_case', price=c.per_case) }}{% else %}&nbsp;{% endif %}</p>
+        {% if stripe_ready and signed_in %}<form method="post" action="/billing/checkout/{{ c.id }}"><button class="btn">{{ _('pricing.cta_buy') }}</button></form>
+        {% elif not signed_in %}<a class="btn" href="/login#register">{{ _('pricing.cta_register') }}</a>{% endif %}</div>{% endfor %}
+    </section>
+
+    {% for c in cards.subscription %}
+    <section class="card plan" aria-labelledby="plan-{{ c.id }}"><h2 id="plan-{{ c.id }}">{{ _('pricing.' ~ c.id ~ '.title') }}</h2><p class="lead">{{ _('pricing.' ~ c.id ~ '.text') }}</p>
+      <div class="offer"><b>{{ c.name }}</b>
+        {% for o in c.offers %}<div class="pv pv-{{ o.period }}">
+          <p class="price">{{ _('pricing.per_month', price=o.per_month) }}{% if o.discount_pct %}<span class="save">{{ _('pricing.discount', pct=o.discount_pct) }}</span>{% endif %}</p>
+          <p class="sub">{% if o.months == 1 %}{{ _('pricing.billed.monthly') }}{% else %}{{ _('pricing.billed.' ~ o.period, total=o.total, list=o.list_total) }}{% endif %}</p>
+          {% if stripe_ready and signed_in and not (bal is defined and bal.subscribed) %}<form method="post" action="/billing/checkout/{{ c.id }}"><input type="hidden" name="period" value="{{ o.period }}"><button class="btn">{{ _('pricing.cta_subscribe') }}</button></form>
+          {% elif signed_in and bal is defined and bal.subscribed %}<a class="btn" href="/account">{{ _('acct.manage_sub') }}</a>
+          {% elif not signed_in %}<a class="btn" href="/login#register">{{ _('pricing.cta_register') }}</a>{% endif %}</div>{% endfor %}
+        <p class="sub" style="margin-top:8px">{{ _('pricing.sub_includes', n=c.dossiers) }}</p></div>
+    </section>{% endfor %}
+  </div>
+</div>
+<ul class="notes" style="max-width:46em"><li>{{ _('pricing.quota_monthly') }}</li><li>{{ _('pricing.sub_no_carryover') }}</li><li>{{ _('pricing.sub_extra') }}</li><li>{{ _('pricing.sub_cancel') }}</li></ul>
+{% if not stripe_ready %}<p class="card" style="max-width:46em">{{ _('pricing.unavailable') }} <a href="/contact">{{ _('pricing.volume.cta') }}</a></p>{% endif %}
+
+<section class="card" style="max-width:46em;margin-top:22px"><h2 style="margin:0 0 6px;font-size:18px">{{ _('pricing.volume.title') }}</h2><p class="mut" style="margin:0 0 10px">{{ _('pricing.volume.text') }}</p>
+<a class="btn" href="/contact">{{ _('pricing.volume.cta') }}</a></section>
+{% endblock %}

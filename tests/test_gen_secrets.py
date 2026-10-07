@@ -13,7 +13,8 @@ def test_generated_values_are_random_and_long_enough():
     assert a["SECRET_KEY"] != b["SECRET_KEY"] and a["FILE_ENCRYPTION_KEY"] != b["FILE_ENCRYPTION_KEY"] and a["INVITE_CODE"] != b["INVITE_CODE"]
     assert re.fullmatch(r"[0-9a-f]{64}", a["SECRET_KEY"]) and re.fullmatch(r"[0-9a-f]{64}", a["FILE_ENCRYPTION_KEY"])
     assert a["SECRET_KEY"] != a["FILE_ENCRYPTION_KEY"]  # never the same value for two purposes
-    assert len(a["INVITE_CODE"]) >= 16 and a["APP_ENV"] == "production" and a["COOKIE_SECURE"] == "1"
+    assert re.fullmatch(r"([0-9A-HJKMNP-TV-Z]{4}-){3}[0-9A-HJKMNP-TV-Z]{4}", a["INVITE_CODE"])  # XXXX-XXXX-XXXX-XXXX, no I/L/O/U
+    assert a["APP_ENV"] == "production" and a["COOKIE_SECURE"] == "1"
 
 
 def test_generated_values_satisfy_the_production_guard(monkeypatch):

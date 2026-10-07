@@ -1,9 +1,25 @@
-{% extends "base.html" %}{% block content %}
+{% extends "base.html" %}{% from "_macros.html" import password_field with context %}{% block content %}
 <p><a href="/">← {{ _('nav.cases') }}</a></p><h2>{{ _('acct.title') }}</h2>
 {% if paid %}<p class="ok">{{ _('acct.paid_thanks') }}</p>{% endif %}
-<div class="card"><b>{{ org.name }}</b> · {{ user.email }} {% if user.email_verified %}<span class="badge ok">{{ _('acct.verified') }}</span>{% elif verification_on %}<span class="badge warn">{{ _('acct.unverified') }}</span>{% endif %}
-<p>{{ _('acct.balance') }} <b>{{ _('ui.credits', n=org.credits) }}</b> <span class="mut">({{ _('acct.credit_rule') }})</span></p>
-{% if stripe_ready %}<form method="post" action="/billing/checkout"><button>{{ _('acct.buy', n=pack) }}</button></form>{% else %}<p class="mut">{{ _('acct.stripe_off') }}</p>{% endif %}</div>
+<div class="card"><b>{{ org.name }}</b> · {{ user.email }} {% if user.email_verified %}<span class="badge ok">{{ _('acct.verified') }}</span>{% elif verification_on %}<span class="badge warn">{{ _('acct.unverified') }}</span>{% endif %}</div>
+
+<div class="card"><b>{{ _('acct.plan_title') }}</b>
+{% if bal.subscribed %}<p>{{ _('acct.sub_line', name=sub_name, period=_('period.' ~ (bal.period or 'monthly')), used=bal.used, quota=bal.quota) }}
+<span class="badge ok">{{ _('acct.sub_status.' ~ bal.status) }}</span></p>
+{% if bal.renews_on %}<p class="mut">{{ _('acct.quota_renews', date=bal.renews_on.date().isoformat()) }}</p>{% endif %}
+{% if bal.cancel_at_period_end %}<p class="mut">{{ _('acct.sub_cancel_at_end') }}</p>{% endif %}
+{% elif org.subscription_status %}<p>{{ _('acct.sub_none') }} <span class="badge {{ 'warn' if org.subscription_status in ('past_due', 'unpaid') else 'info' }}">{{ _('acct.sub_status.' ~ org.subscription_status) }}</span></p>
+{% else %}<p class="mut">{{ _('acct.sub_none') }}</p>{% endif %}
+<p>{{ _('acct.credits_line') }} <b>{{ _('ui.credits', n=bal.credits) }}</b> <span class="mut">({{ _('acct.credit_rule', max=max_documents) }})</span></p>
+{% if has_customer and stripe_ready %}<form method="post" action="/billing/portal"><button class="sec">{{ _('acct.manage_sub') }}</button></form>{% endif %}</div>
+
+<div class="card"><b>{{ _('acct.buy_title') }}</b>
+{% if stripe_ready %}
+<p class="mut">{{ _('acct.buy_hint') }} {{ _('pricing.vat.' ~ vat) }}</p>
+<div class="row">{% for c in cards.payg %}<form method="post" action="/billing/checkout/{{ c.id }}"><button>{{ _('acct.buy_button', name=c.name, price=c.price) }}</button></form>{% endfor %}</div>
+{% if not bal.subscribed %}<p style="margin-top:12px"><a href="/pricing">{{ _('acct.see_plans') }} →</a></p>{% endif %}
+{% else %}<p class="mut">{{ _('acct.stripe_off') }}</p>{% endif %}
+<p class="mut"><a href="/pricing">{{ _('nav.pricing') }}</a></p></div>
 
 <div class="card"><b>{{ _('acct.keys_title') }}</b>
 <p class="mut">{{ _('acct.keys_hint') }} <code>curl -H "X-API-Key: sk_live_…" -F "files=@epc.pdf" -F "files=@akte.pdf" {{ base_url }}/v1/dossier</code></p>
@@ -18,5 +34,5 @@
 <div class="card"><b>{{ _('acct.delete_title') }}</b>
 <p class="mut">{{ _('acct.delete_hint') }}</p>
 <form method="post" action="/account/delete" class="row" onsubmit='return confirm({{ _("acct.delete_confirm")|tojson }})'>
-<input name="password" type="password" placeholder="{{ _('auth.password') }}" aria-label="{{ _('auth.password') }}" autocomplete="current-password" required><button class="sec">{{ _('acct.delete_btn') }}</button></form></div>
+{{ password_field('password', _('auth.password'), 'current-password', None, 'min-width:220px') }}<button class="sec">{{ _('acct.delete_btn') }}</button></form></div>
 {% endblock %}

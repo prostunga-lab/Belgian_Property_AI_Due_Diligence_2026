@@ -8,13 +8,14 @@
 <table>{% for d in case.documents %}<tr><td>{{ d.filename }}</td><td>
 <form method="post" action="/cases/{{ case.id }}/documents/{{ d.id }}/type" class="row">
 <select name="doc_type" aria-label="{{ _('case.doc_type') }}" onchange="this.form.submit()">{% for k in doc_types %}<option value="{{ k }}" {{ "selected" if d.doc_type==k }}>{{ _('doctype.' ~ k) }}</option>{% endfor %}</select>
-<span class="mut">{{ (d.classification_confidence*100)|round|int }}% · {{ _('case.fields', n=d.fields|length) }}{% if d.ocr_pages %} · {{ _('case.ocr_pages', pages=d.ocr_pages|map(attribute="page")|join(", ")) }}{% endif %}{% if d.billed %} · {{ _('case.analysed') }}{% endif %}</span></form></td></tr>
+<span class="mut">{{ (d.classification_confidence*100)|round|int }}% · {{ _('case.fields', n=d.fields|length) }}{% if d.ocr_pages %} · {{ _('case.ocr_pages', pages=d.ocr_pages|map(attribute="page")|join(", ")) }}{% endif %}{% if case.billed %} · {{ _('case.analysed') }}{% endif %}</span></form></td></tr>
 {% else %}<tr><td class="mut">{{ _('case.no_documents') }}</td></tr>{% endfor %}</table>
 <form method="post" action="/cases/{{ case.id }}/documents" enctype="multipart/form-data" class="row" style="margin-top:8px">
 <input type="file" name="files" multiple accept=".pdf,.txt,.png,.jpg,.jpeg,.tif,.tiff" aria-label="{{ _('case.choose_files') }}" required><button class="sec">{{ _('case.upload') }}</button></form>
 <form method="post" action="/cases/{{ case.id }}/analyze" class="row" style="margin-top:8px">
-<button {{ "disabled" if needs_verification or not case.documents }}>{{ _('case.analyze') }}</button>
-<span class="mut">{% if to_charge %}{{ _('case.will_charge', n=to_charge, balance=org.credits) }}{% elif case.documents %}{{ _('case.reanalysis_free') }}{% endif %}</span></form></div>
+<button {{ "disabled" if needs_verification or not case.documents or preview == "none" }}>{{ _('case.analyze') }}</button>
+<span class="mut">{% if preview == 'billed' %}{{ _('case.reanalysis_free') }}{% elif preview == 'quota' %}{{ _('case.will_charge_quota', left=bal.quota_left) }}{% elif preview == 'credit' %}{{ _('case.will_charge_credit', balance=bal.credits) }}{% else %}{{ _('case.nothing_left') }} <a href="/pricing">{{ _('nav.pricing') }}</a>{% endif %}</span></form>
+<p class="mut" style="margin:6px 0 0">{{ _('case.max_documents', max=max_documents) }}</p></div>
 
 {% if case.status == "analyzed" %}
 <div class="card"><div class="row" style="justify-content:space-between"><b>{{ _('case.score') }} :

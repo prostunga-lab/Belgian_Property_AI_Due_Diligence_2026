@@ -12,6 +12,8 @@ SaaS construit à partir de `docs/strategy.md` (§9 « MVP recommandé »): **Fl
 - **Lecture IA** facultative (Claude, prompts dans `app/prompts.py`) : synthèse par document et synthèse croisée, affichée à part, **jamais dans le score**.
 - API publique `POST /v1/dossier` (clé `X-API-Key`).
 - **Interface en français, néerlandais et anglais** avec sélecteur de langue (FR | NL | EN) : pages, erreurs, e-mails, rapport PDF et lecture IA. Les constats sont stockés sans texte et rendus dans la langue du lecteur.
+- **Page d'accueil publique** (visiteurs non connectés, FR/NL/EN) : proposition de valeur, fonctionnement, contrôles, exemple fictif, garde-fous, crédits, FAQ ; mention « accès sur invitation » si un `INVITE_CODE` est configuré. Les utilisateurs connectés arrivent sur leur tableau de bord. Bouton **afficher/masquer** sur tous les champs de mot de passe.
+- Pages **À propos** et **Contact** publiques, pied de page sur toutes les pages ; coordonnées de l'éditeur lues dans la configuration (jamais inventées).
 - Property Risk Score global + 6 domaines (Legal / Urbanistic / Energy / Technical / Environmental / Documentation).
 - Chaque finding distingue **fait / inférence IA / risque / action**; validation humaine (confirmer/rejeter), commentaires, audit log.
 - Rapport PDF exportable avec sources, règles utilisées, questions par partie (notaire/vendeur), disclaimer.

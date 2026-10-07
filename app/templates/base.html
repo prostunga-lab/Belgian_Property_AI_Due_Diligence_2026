@@ -1,27 +1,57 @@
 <!doctype html>
 <html lang="{{ lang }}"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
 <title>{% block title %}Property Due Diligence{% endblock %}</title>
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Ctext y='.9em' font-size='90'%3E%F0%9F%8F%A0%3C/text%3E%3C/svg%3E">
+{% block head %}{% endblock %}
 <style>
-:root{--bg:#f8fafc;--fg:#0f172a;--mut:#64748b;--card:#fff;--bd:#e2e8f0;--acc:#1d4ed8;--high:#b91c1c;--medium:#c2410c;--low:#a16207;--info:#475569}
-@media (prefers-color-scheme:dark){:root{--bg:#0b1120;--fg:#e2e8f0;--mut:#94a3b8;--card:#111a2e;--bd:#25314d;--acc:#60a5fa;--high:#f87171;--medium:#fb923c;--low:#facc15;--info:#94a3b8}}
-body{margin:0;background:var(--bg);color:var(--fg);font:15px/1.5 system-ui,sans-serif}
+:root{--bg:#e8eef6;--bg2:#dbe6f3;--fg:#0f172a;--mut:#4f5d73;--card:#ffffff;--bd:#c5d1e0;--acc:#1d4ed8;--btn:#1d4ed8;--code:#dde6f1;--high:#b91c1c;--medium:#b23a0b;--low:#8a5a00;--info:#3f4c62;--ok:#166534;--hdr:#13294b;--shadow:0 1px 2px rgba(15,23,42,.08)}
+@media (prefers-color-scheme:dark){:root{--bg:#0b1120;--bg2:#0f1a33;--fg:#e2e8f0;--mut:#94a3b8;--card:#111a2e;--bd:#25314d;--acc:#60a5fa;--btn:#2563eb;--code:#1b2742;--high:#f87171;--medium:#fb923c;--low:#facc15;--info:#94a3b8;--ok:#4ade80;--shadow:none}}
+html{background:var(--bg)}
+body{margin:0;min-height:100vh;color:var(--fg);font:15px/1.5 system-ui,sans-serif;background-color:var(--bg);background-image:linear-gradient(180deg,var(--bg2),var(--bg) 380px);background-repeat:no-repeat}
 main{max-width:980px;margin:0 auto;padding:16px}
-header{display:flex;justify-content:space-between;align-items:center;padding:12px 16px;border-bottom:1px solid var(--bd)}
-a{color:var(--acc)} .card{background:var(--card);border:1px solid var(--bd);border-radius:10px;padding:14px;margin:12px 0}
+header{display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap;padding:12px 16px;background:var(--hdr);color:#fff}
+header a{color:#dbe6f3}header a.brand{color:#fff;text-decoration:none}.hl{display:flex;align-items:center;gap:18px;flex-wrap:wrap}.mainnav{display:flex;gap:2px;flex-wrap:wrap}.mainnav a{text-decoration:none;padding:6px 10px;border-radius:6px}.mainnav a:hover{background:rgba(255,255,255,.12)}.mainnav a[aria-current=page]{background:rgba(255,255,255,.2);color:#fff;font-weight:600}header .badge{color:#dbe6f3}
+header button.sec{color:#fff;border-color:rgba(255,255,255,.4)}header button.sec:hover{background:rgba(255,255,255,.12)}
+a{color:var(--acc)} .card{background:var(--card);border:1px solid var(--bd);border-radius:10px;padding:14px;margin:12px 0;box-shadow:var(--shadow)}
 input,select,textarea,button{box-sizing:border-box;max-width:100%;font:inherit;padding:7px 10px;border-radius:7px;border:1px solid var(--bd);background:var(--card);color:var(--fg)}
-button{background:var(--acc);color:#fff;border:0;cursor:pointer} button.sec{background:transparent;color:var(--fg);border:1px solid var(--bd)}
+button{background:var(--btn);color:#fff;border:0;cursor:pointer} button.sec{background:transparent;color:var(--fg);border:1px solid var(--bd)}
 .mut{color:var(--mut);font-size:13px} .row{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
 .badge{padding:1px 8px;border-radius:99px;font-size:12px;border:1px solid currentColor}
 .high{color:var(--high)}.medium{color:var(--medium)}.low{color:var(--low)}.info{color:var(--info)}
-.ok{color:#15803d}.warn{background:#fef3c7;color:#78350f;border-color:#fcd34d}@media (prefers-color-scheme:dark){.ok{color:#4ade80}.warn{background:#3b2f0b;color:#fde68a;border-color:#92400e}}code{background:var(--bd);padding:1px 5px;border-radius:4px;word-break:break-all}.langbtn{padding:2px 7px;border-radius:6px;font-size:12px;text-decoration:none;border:1px solid var(--bd);color:var(--mut)}.langbtn.on{background:var(--acc);color:#fff;border-color:var(--acc)}.bar{height:8px;background:var(--bd);border-radius:4px;overflow:hidden}.bar>i{display:block;height:100%;background:var(--acc)}
+.ok{color:var(--ok)}.warn{background:#fef3c7;color:#78350f;border-color:#fcd34d}@media (prefers-color-scheme:dark){.warn{background:#3b2f0b;color:#fde68a;border-color:#92400e}}
+code{background:var(--code);padding:1px 5px;border-radius:4px;word-break:break-all}
+.pw{position:relative;display:block}.pw input{padding-right:42px}.pwtoggle{display:none;position:absolute;right:3px;top:50%;transform:translateY(-50%);width:34px;height:30px;padding:0;background:transparent;color:var(--mut);border:0;border-radius:6px;line-height:0;align-items:center;justify-content:center}.js .pwtoggle{display:inline-flex}.pwtoggle:hover{color:var(--fg)}.pwtoggle:focus-visible{outline:2px solid var(--acc)}.pwtoggle .eye-off{display:none}.pwtoggle[aria-pressed=true] .eye-on{display:none}.pwtoggle[aria-pressed=true] .eye-off{display:block}
+.langbtn{padding:2px 7px;border-radius:6px;font-size:12px;text-decoration:none;border:1px solid var(--bd);color:var(--mut)}.langbtn.on{background:var(--btn);color:#fff;border-color:var(--btn)}
+header .langbtn{color:#c9d6ea;border-color:rgba(255,255,255,.3)}header .langbtn:hover{background:rgba(255,255,255,.12)}header .langbtn.on{background:#fff;color:var(--hdr);border-color:#fff}
+.bar{height:8px;background:var(--bd);border-radius:4px;overflow:hidden}.bar>i{display:block;height:100%;background:var(--acc)}
 blockquote{margin:4px 0;padding:2px 10px;border-left:3px solid var(--bd);color:var(--mut);font-size:13px}
-table{width:100%;border-collapse:collapse}td,th{padding:5px 8px;border-bottom:1px solid var(--bd);text-align:left;font-size:14px}
+table{width:100%;border-collapse:collapse}td,th{padding:8px 10px;border-bottom:1px solid var(--bd);text-align:left;font-size:14px}tr:last-child td{border-bottom:0}
+.tablecard{padding:0;overflow-x:auto}
+footer .mut{display:grid;gap:6px}.footnav{display:flex;gap:16px;flex-wrap:wrap}.footnav a{color:var(--fg);font-weight:600}
 </style></head><body>
-<header><a href="/" style="text-decoration:none;color:inherit"><b>🏠 Belgian Property Due Diligence</b></a>
+<header><div class="hl"><a href="/" class="brand"><b>🏠 Belgian Property Due Diligence</b></a>
+<nav class="mainnav" aria-label="Menu">{% for href, key in (("/pricing", "nav.pricing"), ("/about", "nav.about"), ("/contact", "nav.contact")) %}<a href="{{ href }}"{% if request.url.path == href %} aria-current="page"{% endif %}>{{ _(key) }}</a>{% endfor %}</nav></div>
 <div class="row">
 <nav class="row" aria-label="{{ _('ui.language') }}" style="gap:2px">{% for code in languages %}<a href="/lang/{{ code }}?next={{ switch_next|urlencode }}" class="langbtn{{ ' on' if code == lang }}" hreflang="{{ code }}" lang="{{ code }}" {{ 'aria-current=true' if code == lang }} title="{{ lang_names[code] }}">{{ code|upper }}</a>{% endfor %}</nav>
-{% if user is defined and user %}<a href="/account">{{ user.email }}</a>{% if org is defined and org %}<span class="badge info">{{ _('ui.credits', n=org.credits) }}</span>{% endif %}
-<form method="post" action="/logout"><button class="sec">{{ _('nav.logout') }}</button></form>{% endif %}</div></header>
+{% if user is defined and user %}<a href="/account">{{ user.email }}</a>{% if bal is defined and bal %}<a href="/account" class="badge info" style="text-decoration:none">{{ _('ui.dossiers_available', n=bal.available) }}</a>{% endif %}
+<form method="post" action="/logout"><button class="sec">{{ _('nav.logout') }}</button></form>{% elif request.url.path != '/login' %}<a href="/login">{{ _('nav.login') }}</a>{% endif %}</div></header>
 <main>{% block content %}{% endblock %}</main>
-<footer><main class="mut">{{ _('ui.disclaimer') }}</main></footer>
-</body></html>
+<footer><main class="mut"><nav class="footnav" aria-label="Footer"><a href="/about">{{ _('nav.about') }}</a><a href="/contact">{{ _('nav.contact') }}</a></nav>
+<div>{{ _('ui.disclaimer') }}</div><div>{{ _('footer.copyright', year=year, name=company_name or 'Belgian Property Due Diligence') }}</div></main></footer>
+<script>
+document.documentElement.classList.add("js");
+document.addEventListener("click",function(e){
+  var b=e.target.closest(".pwtoggle"); if(!b) return;
+  var input=b.parentElement.querySelector("input"), show=input.type==="password";
+  input.type=show?"text":"password";
+  b.setAttribute("aria-pressed",show?"true":"false");
+  var label=show?b.dataset.hide:b.dataset.show; b.setAttribute("aria-label",label); b.title=label;
+});
+// Never leave a password visible when coming back to the page (back button / bfcache).
+window.addEventListener("pageshow",function(){
+  document.querySelectorAll(".pwtoggle").forEach(function(b){
+    var input=b.parentElement.querySelector("input"); input.type="password";
+    b.setAttribute("aria-pressed","false"); b.setAttribute("aria-label",b.dataset.show); b.title=b.dataset.show;
+  });
+});
+</script></body></html>

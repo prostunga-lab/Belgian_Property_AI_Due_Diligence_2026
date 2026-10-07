@@ -37,6 +37,12 @@ Le contrôle de santé est `GET /health` (vérifie aussi la base). Un premier bu
 4. **Lire les logs** (*Deployments → View logs*) : chaque refus écrit `invite code mismatch (submitted X chars, configured Y chars)` sans révéler le code. `configured` ≠ longueur attendue = la valeur Railway n'est pas celle que vous croyez ; `submitted` ≠ `configured` = ce qui a été saisi diffère.
 5. En dernier recours, définissez vous-même un nouveau `INVITE_CODE` (toute phrase de 12 caractères ou plus), redéployez, et utilisez celui-là.
 
+## Pages publiques : accueil, À propos, Contact
+- `/` (visiteurs non connectés), `/about` et `/contact` sont publiques, en FR/NL/EN, avec un pied de page présent sur toutes les pages.
+- **Coordonnées de l'éditeur : à renseigner, jamais inventées.** Variables : `CONTACT_EMAIL`, `COMPANY_NAME`, `COMPANY_ADDRESS`, `COMPANY_ENTERPRISE_NUMBER` (BCE/TVA), `COMPANY_PHONE`. Seuls les champs définis sont affichés ; sans `CONTACT_EMAIL`, la page Contact indique que les coordonnées seront publiées prochainement.
+- Pas de formulaire de contact volontairement : sans serveur d'e-mail configuré, un message pourrait se perdre en silence. La page propose un lien `mailto:` (adresse validée strictement). Un formulaire pourra être ajouté une fois `SMTP_HOST` en place.
+- ⚠️ **À faire valider par un juriste** : en Belgique, un site proposant un service en ligne doit en principe permettre d'identifier son prestataire (dénomination, adresse géographique, e-mail, numéro d'entreprise/TVA). Renseignez ces variables avant d'ouvrir le site au public. Des mentions légales, une politique de confidentialité et des CGV restent à rédiger.
+
 ## Langues
 - Interface, messages d'erreur, e-mails et rapport PDF existent en **français, néerlandais et anglais**.
 - Ordre de choix : lien FR/NL/EN (cookie, mémorisé sur le compte) > `Accept-Language` du navigateur > français. L'API répond en anglais par défaut ou selon `Accept-Language` / `?lang=`.

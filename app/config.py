@@ -1,4 +1,5 @@
 import os
+import re
 from pathlib import Path
 
 DATA_DIR = Path(os.environ.get("DATA_DIR", "data"))
@@ -33,6 +34,14 @@ MAX_UPLOAD_MB = int(os.environ.get("MAX_UPLOAD_MB", "25"))
 # Configurable retention (GDPR): cases older than this are purged by `python -m app.purge`.
 RETENTION_DAYS = int(os.environ.get("RETENTION_DAYS", "365"))
 
+# Publisher identity shown on /about and /contact and in the footer. Nothing is invented: a field that is not set is not shown.
+COMPANY_NAME = _clean("COMPANY_NAME")
+COMPANY_ADDRESS = _clean("COMPANY_ADDRESS")
+COMPANY_ENTERPRISE_NUMBER = _clean("COMPANY_ENTERPRISE_NUMBER")  # BCE/KBO number and/or VAT number
+COMPANY_PHONE = _clean("COMPANY_PHONE")
+_email = _clean("CONTACT_EMAIL")
+CONTACT_EMAIL = _email if re.fullmatch(r"[A-Za-z0-9._+\-]+@[A-Za-z0-9\-]+(?:\.[A-Za-z0-9\-]+)*\.[A-Za-z]{2,}", _email) else ""  # strict: it ends up in a mailto: link
+
 # Accounts, credits, billing, e-mail
 # Public URL used in e-mailed links and Stripe redirects. Railway/Render expose their public host automatically.
 def _base_url() -> str:
@@ -44,11 +53,15 @@ def _base_url() -> str:
 
 
 BASE_URL = _base_url()
-FREE_CREDITS = int(os.environ.get("FREE_CREDITS", "6"))  # granted to each new organisation; 1 credit = 1 document
-PACK_CREDITS = int(os.environ.get("PACK_CREDITS", "20"))
+FREE_CREDITS = int(os.environ.get("FREE_CREDITS", "1"))  # complete dossiers offered to each new organisation (1 credit = 1 dossier)
 STRIPE_SECRET_KEY = os.environ.get("STRIPE_SECRET_KEY", "")
-STRIPE_PRICE_ID = os.environ.get("STRIPE_PRICE_ID", "")
 STRIPE_WEBHOOK_SECRET = os.environ.get("STRIPE_WEBHOOK_SECRET", "")
+# A dossier is one complete case; billing is per dossier, so a case is capped to keep that unit meaningful.
+DOSSIER_MAX_DOCUMENTS = int(os.environ.get("DOSSIER_MAX_DOCUMENTS", "8"))
+# Prices are shown VAT-inclusive by default (required for consumers); set PRICES_VAT=excl for a B2B-only offer.
+PRICES_VAT = _clean("PRICES_VAT", "incl").lower() if _clean("PRICES_VAT", "incl").lower() in ("incl", "excl") else "incl"
+# Public promise on processing time of a complete dossier (minutes). Measured and tested: see tests/test_promise.py.
+PROCESSING_PROMISE_MINUTES = int(os.environ.get("PROCESSING_PROMISE_MINUTES", "2"))
 SMTP_HOST = os.environ.get("SMTP_HOST")
 # E-mail confirmation is enforced only when mail can actually be delivered (otherwise nobody could ever confirm).
 REQUIRE_EMAIL_VERIFICATION = os.environ.get("REQUIRE_EMAIL_VERIFICATION", "1" if SMTP_HOST else "0") == "1"
