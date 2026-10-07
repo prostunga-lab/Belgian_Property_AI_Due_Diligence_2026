@@ -47,11 +47,11 @@ def test_landing_sections_come_from_the_catalog_in_every_language():
 
 def test_landing_states_free_credits_and_upload_limits(monkeypatch):
     monkeypatch.setattr(config, "FREE_CREDITS", 6)
-    assert "6 crédits offerts" in page_text(get("fr"))
+    assert "6 dossiers complets offerts" in page_text(get("fr"))
     monkeypatch.setattr(config, "FREE_CREDITS", 1)
-    assert "1 crédit offert" in page_text(get("fr")) and "1 free credit" in page_text(get("en"))
+    assert "1 dossier complet offert" in page_text(get("fr")) and "1 complete case offered" in page_text(get("en"))
     monkeypatch.setattr(config, "FREE_CREDITS", 0)
-    assert "free credit" not in page_text(get("en"))  # no promise when nothing is offered
+    assert "offered to try" not in page_text(get("en"))  # no promise when nothing is offered
     assert f"{config.MAX_UPLOAD_MB} MB" in page_text(get("en"))
 
 

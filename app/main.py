@@ -18,7 +18,7 @@ from sqlalchemy.orm import Session
 from starlette.exceptions import HTTPException as StarletteHTTPException
 from starlette.middleware.sessions import SessionMiddleware
 
-from . import billing, config, i18n, invite, mail
+from . import billing, config, i18n, invite, mail, pricing
 from .api_v1 import router as api_v1_router
 from .auth import (ApiKey, current_user, get_db, hash_password, make_token, new_api_key, open_session, optional_user,
                    pw_fingerprint, read_token, verify_password)
@@ -27,8 +27,8 @@ from .errors import AppError
 from .models import AuditLog, Case, Comment, Org, User, init_db
 from .report import build_pdf
 from .rules import RULESET_VERSION
-from .services import (add_document, audit, case_payload, delete_case_data, finding_view, get_case, require_verified,
-                       run_analysis)
+from .services import (add_document, audit, balance, billing_preview, case_payload, delete_case_data, finding_view, get_case,
+                       require_verified, run_analysis)
 
 
 def resolve_lang(request: Request) -> str:
@@ -297,13 +297,20 @@ def reset(request: Request, token: str = Form(...), password: str = Form(...), d
 
 # --- account: credits, API keys, erasure --------------------------------------------------------------
 
+def account_context(request: Request, user: User, db: Session, new_key: str | None = None, paid: str | None = None) -> dict:
+    org = db.get(Org, user.org_id)
+    keys = db.scalars(select(ApiKey).where(ApiKey.user_id == user.id, ApiKey.revoked == False).order_by(ApiKey.id)).all()  # noqa: E712
+    bal = balance(org)
+    return {"user": user, "org": org, "bal": bal, "keys": keys, "new_key": new_key, "paid": paid, "base_url": config.BASE_URL,
+            "stripe_ready": billing.configured(), "verification_on": config.REQUIRE_EMAIL_VERIFICATION,
+            "cards": pricing.cards(request.state.lang), "max_documents": config.DOSSIER_MAX_DOCUMENTS, "vat": config.PRICES_VAT,
+            "sub_name": billing.plan_name(bal["plan"], request.state.lang) if bal["plan"] else None,
+            "has_customer": bool(org.stripe_customer_id)}
+
+
 @app.get("/account")
 def account(request: Request, user: User = Depends(current_user), db: Session = Depends(get_db)):
-    keys = db.scalars(select(ApiKey).where(ApiKey.user_id == user.id, ApiKey.revoked == False).order_by(ApiKey.id)).all()  # noqa: E712
-    return templates.TemplateResponse(request, "account.html", {
-        "user": user, "org": db.get(Org, user.org_id), "keys": keys, "new_key": None, "pack": config.PACK_CREDITS,
-        "stripe_ready": billing.configured(), "paid": request.query_params.get("paid"), "base_url": config.BASE_URL,
-        "verification_on": config.REQUIRE_EMAIL_VERIFICATION})
+    return templates.TemplateResponse(request, "account.html", account_context(request, user, db, paid=request.query_params.get("paid")))
 
 
 @app.post("/account/keys")
@@ -314,11 +321,19 @@ def create_key(request: Request, user: User = Depends(current_user), db: Session
     db.add(ApiKey(user_id=user.id, prefix=prefix, key_hash=key_hash))
     audit(db, user, "apikey.create", detail=prefix)
     db.commit()
-    keys = db.scalars(select(ApiKey).where(ApiKey.user_id == user.id, ApiKey.revoked == False).order_by(ApiKey.id)).all()  # noqa: E712
-    return templates.TemplateResponse(request, "account.html", {
-        "user": user, "org": db.get(Org, user.org_id), "keys": keys, "new_key": key, "pack": config.PACK_CREDITS,
-        "stripe_ready": billing.configured(), "paid": None, "base_url": config.BASE_URL,
-        "verification_on": config.REQUIRE_EMAIL_VERIFICATION})
+    return templates.TemplateResponse(request, "account.html", account_context(request, user, db, new_key=key))
+
+
+@app.get("/pricing")
+def pricing_page(request: Request, user: User | None = Depends(optional_user), db: Session = Depends(get_db)):
+    """Public pricing: pay per complete dossier (investors) or monthly subscription with a quota (agents)."""
+    ctx = {"cards": pricing.cards(request.state.lang), "stripe_ready": billing.configured(), "free_credits": config.FREE_CREDITS,
+           "max_documents": config.DOSSIER_MAX_DOCUMENTS, "vat": config.PRICES_VAT, "base_url": config.BASE_URL, "signed_in": user is not None,
+           "promise_minutes": config.PROCESSING_PROMISE_MINUTES}
+    if user:
+        org = db.get(Org, user.org_id)
+        ctx |= {"user": user, "org": org, "bal": balance(org)}
+    return templates.TemplateResponse(request, "pricing.html", ctx)
 
 
 @app.post("/account/keys/{key_id}/revoke")
@@ -361,8 +376,9 @@ def home(request: Request, user: User | None = Depends(optional_user), db: Sessi
             "invite": bool(config.INVITE_CODE), "free_credits": config.FREE_CREDITS, "max_files": config.MAX_FILES_PER_REQUEST,
             "max_mb": config.MAX_UPLOAD_MB, "base_url": config.BASE_URL})
     cases = db.scalars(select(Case).where(Case.org_id == user.org_id).order_by(Case.id.desc())).all()
+    org = db.get(Org, user.org_id)
     return templates.TemplateResponse(request, "dashboard.html", {
-        "cases": cases, "org": db.get(Org, user.org_id), "user": user,
+        "cases": cases, "org": org, "bal": balance(org), "user": user,
         "msg": i18n.t(DASHBOARD_MESSAGES[m], request.state.lang) if (m := request.query_params.get("msg")) in DASHBOARD_MESSAGES else None,
         "needs_verification": config.REQUIRE_EMAIL_VERIFICATION and not user.email_verified})
 
@@ -384,7 +400,8 @@ def case_page(request: Request, case_id: int, user: User = Depends(current_user)
         "case": case, "user": user, "org": db.get(Org, user.org_id), "version": RULESET_VERSION, "doc_types": DOC_TYPES,
         "findings": [finding_view(f, request.state.lang) | {"comments": f.comments}
                      for f in sorted(case.findings, key=lambda f: (SEVERITY_ORDER.get(f.severity, 9), f.id))],
-        "to_charge": sum(1 for d in case.documents if not d.billed), "needs_verification": config.REQUIRE_EMAIL_VERIFICATION and not user.email_verified})
+        "preview": billing_preview(db.get(Org, user.org_id), case), "bal": balance(db.get(Org, user.org_id)),
+        "max_documents": config.DOSSIER_MAX_DOCUMENTS, "needs_verification": config.REQUIRE_EMAIL_VERIFICATION and not user.email_verified})
 
 
 @app.post("/cases/{case_id}/documents")

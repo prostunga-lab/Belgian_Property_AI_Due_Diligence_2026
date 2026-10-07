@@ -7,7 +7,7 @@ from app import config
 from app.main import app
 from tests.fixtures import ASB, DEED, ELEC, EPC, pdf
 from tests.helpers import new_client
-from tests.test_credits_billing import force_credits, org_credits, org_of
+from tests.org_helpers import force_credits, org_credits, org_of
 
 
 def key_for(c) -> str:
@@ -53,13 +53,14 @@ def test_api_charges_credits_and_cleans_up_on_402():
     c = new_client("api2@x.be")
     oid = org_of("api2@x.be")
     key = key_for(c)
-    force_credits(oid, 1)
+    force_credits(oid, 0)
     before = set(config.UPLOAD_DIR.glob(f"{oid}/*"))
     r = api(key).post("/v1/dossier", files=files(("akte.pdf", DEED), ("epc.pdf", EPC)))
     assert r.status_code == 402
-    assert org_credits(oid) == 1  # nothing charged
+    assert org_credits(oid) == 0  # nothing charged
     assert set(config.UPLOAD_DIR.glob(f"{oid}/*")) == before  # no orphan files left on disk
-    assert api(key).post("/v1/dossier", files=files(("akte.pdf", DEED))).status_code == 200
+    force_credits(oid, 1)
+    assert api(key).post("/v1/dossier", files=files(("akte.pdf", DEED), ("epc.pdf", EPC))).status_code == 200  # 2 files, 1 dossier
     assert org_credits(oid) == 0
 
 
