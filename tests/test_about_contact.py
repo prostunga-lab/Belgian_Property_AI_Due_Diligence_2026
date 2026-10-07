@@ -100,14 +100,16 @@ def test_invite_hint_only_in_invite_mode_and_privacy_note_present(monkeypatch):
     assert CATALOGS["en"]["contact.invite"] in body and CATALOGS["en"]["contact.privacy"] in body and "secret-code-123" not in body
 
 
-def test_footer_links_on_every_kind_of_page():
+def test_about_and_contact_are_in_the_header_menu_not_the_footer_on_every_kind_of_page():
     c = new_client("foot@x.be")
     pages = {"landing": TestClient(app).get("/"), "login": TestClient(app).get("/login"), "about": TestClient(app).get("/about"),
              "contact": TestClient(app).get("/contact"), "dashboard": c.get("/"), "account": c.get("/account"),
              "404": c.get("/cases/9999", headers={"accept": "text/html"})}
     for name, r in pages.items():
         footer = r.text.split("<footer>")[1]
-        assert 'href="/about"' in footer and 'href="/contact"' in footer, f"{name}: footer links missing"
+        assert 'href="/about"' not in footer and 'href="/contact"' not in footer, f"{name}: footer must not link About/Contact"
+        header = r.text.split("<header>")[1].split("</header>")[0]
+        assert 'href="/about"' in header and 'href="/contact"' in header, f"{name}: header menu links missing"
         assert f"© {dt.date.today().year} Belgian Property Due Diligence" in html.unescape(footer)
 
 

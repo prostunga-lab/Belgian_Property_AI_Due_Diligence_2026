@@ -36,8 +36,7 @@ footer .mut{display:grid;gap:6px}.footnav{display:flex;gap:16px;flex-wrap:wrap}.
 {% if user is defined and user %}<a href="/account">{{ user.email }}</a>{% if bal is defined and bal %}<a href="/account" class="badge info" style="text-decoration:none">{{ _('ui.dossiers_available', n=bal.available) }}</a>{% endif %}
 <form method="post" action="/logout"><button class="sec">{{ _('nav.logout') }}</button></form>{% elif request.url.path != '/login' %}<a href="/login">{{ _('nav.login') }}</a>{% endif %}</div></header>
 <main>{% block content %}{% endblock %}</main>
-<footer><main class="mut"><nav class="footnav" aria-label="Footer"><a href="/about">{{ _('nav.about') }}</a><a href="/contact">{{ _('nav.contact') }}</a></nav>
-<div>{{ _('ui.disclaimer') }}</div><div>{{ _('footer.copyright', year=year, name=company_name or 'Belgian Property Due Diligence') }}</div></main></footer>
+<footer><main class="mut"><div>{{ _('ui.disclaimer') }}</div><div>{{ _('footer.copyright', year=year, name=company_name or 'Belgian Property Due Diligence') }}</div></main></footer>
 <script>
 document.documentElement.classList.add("js");
 document.addEventListener("click",function(e){
