@@ -7,6 +7,8 @@ from __future__ import annotations
 import secrets
 import sys
 
+from . import invite
+
 
 def generate() -> dict[str, str]:
     return {
@@ -14,7 +16,7 @@ def generate() -> dict[str, str]:
         "COOKIE_SECURE": "1",
         "SECRET_KEY": secrets.token_hex(32),           # signs session cookies and e-mailed links
         "FILE_ENCRYPTION_KEY": secrets.token_hex(32),  # encrypts uploaded files at rest: LOSING IT LOSES THE FILES
-        "INVITE_CODE": secrets.token_urlsafe(12),      # share only with people allowed to register
+        "INVITE_CODE": invite.generate(),               # XXXX-XXXX-XXXX-XXXX, no look-alike characters; case/hyphens ignored when typed
     }
 
 

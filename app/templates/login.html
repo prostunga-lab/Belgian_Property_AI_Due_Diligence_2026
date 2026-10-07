@@ -9,7 +9,7 @@
 <p class="mut">{{ _('auth.register.hint') }}</p>
 <p><input name="org_name" placeholder="{{ _('auth.org_name') }}" aria-label="{{ _('auth.org_name') }}" required style="width:100%"></p>
 <p><input name="email" type="email" placeholder="{{ _('auth.email') }}" aria-label="{{ _('auth.email') }}" autocomplete="username" required style="width:100%"></p>
-{% if invite %}<p><input name="invite_code" placeholder="{{ _('auth.invite_code') }}" aria-label="{{ _('auth.invite_code') }}" required style="width:100%"></p>{% endif %}
+{% if invite %}<p><input name="invite_code" placeholder="{{ _('auth.invite_code') }}" aria-label="{{ _('auth.invite_code') }}" autocomplete="off" autocapitalize="characters" autocorrect="off" spellcheck="false" required style="width:100%"></p>{% endif %}
 <p>{{ password_field('password', _('auth.password_new'), 'new-password', 10) }}</p>
 <button>{{ _('auth.register.button') }}</button></form>
 </div>{% endblock %}

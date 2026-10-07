@@ -18,7 +18,7 @@ from sqlalchemy.orm import Session
 from starlette.exceptions import HTTPException as StarletteHTTPException
 from starlette.middleware.sessions import SessionMiddleware
 
-from . import billing, config, i18n, mail
+from . import billing, config, i18n, invite, mail
 from .api_v1 import router as api_v1_router
 from .auth import (ApiKey, current_user, get_db, hash_password, make_token, new_api_key, open_session, optional_user,
                    pw_fingerprint, read_token, verify_password)
@@ -192,14 +192,13 @@ def register(request: Request, bg: BackgroundTasks, org_name: str = Form(...), e
     def refuse(key: str, status: int):
         return templates.TemplateResponse(request, "login.html", login_context(request, error=key), status_code=status)
 
-    if config.INVITE_CODE:
-        submitted = invite_code.strip().strip("\"'").strip()  # forgive stray spaces/quotes from copy-paste
-        if not hmac.compare_digest(submitted.encode(), config.INVITE_CODE.encode()):
-            # Diagnostic for the operator (Railway logs). Lengths only: the code itself is never logged.
-            logging.getLogger("uvicorn.error").warning(
-                "Registration refused: invite code mismatch (submitted %d chars, configured %d chars). A difference usually means "
-                "the dashboard value changed without a redeploy, or a different value was typed.", len(submitted), len(config.INVITE_CODE))
-            return refuse("auth.err.invite", 403)
+    if config.INVITE_CODE and not invite.matches(invite_code, config.INVITE_CODE):
+        # Diagnostic for the operator (Railway logs). Lengths only (after normalisation): the code itself is never logged.
+        logging.getLogger("uvicorn.error").warning(
+            "Registration refused: invite code mismatch (submitted %d chars, configured %d chars, after ignoring case, spaces and hyphens). "
+            "A difference usually means the dashboard value changed without a redeploy, or a different value was typed.",
+            len(invite.normalize(invite_code)), len(invite.normalize(config.INVITE_CODE)))
+        return refuse("auth.err.invite", 403)
     if not EMAIL_RE.fullmatch(email) or len(email) > 254:
         return refuse("auth.err.email", 400)
     if len(password) < 10:
