@@ -60,7 +60,7 @@ FREE_CREDITS = int(os.environ.get("FREE_CREDITS", "1"))  # complete dossiers off
 STRIPE_SECRET_KEY = os.environ.get("STRIPE_SECRET_KEY", "")
 STRIPE_WEBHOOK_SECRET = os.environ.get("STRIPE_WEBHOOK_SECRET", "")
 # A dossier is one complete case; billing is per dossier, so a case is capped to keep that unit meaningful.
-DOSSIER_MAX_DOCUMENTS = int(os.environ.get("DOSSIER_MAX_DOCUMENTS", "8"))
+DOSSIER_MAX_DOCUMENTS = int(os.environ.get("DOSSIER_MAX_DOCUMENTS", "25"))
 # Prices are shown VAT-inclusive by default (required for consumers); set PRICES_VAT=excl for a B2B-only offer.
 PRICES_VAT = _clean("PRICES_VAT", "incl").lower() if _clean("PRICES_VAT", "incl").lower() in ("incl", "excl") else "incl"
 # Public promise on processing time of a complete dossier (minutes). Measured and tested: see tests/test_promise.py.
@@ -68,7 +68,7 @@ PROCESSING_PROMISE_MINUTES = int(os.environ.get("PROCESSING_PROMISE_MINUTES", "2
 SMTP_HOST = os.environ.get("SMTP_HOST")
 # E-mail confirmation is enforced only when mail can actually be delivered (otherwise nobody could ever confirm).
 REQUIRE_EMAIL_VERIFICATION = os.environ.get("REQUIRE_EMAIL_VERIFICATION", "1" if SMTP_HOST else "0") == "1"
-MAX_FILES_PER_REQUEST = int(os.environ.get("MAX_FILES_PER_REQUEST", "10"))
+MAX_FILES_PER_REQUEST = int(os.environ.get("MAX_FILES_PER_REQUEST", "25"))
 
 # OCR (Tesseract). Pages with fewer than OCR_MIN_CHARS extracted characters are treated as scans.
 OCR_ENABLED = os.environ.get("OCR_ENABLED", "1") != "0"
