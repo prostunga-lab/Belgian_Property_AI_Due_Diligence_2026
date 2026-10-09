@@ -51,7 +51,7 @@ def test_rule_ids_list_matches_the_rules_source():
 
 
 def test_dynamic_label_keys_exist():
-    for prefix, values in {"doctype": ["epc", "deed", "asbestos", "electrical", "cadastre", "soil", "unknown"],
+    for prefix, values in {"doctype": ["epc", "deed", "asbestos", "electrical", "cadastre", "soil", "plan", "invoice", "urbanism", "copro", "photo", "unknown"],
                            "domain": ["legal", "urbanistic", "energy", "technical", "environmental", "documentation"],
                            "kind": ["fact", "inference", "risk", "action"], "level": ["low", "medium", "high"],
                            "severity": ["high", "medium", "low", "info"], "review": ["pending", "confirmed", "dismissed"],

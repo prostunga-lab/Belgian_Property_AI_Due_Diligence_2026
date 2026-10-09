@@ -10,6 +10,7 @@ from reportlab.lib.styles import getSampleStyleSheet
 from reportlab.lib.units import cm
 from reportlab.platypus import Paragraph, SimpleDocTemplate, Spacer, Table, TableStyle
 
+from . import summary as property_summary
 from .i18n import t
 from .models import Case
 from .render import finding_text
@@ -40,6 +41,21 @@ def build_pdf(case: Case, lang: str = "en") -> bytes:
     for d in case.documents:
         story.append(Paragraph(escape("• " + t("pdf.doc_line", lang, filename=d.filename, type=t(f"doctype.{d.doc_type}", lang),
                                                  conf=f"{d.classification_confidence:.0%}")), small))
+
+    prop = property_summary.build(case.documents, lang)
+    if prop["items"]:
+        story.append(Paragraph(escape(t("summary.title", lang)), ss["Heading3"]))
+        if prop["headline"]:
+            story.append(Paragraph(f"<b>{escape(prop['headline'])}</b>", ss["BodyText"]))
+        for it in prop["items"]:
+            story.append(Paragraph(escape(f"• {it['label']} : {it['value']}"), small))
+        story.append(Paragraph(escape(t("summary.disclaimer", lang)), small))
+    events = property_summary.timeline(case.documents, lang)
+    if events:
+        story.append(Paragraph(escape(t("timeline.title", lang)), ss["Heading3"]))
+        for e in events:
+            flag = f" (!) {', '.join(e['flag_labels'])}" if e["flags"] else ""
+            story.append(Paragraph(escape(f"• {e['date']} — {e['label']} ({e['filename']}, {t('ui.page_abbr', lang)}{e['page']}){flag}"), small))
 
     ai = case.ai_summary
     if ai or any(d.ai_analysis for d in case.documents):

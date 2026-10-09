@@ -9,6 +9,7 @@ from pathlib import Path
 from sqlalchemy import update
 from sqlalchemy.orm import Session
 
+from . import summary as property_summary
 from . import config, plans, storage
 from .errors import AppError
 from .analysis import analyze_case, process_document
@@ -165,6 +166,7 @@ def case_payload(case: Case, lang: str = "en") -> dict:
         "id": case.id, "title": case.title, "address": case.address, "status": case.status, "scores": case.scores,
         "ruleset": RULESET_VERSION, "lang": lang, "ai_summary": case.ai_summary,
         "billing": {"billed": case.billed, "source": case.billing_source}, "analysis_seconds": case.analysis_seconds,
+        "summary": property_summary.build(case.documents, lang), "timeline": property_summary.timeline(case.documents, lang),
         "documents": [{"id": d.id, "filename": d.filename, "type": d.doc_type, "confidence": d.classification_confidence,
                        "fields": d.fields, "ocr_pages": d.ocr_pages, "ai_analysis": d.ai_analysis} for d in case.documents],
         "findings": [finding_view(f, lang) | {"params": f.params} for f in case.findings],

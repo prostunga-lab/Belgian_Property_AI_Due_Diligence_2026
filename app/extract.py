@@ -233,8 +233,97 @@ def extract_soil(pages: list[str]) -> dict:
     return f
 
 
+AMT_NUM = r"(\d[\d.\s]*(?:,\d{1,2})?)"
+
+
+def _amount(pages: list[str], label: str):
+    """Amount in euros next to a label; a currency sign is required on either side so that years and counts are never read as money."""
+    return (find(pages, label + r"\D{0,40}?" + AMT_NUM + r"\s*(?:€|eur\b)")
+            or find(pages, label + r"\D{0,40}?(?:€|eur\b)\s*" + AMT_NUM))
+
+
+def _sentence_flag(pages: list[str], topic: str, neg: str):
+    """First sentence about ``topic`` that is not negated -> (True, page, excerpt); else a negated one -> (False, ...); else None."""
+    pos = ngt = None
+    for i, text in enumerate(pages):
+        for sent in re.split(r"(?<=[.!?])\s+|\n", text):
+            if not re.search(topic, sent, re.I):
+                continue
+            hit = (i + 1, " ".join(sent.split()))
+            if re.search(neg, sent, re.I):
+                ngt = ngt or hit
+            else:
+                pos = pos or hit
+    chosen = (True, pos) if pos else (False, ngt) if ngt else None
+    return (chosen[0], chosen[1][0], chosen[1][1]) if chosen else None
+
+
+NEGATION = r"\b(geen|niet|zonder|pas de|aucun\w*|sans|no|not)\b"
+WORK_KINDS = {  # language-neutral code -> pattern; energy-relevant ones are listed in rules.ENERGY_WORKS
+    "roof": r"\bdak\w*|toiture|couverture", "windows": r"\bramen\b|\braam\b|beglazing|vitrage|châssis|fenêtre",
+    "heating": r"verwarming|chauffage|\bketel\b|chaudière|warmtepomp|pompe à chaleur", "insulation": r"isolatie|isolation",
+    "electricity": r"elektr\w*|électri\w*", "extension": r"uitbreiding|aanbouw|extension",
+}
+
+
+def extract_plan(pages: list[str]) -> dict:
+    f: dict = {}
+    _common(pages, f)
+    _put(f, "surface_m2", find(pages, r"(?:bewoonbare oppervlakte|woonoppervlakte|totale oppervlakte|netto[- ]?oppervlakte|bruto[- ]?oppervlakte|surface habitable|surface totale|surface nette|surface brute)\D{0,20}?" + SURF), parse_number)
+    _put(f, "plan_date", find(pages, r"(?:datum|date|opgemaakt op|dressé le)\s*:?\s*" + DATE_RE), _iso)
+    return f
+
+
+def extract_invoice(pages: list[str]) -> dict:
+    f: dict = {}
+    _common(pages, f)
+    _put(f, "invoice_date", find(pages, r"(?:factuurdatum|date de (?:la )?facture|invoice date|datum|date)\s*:?\s*" + DATE_RE), _iso)
+    _put(f, "amount_eur", _amount(pages, r"(?:totaal incl\.?(?: btw)?|total ttc|te betalen|montant à payer|total amount|totaal)"), parse_number)
+    kinds, first = [], None
+    for code, pat in WORK_KINDS.items():
+        hit = find(pages, "(" + pat + ")")
+        if hit:
+            kinds.append(code)
+            first = first or hit
+    if kinds:
+        f["works_kinds"] = {"value": kinds, "page": first[1], "excerpt": first[2]}
+    return f
+
+
+def extract_urbanism(pages: list[str]) -> dict:
+    f: dict = {}
+    _common(pages, f)
+    _put(f, "info_date", find(pages, r"(?:datum|date|afgeleverd op|délivré le)\s*:?\s*" + DATE_RE), _iso)
+    _put(f, "planning_zone", find(pages, r"(woongebied|zone d'habitat|agrarisch gebied|zone agricole|industriegebied|natuurgebied|zone forestière|parkgebied|recreatiegebied)", flags=re.I), str.lower)
+    for name, topic, neg in (
+        ("infraction", r"proces-verbaal|inbreuk|infraction|procès-verbal|stakingsbevel|ordre d'arrêt|herstelmaatregel", NEGATION),
+        ("flood_risk", r"overstromingsgevoelig|signaalgebied|zone inondable|aléa d'inondation|risque d'inondation|overstroming", NEGATION + r"|niet[- ]overstromingsgevoelig"),
+        ("heritage", r"beschermd (?:monument|erfgoed)|vastgoedinventaris|bien classé|patrimoine classé|zone de protection", NEGATION),
+    ):
+        hit = _sentence_flag(pages, topic, neg)
+        if hit:
+            f[name] = {"value": hit[0], "page": hit[1], "excerpt": hit[2]}
+    _put(f, "pre_emption", find(pages, r"(voorkooprecht|droit de préemption)[^\n.]{0,60}"), lambda s: True)
+    return f
+
+
+def extract_copro(pages: list[str]) -> dict:
+    f: dict = {}
+    _common(pages, f)
+    _put(f, "reserve_eur", _amount(pages, r"(?:reservefonds|fonds de réserve)"), parse_number)
+    _put(f, "monthly_charges_eur", _amount(pages, r"(?:maandelijkse (?:kosten|bijdrage|lasten)|charges mensuelles|provision mensuelle|gemeenschappelijke kosten)"), parse_number)
+    _put(f, "assembly_date", find(pages, r"(?:algemene vergadering|assemblée générale)[^\n]{0,80}?" + DATE_RE), _iso)
+    for name, topic in (("dispute", r"geschil|rechtszaak|gerechtelijke procedure|litige|procès|contentieux"),
+                        ("arrears", r"achterstal\w*|arriérés|impayés|onbetaalde")):
+        hit = _sentence_flag(pages, topic, NEGATION)
+        if hit:
+            f[name] = {"value": hit[0], "page": hit[1], "excerpt": hit[2]}
+    return f
+
+
 EXTRACTORS = {"epc": extract_epc, "deed": extract_deed, "asbestos": extract_asbestos, "electrical": extract_electrical,
-              "cadastre": extract_cadastre, "soil": extract_soil}
+              "cadastre": extract_cadastre, "soil": extract_soil,
+              "plan": extract_plan, "invoice": extract_invoice, "urbanism": extract_urbanism, "copro": extract_copro}
 
 LLM_FIELDS = {
     "epc": ["address", "epc_score", "epc_label", "epc_valid_until", "surface_m2", "build_year"],

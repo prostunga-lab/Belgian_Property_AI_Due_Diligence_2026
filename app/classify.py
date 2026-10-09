@@ -10,6 +10,11 @@ DOC_TYPES = {
     "electrical": "Contrôle électrique / Keuring",
     "cadastre": "Extrait cadastral / Kadastraal uittreksel",
     "soil": "Attestation du sol / Bodemattest",
+    "plan": "Plan / Plattegrond",
+    "invoice": "Facture de travaux / Factuur werken",
+    "urbanism": "Renseignements urbanistiques / Stedenbouwkundige inlichtingen",
+    "copro": "Copropriété / Mede-eigendom",
+    "photo": "Photo",
     "unknown": "Non reconnu",
 }
 
@@ -45,6 +50,24 @@ KEYWORDS: dict[str, list[tuple[str, int]]] = {
         (r"elektrische installatie", 4), (r"keuringsverslag", 4), (r"\barei\b", 3),
         (r"\brgie\b", 3), (r"installation électrique", 4), (r"elektriciteit", 2),
         (r"conform", 1), (r"erkend organisme|organisme agréé", 3),
+    ],
+    "plan": [
+        (r"grondplan|plattegrond|bouwplan|as[- ]built|plan d'étage|plan de situation|plan de construction|plan van de", 5),
+        (r"schaal\s*1\s*[/:]\s*\d+|échelle\s*1\s*[/:]\s*\d+", 4), (r"\bverdieping\b|\bétage\b|\brez-de-chaussée\b|gelijkvloers", 1),
+    ],
+    "invoice": [
+        (r"\bfactuur\b|\bfacture\b|\binvoice\b", 5), (r"factuurnummer|numéro de facture|invoice number", 3),
+        (r"totaal incl|total ttc|te betalen|montant à payer|btw\s*\d+\s*%|tva\s*\d+\s*%", 3), (r"btw[- ]nummer|n° tva|numéro de tva", 2),
+    ],
+    "urbanism": [
+        (r"stedenbouwkundig uittreksel|stedenbouwkundige inlichtingen|uittreksel uit het vergunningenregister|vergunningenregister", 8),
+        (r"renseignements urbanistiques|attestation urbanistique|certificat d'urbanisme", 8),
+        (r"gewestplan|plan de secteur|woongebied|zone d'habitat|bestemming|voorkooprecht|droit de préemption", 2),
+    ],
+    "copro": [
+        (r"mede-?eigendom|medeëigendom|vereniging van mede-?eigenaars|copropriété|association des copropriétaires", 5),
+        (r"\bsyndic\b|algemene vergadering|assemblée générale", 3), (r"reservefonds|fonds de réserve|gemeenschappelijke kosten|charges communes", 3),
+        (r"basisakte|acte de base|quotités|breukdelen|règlement de copropriété|reglement van mede-?eigendom", 3),
     ],
 }
 
