@@ -56,3 +56,12 @@ def test_a_clean_dossier_still_gets_a_summary_without_an_action_plan():
     cid = upload_and_analyze(c, [("akte.txt", DEED), ("epc.txt", clean_epc)])
     first = pages(c, cid, "en")[0]
     assert "Executive summary" in first and "Important reservation" in first and "Action plan" not in first
+
+
+@pytest.mark.parametrize("lang,label", [("fr", "Note de risque du bien"), ("nl", "Risicoscore van het pand"), ("en", "Property Risk Score")])
+def test_the_score_label_is_translated_on_the_page_and_in_the_pdf(case, lang, label):
+    c, cid = case
+    assert label in pages(c, cid, lang)[0]
+    from tests.helpers import page_text
+    c.cookies.set("lang", lang)
+    assert label in page_text(c.get(f"/cases/{cid}"))
