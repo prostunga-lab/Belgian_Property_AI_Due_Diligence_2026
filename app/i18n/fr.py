@@ -618,7 +618,7 @@ MESSAGES.update({
 
 
 MESSAGES.update({
-    'reno.title': 'Plan de rénovation et budget indicatif',
+    'reno.title': 'Plan de rénovation',
     'reno.disclaimer': "Ordre de grandeur, pas un devis : fourchettes de prix de marché publiées (hors TVA, octobre 2026). Une TVA réduite de 6 % peut s'appliquer pour un logement de plus de 10 ans occupé par son propriétaire (à vérifier). Demandez plusieurs devis avant toute décision ou négociation.",
     'reno.phase.before_signature': '1. Avant la signature',
     'reno.phase.safety_compliance': '2. Sécurité et mise en conformité',
@@ -648,16 +648,33 @@ MESSAGES.update({
     'reno.item.electrical_recheck.what': "Faire contrôler à nouveau l'installation (rapport ancien ou travaux postérieurs au contrôle).",
     'reno.item.epc_refresh.title': 'Nouveau certificat PEB',
     'reno.item.epc_refresh.what': 'Faire établir un nouveau certificat (certificat échu, ancien ou antérieur à des travaux énergétiques).',
-    'reno.item.energy_upgrade_e.title': 'Amélioration énergétique (label E)',
-    'reno.item.energy_upgrade_e.what': 'Combinaison type : isolation de la toiture, vitrage performant, remplacement du chauffage ; à préciser par un audit énergétique.',
-    'reno.item.energy_upgrade_e.note': 'Hypothèse de travail construite sur des fourchettes publiées (isolation, vitrage, chauffage), pas un prix publié pour ce bien.',
-    'reno.item.energy_upgrade_f.title': 'Amélioration énergétique (label F)',
-    'reno.item.energy_upgrade_f.what': 'Rénovation énergétique plus lourde : toiture, façades ou murs, vitrage, chauffage ; à préciser par un audit énergétique.',
-    'reno.item.energy_upgrade_f.note': 'Hypothèse de travail construite sur des fourchettes publiées (isolation, vitrage, chauffage), pas un prix publié pour ce bien. Vérifiez les obligations de rénovation et les aides de votre région.',
     'reno.item.permit_regularisation.title': 'Régularisation urbanistique',
     'reno.item.permit_regularisation.what': "Vérifier les permis, régulariser l'extension ou clarifier l'infraction : honoraires d'architecte, taxes et éventuels travaux.",
     'reno.item.permit_regularisation.note': "Aucune estimation fiable sans analyse du dossier par l'architecte ou le notaire.",
     'reno.item.soil_investigation.title': 'Étude de sol',
     'reno.item.soil_investigation.what': "Faire réaliser une étude de sol avant l'achat ; l'éventuel assainissement ne peut pas être chiffré sans elle.",
     'reno.item.soil_investigation.note': 'Aucune estimation fiable sans étude.',
+})
+
+
+MESSAGES.update({
+    'reno.col.work': 'Travaux',
+    'reno.col.priority': 'Priorité',
+    'reno.col.estimate': 'Estimation',
+    'reno.prio.high': 'Élevée',
+    'reno.prio.medium': 'Moyenne',
+    'reno.prio.low': 'Faible',
+    'reno.cost.range_k': '{low}–{high} k€',
+    'reno.cost.none_short': 'à chiffrer',
+    'reno.priority_legend': "La priorité reprend la gravité des constats à l'origine du poste.",
+    'reno.details': 'Détails et sources',
+    'reno.item.energy_roof.title': 'Isolation de la toiture',
+    'reno.item.energy_roof.what': "Isoler la toiture ou les combles, l'un des travaux les plus rentables pour le PEB ; à préciser par un audit énergétique.",
+    'reno.item.energy_roof.note': 'Hypothèse de travail construite sur des fourchettes publiées (isolation 20–100 €/m²), appliquée à la surface du bien ; pas un prix publié pour ce bien.',
+    'reno.item.energy_glazing.title': 'Vitrage',
+    'reno.item.energy_glazing.what': 'Remplacer le vitrage et les châssis par des vitrages performants ; à préciser par un audit énergétique.',
+    'reno.item.energy_glazing.note': "Hypothèse de travail : aucun prix au m² fiable n'a été trouvé pour les châssis. Demandez un devis à un menuisier ou un vitrier.",
+    'reno.item.energy_heating.title': 'Chauffage',
+    'reno.item.energy_heating.what': 'Remplacer ou moderniser le système de chauffage (chaudière performante, pompe à chaleur) ; à préciser par un audit énergétique.',
+    'reno.item.energy_heating.note': 'Hypothèse de travail, sans prix publié retenu : les devis varient fortement selon le système et le bâtiment. Vérifiez les aides de votre région.',
 })

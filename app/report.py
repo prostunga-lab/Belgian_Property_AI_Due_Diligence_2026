@@ -59,16 +59,22 @@ def build_pdf(case: Case, lang: str = "en") -> bytes:
             story.append(Paragraph(escape(f"• {e['date']} — {e['label']} ({e['filename']}, {t('ui.page_abbr', lang)}{e['page']}){flag}"), small))
 
     plan = renovation.build([f for f in case.findings if f.review_status != "dismissed"], case.documents, lang)
-    if plan["phases"]:
+    if plan["rows"]:
         story.append(Paragraph(escape(t("reno.title", lang)), ss["Heading3"]))
-        story.append(Paragraph(escape(t("reno.disclaimer", lang)), small))
-        for ph in plan["phases"]:
-            story.append(Paragraph(f"<b>{escape(ph['label'])}</b>" + (f" — {escape(ph['cost'])}" if ph["cost"] else ""), ss["BodyText"]))
-            for it in ph["items"]:
-                story.append(Paragraph(escape(f"• {it['title']} : {it['cost']} ({it['confidence_label']})"), small))
-                story.append(Paragraph(escape(it["what"]), small))
+        prio_color = {"high": colors.HexColor("#b91c1c"), "medium": colors.HexColor("#e08a00"), "low": colors.HexColor("#166534")}
+        rows = [[t("reno.col.work", lang), t("reno.col.priority", lang), t("reno.col.estimate", lang)]]
+        rows += [[it["title"], it["priority_label"], it["cost"]] for it in plan["rows"]]
         if plan["total"]:
-            story.append(Paragraph(f"<b>{escape(t('reno.total', lang))} : {escape(plan['total'])}</b> {escape(plan['unestimated_text'])}", ss["BodyText"]))
+            rows.append([t("reno.total", lang), "", plan["total"]])
+        style = [("GRID", (0, 0), (-1, -1), 0.25, colors.grey), ("FONTNAME", (0, 0), (-1, 0), "Helvetica-Bold"), ("ALIGN", (2, 0), (2, -1), "RIGHT"),
+                 ("BACKGROUND", (0, 0), (-1, 0), colors.HexColor("#e2e8f0"))]
+        for n, it in enumerate(plan["rows"], 1):
+            style.append(("TEXTCOLOR", (1, n), (1, n), prio_color[it["priority"]]))
+        if plan["total"]:
+            style.append(("FONTNAME", (0, len(rows) - 1), (-1, len(rows) - 1), "Helvetica-Bold"))
+        table = Table(rows, colWidths=[8 * cm, 3.5 * cm, 4.5 * cm])
+        table.setStyle(TableStyle(style))
+        story += [table, Paragraph(escape(plan["unestimated_text"]), small), Paragraph(escape(t("reno.priority_legend", lang) + " " + t("reno.disclaimer", lang)), small), Spacer(1, 8)]
 
     ai = case.ai_summary
     if ai or any(d.ai_analysis for d in case.documents):

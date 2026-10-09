@@ -618,7 +618,7 @@ MESSAGES.update({
 
 
 MESSAGES.update({
-    'reno.title': 'Renovatieplan en indicatief budget',
+    'reno.title': 'Renovatieplan',
     'reno.disclaimer': 'Orde van grootte, geen offerte: gepubliceerde marktprijsbereiken (excl. btw, oktober 2026). Een verlaagd btw-tarief van 6 % kan gelden voor een woning ouder dan 10 jaar die door de eigenaar wordt bewoond (te controleren). Vraag meerdere offertes vóór elke beslissing of onderhandeling.',
     'reno.phase.before_signature': '1. Vóór de ondertekening',
     'reno.phase.safety_compliance': '2. Veiligheid en conformiteit',
@@ -648,16 +648,33 @@ MESSAGES.update({
     'reno.item.electrical_recheck.what': 'De installatie opnieuw laten keuren (oud verslag of werken na de keuring).',
     'reno.item.epc_refresh.title': 'Nieuw EPC',
     'reno.item.epc_refresh.what': 'Een nieuw certificaat laten opstellen (verlopen, oud of van vóór energetische werken).',
-    'reno.item.energy_upgrade_e.title': 'Energetische verbetering (label E)',
-    'reno.item.energy_upgrade_e.what': 'Typische combinatie: dakisolatie, performante beglazing, vervanging van de verwarming; te verfijnen door een energie-audit.',
-    'reno.item.energy_upgrade_e.note': 'Werkhypothese op basis van gepubliceerde bereiken (isolatie, beglazing, verwarming), geen gepubliceerde prijs voor dit pand.',
-    'reno.item.energy_upgrade_f.title': 'Energetische verbetering (label F)',
-    'reno.item.energy_upgrade_f.what': 'Zwaardere energetische renovatie: dak, gevels of muren, beglazing, verwarming; te verfijnen door een energie-audit.',
-    'reno.item.energy_upgrade_f.note': 'Werkhypothese op basis van gepubliceerde bereiken (isolatie, beglazing, verwarming), geen gepubliceerde prijs voor dit pand. Controleer de renovatieverplichtingen en premies van uw gewest.',
     'reno.item.permit_regularisation.title': 'Stedenbouwkundige regularisatie',
     'reno.item.permit_regularisation.what': 'Vergunningen controleren, de uitbreiding regulariseren of de inbreuk verduidelijken: erelonen van de architect, taksen en eventuele werken.',
     'reno.item.permit_regularisation.note': 'Geen betrouwbare raming zonder analyse van het dossier door de architect of de notaris.',
     'reno.item.soil_investigation.title': 'Bodemonderzoek',
     'reno.item.soil_investigation.what': 'Laat vóór de aankoop een bodemonderzoek uitvoeren; een eventuele sanering kan zonder dat niet worden begroot.',
     'reno.item.soil_investigation.note': 'Geen betrouwbare raming zonder onderzoek.',
+})
+
+
+MESSAGES.update({
+    'reno.col.work': 'Werken',
+    'reno.col.priority': 'Prioriteit',
+    'reno.col.estimate': 'Raming',
+    'reno.prio.high': 'Hoog',
+    'reno.prio.medium': 'Gemiddeld',
+    'reno.prio.low': 'Laag',
+    'reno.cost.range_k': '{low}–{high} k€',
+    'reno.cost.none_short': 'te begroten',
+    'reno.priority_legend': 'De prioriteit volgt de ernst van de bevindingen waaruit de post voortkomt.',
+    'reno.details': 'Details en bronnen',
+    'reno.item.energy_roof.title': 'Dakisolatie',
+    'reno.item.energy_roof.what': 'Het dak of de zolder isoleren, een van de meest renderende werken voor het EPC; te verfijnen door een energie-audit.',
+    'reno.item.energy_roof.note': 'Werkhypothese op basis van gepubliceerde bereiken (isolatie 20–100 €/m²), toegepast op de oppervlakte van het pand; geen gepubliceerde prijs voor dit pand.',
+    'reno.item.energy_glazing.title': 'Beglazing',
+    'reno.item.energy_glazing.what': 'Beglazing en ramen vervangen door performante beglazing; te verfijnen door een energie-audit.',
+    'reno.item.energy_glazing.note': 'Werkhypothese: er werd geen betrouwbare prijs per m² voor ramen gevonden. Vraag een offerte aan een schrijnwerker of glaszetter.',
+    'reno.item.energy_heating.title': 'Verwarming',
+    'reno.item.energy_heating.what': 'Het verwarmingssysteem vervangen of moderniseren (performante ketel, warmtepomp); te verfijnen door een energie-audit.',
+    'reno.item.energy_heating.note': 'Werkhypothese zonder gepubliceerde prijs: offertes variëren sterk naargelang systeem en gebouw. Controleer de premies van uw gewest.',
 })

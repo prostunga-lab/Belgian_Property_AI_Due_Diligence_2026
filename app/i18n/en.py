@@ -618,7 +618,7 @@ MESSAGES.update({
 
 
 MESSAGES.update({
-    'reno.title': 'Renovation plan and indicative budget',
+    'reno.title': 'Renovation plan',
     'reno.disclaimer': 'An order of magnitude, not a quote: published market price ranges (excl. VAT, October 2026). A reduced 6 % VAT rate may apply to a dwelling over 10 years old occupied by its owner (to be checked). Get several quotes before any decision or negotiation.',
     'reno.phase.before_signature': '1. Before signing',
     'reno.phase.safety_compliance': '2. Safety and compliance',
@@ -648,16 +648,33 @@ MESSAGES.update({
     'reno.item.electrical_recheck.what': 'Have the installation inspected again (old report, or works carried out after the inspection).',
     'reno.item.epc_refresh.title': 'New EPC',
     'reno.item.epc_refresh.what': 'Have a new certificate issued (expired, old, or predating energy works).',
-    'reno.item.energy_upgrade_e.title': 'Energy improvement (label E)',
-    'reno.item.energy_upgrade_e.what': 'Typical combination: roof insulation, high-performance glazing, heating replacement; to be refined by an energy audit.',
-    'reno.item.energy_upgrade_e.note': 'Working assumption built from published ranges (insulation, glazing, heating), not a published price for this property.',
-    'reno.item.energy_upgrade_f.title': 'Energy improvement (label F)',
-    'reno.item.energy_upgrade_f.what': 'Heavier energy renovation: roof, facades or walls, glazing, heating; to be refined by an energy audit.',
-    'reno.item.energy_upgrade_f.note': 'Working assumption built from published ranges (insulation, glazing, heating), not a published price for this property. Check the renovation obligations and grants of your region.',
     'reno.item.permit_regularisation.title': 'Planning regularisation',
     'reno.item.permit_regularisation.what': 'Check permits, regularise the extension or clarify the infringement: architect fees, taxes and any works.',
     'reno.item.permit_regularisation.note': 'No reliable estimate without the architect or notary reviewing the file.',
     'reno.item.soil_investigation.title': 'Soil investigation',
     'reno.item.soil_investigation.what': 'Have a soil investigation done before buying; any remediation cannot be priced without it.',
     'reno.item.soil_investigation.note': 'No reliable estimate without an investigation.',
+})
+
+
+MESSAGES.update({
+    'reno.col.work': 'Works',
+    'reno.col.priority': 'Priority',
+    'reno.col.estimate': 'Estimate',
+    'reno.prio.high': 'High',
+    'reno.prio.medium': 'Medium',
+    'reno.prio.low': 'Low',
+    'reno.cost.range_k': '€{low}–{high}k',
+    'reno.cost.none_short': 'to be priced',
+    'reno.priority_legend': 'Priority follows the severity of the findings behind each item.',
+    'reno.details': 'Details and sources',
+    'reno.item.energy_roof.title': 'Roof insulation',
+    'reno.item.energy_roof.what': 'Insulate the roof or attic, one of the most cost-effective works for the EPC; to be refined by an energy audit.',
+    'reno.item.energy_roof.note': "Working assumption built from published ranges (insulation €20–100/m²), applied to the property's floor area; not a published price for this property.",
+    'reno.item.energy_glazing.title': 'Glazing',
+    'reno.item.energy_glazing.what': 'Replace glazing and window frames with high-performance glazing; to be refined by an energy audit.',
+    'reno.item.energy_glazing.note': 'Working assumption: no reliable per-m² price was found for window frames. Ask a joiner or glazier for a quote.',
+    'reno.item.energy_heating.title': 'Heating',
+    'reno.item.energy_heating.what': 'Replace or modernise the heating system (efficient boiler, heat pump); to be refined by an energy audit.',
+    'reno.item.energy_heating.note': 'Working assumption without a published price: quotes vary widely with the system and the building. Check the grants of your region.',
 })
