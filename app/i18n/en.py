@@ -678,3 +678,21 @@ MESSAGES.update({
     'reno.item.energy_heating.what': 'Replace or modernise the heating system (efficient boiler, heat pump); to be refined by an energy audit.',
     'reno.item.energy_heating.note': 'Working assumption without a published price: quotes vary widely with the system and the building. Check the grants of your region.',
 })
+
+
+MESSAGES.update({
+    'pdf.exec.title': 'Executive summary',
+    'pdf.exec.detail_title': 'Detailed report',
+    'pdf.exec.reserve': 'Important reservation: this report is a reading aid produced automatically from the documents provided. It is an indicative opinion, not legal, notarial, architectural or technical advice. Cost estimates are orders of magnitude. Before any decision, commitment or negotiation, consult a qualified professional (notary, architect, surveyor).',
+    'pdf.exec.key_findings': 'Key points',
+    'pdf.exec.no_key_findings': 'No findings of high or medium severity.',
+    'pdf.exec.more.one': '+ {n} other finding, detailed on the following pages.',
+    'pdf.exec.more.other': '+ {n} other findings, detailed on the following pages.',
+    'pdf.exec.actions': 'Action plan',
+    'pdf.exec.before_signing': 'To ask or check before signing',
+})
+
+
+MESSAGES.update({
+    'reno.disclaimer_short': 'Orders of magnitude excl. VAT, not a quote: get several quotes.',
+})

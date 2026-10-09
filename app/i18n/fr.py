@@ -678,3 +678,21 @@ MESSAGES.update({
     'reno.item.energy_heating.what': 'Remplacer ou moderniser le système de chauffage (chaudière performante, pompe à chaleur) ; à préciser par un audit énergétique.',
     'reno.item.energy_heating.note': 'Hypothèse de travail, sans prix publié retenu : les devis varient fortement selon le système et le bâtiment. Vérifiez les aides de votre région.',
 })
+
+
+MESSAGES.update({
+    'pdf.exec.title': 'Synthèse (executive summary)',
+    'pdf.exec.detail_title': 'Rapport détaillé',
+    'pdf.exec.reserve': 'Réserve importante : ce rapport est une aide à la lecture produite automatiquement à partir des documents fournis. Il représente un avis indicatif, et non un avis juridique, notarial, architectural ou technique. Les estimations de coûts sont des ordres de grandeur. Avant toute décision, tout engagement ou toute négociation, consultez un professionnel qualifié (notaire, architecte, expert).',
+    'pdf.exec.key_findings': 'Points clés',
+    'pdf.exec.no_key_findings': 'Aucun constat de gravité élevée ou moyenne.',
+    'pdf.exec.more.one': '+ {n} autre constat, détaillé dans les pages suivantes.',
+    'pdf.exec.more.other': '+ {n} autres constats, détaillés dans les pages suivantes.',
+    'pdf.exec.actions': "Plan d'action",
+    'pdf.exec.before_signing': 'À demander ou vérifier avant de signer',
+})
+
+
+MESSAGES.update({
+    'reno.disclaimer_short': 'Ordres de grandeur hors TVA, pas un devis : demandez plusieurs devis.',
+})

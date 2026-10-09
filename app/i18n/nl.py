@@ -678,3 +678,21 @@ MESSAGES.update({
     'reno.item.energy_heating.what': 'Het verwarmingssysteem vervangen of moderniseren (performante ketel, warmtepomp); te verfijnen door een energie-audit.',
     'reno.item.energy_heating.note': 'Werkhypothese zonder gepubliceerde prijs: offertes variëren sterk naargelang systeem en gebouw. Controleer de premies van uw gewest.',
 })
+
+
+MESSAGES.update({
+    'pdf.exec.title': 'Samenvatting (executive summary)',
+    'pdf.exec.detail_title': 'Gedetailleerd rapport',
+    'pdf.exec.reserve': 'Belangrijk voorbehoud: dit rapport is een leeshulp die automatisch werd opgesteld op basis van de aangeleverde documenten. Het is een indicatief advies en geen juridisch, notarieel, architecturaal of technisch advies. De kostenramingen zijn ordes van grootte. Raadpleeg vóór elke beslissing, verbintenis of onderhandeling een gekwalificeerde professional (notaris, architect, expert).',
+    'pdf.exec.key_findings': 'Kernpunten',
+    'pdf.exec.no_key_findings': 'Geen bevindingen met hoge of gemiddelde ernst.',
+    'pdf.exec.more.one': '+ {n} andere bevinding, uitgewerkt op de volgende pagina’s.',
+    'pdf.exec.more.other': '+ {n} andere bevindingen, uitgewerkt op de volgende pagina’s.',
+    'pdf.exec.actions': 'Actieplan',
+    'pdf.exec.before_signing': 'Te vragen of te controleren vóór de ondertekening',
+})
+
+
+MESSAGES.update({
+    'reno.disclaimer_short': 'Ordes van grootte excl. btw, geen offerte: vraag meerdere offertes.',
+})
