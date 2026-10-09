@@ -19,6 +19,7 @@ from starlette.exceptions import HTTPException as StarletteHTTPException
 from starlette.middleware.sessions import SessionMiddleware
 
 from . import billing, config, i18n, invite, legal, mail, pricing
+from . import renovation
 from . import summary as property_summary
 from .api_v1 import router as api_v1_router
 from .auth import (ApiKey, current_user, get_db, hash_password, make_token, new_api_key, open_session, optional_user,
@@ -429,6 +430,7 @@ def case_page(request: Request, case_id: int, user: User = Depends(current_user)
     return templates.TemplateResponse(request, "case.html", {
         "case": case, "user": user, "org": db.get(Org, user.org_id), "version": RULESET_VERSION, "promise_minutes": config.PROCESSING_PROMISE_MINUTES, "doc_types": DOC_TYPES,
         "prop": property_summary.build(case.documents, request.state.lang), "events": property_summary.timeline(case.documents, request.state.lang),
+        "reno": renovation.build([f for f in case.findings if f.review_status != "dismissed"], case.documents, request.state.lang),
         "findings": [finding_view(f, request.state.lang) | {"comments": f.comments}
                      for f in sorted(case.findings, key=lambda f: (SEVERITY_ORDER.get(f.severity, 9), f.id))],
         "preview": billing_preview(db.get(Org, user.org_id), case), "bal": balance(db.get(Org, user.org_id)),

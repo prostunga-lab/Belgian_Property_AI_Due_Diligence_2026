@@ -10,6 +10,7 @@ from reportlab.lib.styles import getSampleStyleSheet
 from reportlab.lib.units import cm
 from reportlab.platypus import Paragraph, SimpleDocTemplate, Spacer, Table, TableStyle
 
+from . import renovation
 from . import summary as property_summary
 from .i18n import t
 from .models import Case
@@ -56,6 +57,18 @@ def build_pdf(case: Case, lang: str = "en") -> bytes:
         for e in events:
             flag = f" (!) {', '.join(e['flag_labels'])}" if e["flags"] else ""
             story.append(Paragraph(escape(f"• {e['date']} — {e['label']} ({e['filename']}, {t('ui.page_abbr', lang)}{e['page']}){flag}"), small))
+
+    plan = renovation.build([f for f in case.findings if f.review_status != "dismissed"], case.documents, lang)
+    if plan["phases"]:
+        story.append(Paragraph(escape(t("reno.title", lang)), ss["Heading3"]))
+        story.append(Paragraph(escape(t("reno.disclaimer", lang)), small))
+        for ph in plan["phases"]:
+            story.append(Paragraph(f"<b>{escape(ph['label'])}</b>" + (f" — {escape(ph['cost'])}" if ph["cost"] else ""), ss["BodyText"]))
+            for it in ph["items"]:
+                story.append(Paragraph(escape(f"• {it['title']} : {it['cost']} ({it['confidence_label']})"), small))
+                story.append(Paragraph(escape(it["what"]), small))
+        if plan["total"]:
+            story.append(Paragraph(f"<b>{escape(t('reno.total', lang))} : {escape(plan['total'])}</b> {escape(plan['unestimated_text'])}", ss["BodyText"]))
 
     ai = case.ai_summary
     if ai or any(d.ai_analysis for d in case.documents):
