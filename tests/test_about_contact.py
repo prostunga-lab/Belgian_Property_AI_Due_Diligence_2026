@@ -116,3 +116,9 @@ def test_about_and_contact_are_in_the_header_menu_not_the_footer_on_every_kind_o
 def test_footer_uses_the_company_name_when_set(monkeypatch):
     monkeypatch.setattr(config, "COMPANY_NAME", "Acme BV")
     assert f"© {dt.date.today().year} Acme BV" in html.unescape(get("nl", "/").text.split("<footer>")[1])
+
+
+def test_header_menu_order_is_about_pricing_contact():
+    for lang in ("fr", "nl", "en"):
+        header = get(lang, "/").text.split("<header>")[1].split("</nav>")[0]
+        assert header.index('href="/about"') < header.index('href="/pricing"') < header.index('href="/contact"'), lang

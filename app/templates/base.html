@@ -34,7 +34,7 @@ ol.tl{list-style:none;margin:8px 0 0;padding:0;border-left:2px solid var(--bd)}o
 footer .mut{display:grid;gap:6px}.footnav{display:flex;gap:16px;flex-wrap:wrap}.footnav a{color:var(--fg);font-weight:600}
 </style></head><body>
 <header><div class="hl"><a href="/" class="brand"><b>🏠 Belgian Property Due Diligence</b></a>
-<nav class="mainnav" aria-label="Menu">{% for href, key in (("/pricing", "nav.pricing"), ("/about", "nav.about"), ("/contact", "nav.contact")) %}<a href="{{ href }}"{% if request.url.path == href %} aria-current="page"{% endif %}>{{ _(key) }}</a>{% endfor %}</nav></div>
+<nav class="mainnav" aria-label="Menu">{% for href, key in (("/about", "nav.about"), ("/pricing", "nav.pricing"), ("/contact", "nav.contact")) %}<a href="{{ href }}"{% if request.url.path == href %} aria-current="page"{% endif %}>{{ _(key) }}</a>{% endfor %}</nav></div>
 <div class="row">
 <nav class="row" aria-label="{{ _('ui.language') }}" style="gap:2px">{% for code in languages %}<a href="/lang/{{ code }}?next={{ switch_next|urlencode }}" class="langbtn{{ ' on' if code == lang }}" hreflang="{{ code }}" lang="{{ code }}" {{ 'aria-current=true' if code == lang }} title="{{ lang_names[code] }}">{{ code|upper }}</a>{% endfor %}</nav>
 {% if user is defined and user %}<a href="/account">{{ user.email }}</a>{% if bal is defined and bal %}<a href="/account" class="badge info" style="text-decoration:none">{{ _('ui.dossiers_available', n=bal.available) }}</a>{% endif %}
