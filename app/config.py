@@ -25,6 +25,7 @@ APP_ENV = _clean("APP_ENV", "development").lower()  # "production" enforces secr
 FILE_ENCRYPTION_KEY = os.environ.get("FILE_ENCRYPTION_KEY")
 # Registration: "open" (anyone) or "invite" (requires INVITE_CODE).
 INVITE_CODE = _clean("INVITE_CODE") or None
+ADMIN_EMAILS = {e.strip().lower() for e in _clean("ADMIN_EMAILS").split(",") if e.strip()}  # may read the access requests at /admin/requests
 AUTO_MIGRATE = os.environ.get("AUTO_MIGRATE", "1") == "1"
 SECRET_KEY = os.environ.get("SECRET_KEY", "dev-only-change-me")
 COOKIE_SECURE = _clean("COOKIE_SECURE", "0") == "1"  # set to 1 behind HTTPS

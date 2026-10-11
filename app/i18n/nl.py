@@ -23,7 +23,7 @@ MESSAGES: dict[str, str] = {
     "auth.login.button": "Inloggen",
     "auth.forgot_link": "Wachtwoord vergeten?",
     "auth.register.title": "Account aanmaken",
-    'auth.register.hint': 'Bij registratie kunnen proeftegoeden worden aangeboden. 1 tegoed = 1 volledig geanalyseerd dossier.',
+    'auth.register.hint': '1 tegoed = 1 volledig geanalyseerd dossier.',
     "auth.register.button": "Registreren",
     "auth.err.invite": "Ongeldige uitnodigingscode.",
     "auth.err.email": "Ongeldig e-mailadres.",
@@ -388,7 +388,7 @@ MESSAGES.update({
     'contact.enterprise': 'Ondernemings-/btw-nummer',
     'contact.phone': 'Telefoon',
     'contact.mail_subject': 'Vraag over Belgian Property Due Diligence',
-    'contact.unavailable': 'De contactgegevens worden binnenkort gepubliceerd.',
+    'contact.unavailable': 'Er is momenteel geen e-mailadres gepubliceerd: gebruik het formulier hieronder om toegang aan te vragen of een vraag te stellen.',
     'contact.home': 'Terug naar de startpagina',
 })
 
@@ -701,4 +701,34 @@ MESSAGES.update({
 MESSAGES.update({
     'err.title.405': 'Actie niet toegestaan op deze pagina',
     'err.title.500': 'Onverwachte fout',
+})
+
+
+MESSAGES.update({
+    'access.title': 'Toegang aanvragen',
+    'access.intro': 'De dienst is in bèta, op uitnodiging. Laat uw gegevens achter: wij antwoorden met een uitnodigingscode of een antwoord over het vervolg.',
+    'access.f.name': 'Uw naam',
+    'access.f.type': 'U bent',
+    'access.type.individual': 'Een particulier',
+    'access.type.professional': 'Een professional (kantoor, makelaar, bedrijf)',
+    'access.f.org': 'Kantoor / bedrijf (optioneel)',
+    'access.f.message': 'Bericht (optioneel)',
+    'access.consent': 'Ik aanvaard dat deze gegevens worden gebruikt om mijn aanvraag te beantwoorden (zie het {privacy}).',
+    'access.submit': 'Mijn aanvraag verzenden',
+    'access.sent': 'Bedankt, uw aanvraag is geregistreerd. Wij antwoorden per e-mail.',
+    'access.err.name': 'Vul uw naam in (maximaal 120 tekens).',
+    'access.err.consent': 'U moet aanvaarden dat deze gegevens worden gebruikt om uw aanvraag te behandelen.',
+    'access.err.too_long': 'Het bericht of de naam van de organisatie is te lang.',
+    'mail.access.subject': 'Nieuwe toegangsaanvraag: {name}',
+    'mail.access.body': 'Nieuwe toegangsaanvraag voor Belgian Property Due Diligence.\n\nNaam: {name}\nE-mail: {email}\nProfiel: {kind}\nOrganisatie: {organisation}\nTaal: {language}\n\nBericht:\n{message}\n\nAlle aanvragen: {base}/admin/requests (enkel voor beheerders).',
+    'auth.request_access': 'Geen uitnodigingscode? Vraag toegang aan.',
+    'auth.account_type': 'U bent',
+    'auth.org_name_hint': 'Verplicht voor een professional; optioneel voor een particulier.',
+    'auth.err.org_name': 'Vul de naam van uw kantoor of bedrijf in, of kies « Een particulier ».',
+    'landing.cta_request': 'Toegang aanvragen',
+    'admin.requests.title': 'Toegangsaanvragen',
+    'admin.requests.hint': 'Antwoord per e-mail met een uitnodigingscode (gegenereerd met docs/generer-secrets.html) en markeer de aanvraag daarna als behandeld.',
+    'admin.requests.done': 'Behandeld',
+    'admin.requests.empty': 'Nog geen aanvragen.',
+    'landing.region_note': 'Vandaag: geoptimaliseerd voor Vlaanderen. Brussel en Wallonië: voorlopige regels, vermeld in elk rapport.',
 })

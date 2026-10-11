@@ -27,7 +27,7 @@ from .auth import (ApiKey, current_user, get_db, hash_password, make_token, new_
                    pw_fingerprint, read_token, verify_password)
 from .classify import DOC_TYPES
 from .errors import AppError
-from .models import AuditLog, Case, Comment, Org, User, init_db
+from .models import AccessRequest, AuditLog, Case, Comment, Org, User, init_db
 from .report import build_pdf
 from .rules import RULESET_VERSION
 from .services import (add_document, audit, balance, billing_preview, case_payload, delete_case_data, finding_view, get_case,
@@ -190,12 +190,81 @@ def about(request: Request):
     return templates.TemplateResponse(request, "about.html", {"base_url": config.BASE_URL})
 
 
+def contact_context(request: Request, error: str | None = None, **form) -> dict:
+    lang = request.state.lang
+    return {"base_url": config.BASE_URL, "contact_email": config.CONTACT_EMAIL, "invite": bool(config.INVITE_CODE),
+            "company_address": config.COMPANY_ADDRESS, "enterprise_number": config.COMPANY_ENTERPRISE_NUMBER, "company_phone": config.COMPANY_PHONE,
+            "error": i18n.t(error, lang) if error else None, "form": form, "sent": request.query_params.get("sent") == "1"}
+
+
 @app.get("/contact")
 def contact(request: Request):
-    """Public contact page. Only configured details are shown; nothing is invented, and there is no form that could silently lose a message."""
-    return templates.TemplateResponse(request, "contact.html", {
-        "base_url": config.BASE_URL, "contact_email": config.CONTACT_EMAIL, "invite": bool(config.INVITE_CODE),
-        "company_address": config.COMPANY_ADDRESS, "enterprise_number": config.COMPANY_ENTERPRISE_NUMBER, "company_phone": config.COMPANY_PHONE})
+    """Public contact page: published details, plus a working access-request form so that no visitor reaches a dead end."""
+    return templates.TemplateResponse(request, "contact.html", contact_context(request))
+
+
+ACCOUNT_TYPES = ("individual", "professional")
+
+
+@app.post("/request-access")
+def request_access(request: Request, bg: BackgroundTasks, name: str = Form(""), email: str = Form(""), account_type: str = Form("professional"),
+                   organisation: str = Form(""), message: str = Form(""), consent: str = Form(""), website: str = Form(""),
+                   db: Session = Depends(get_db)):
+    """Store a request for access (invitation-only beta) and tell the owner. A hidden 'website' field catches simple bots."""
+    done = RedirectResponse("/contact?sent=1#access", status_code=303)
+    if website.strip():  # honeypot: looks like success, stores nothing
+        return done
+    throttle(f"access:{client_ip(request)}", 3, 3600)
+    name, email, organisation, message = name.strip(), email.strip().lower(), organisation.strip(), message.strip()
+    form = {"name": name, "email": email, "account_type": account_type, "organisation": organisation, "message": message}
+
+    def refuse(key: str):
+        return templates.TemplateResponse(request, "contact.html", contact_context(request, key, **form), status_code=400)
+
+    if not name or len(name) > 120:
+        return refuse("access.err.name")
+    if not EMAIL_RE.fullmatch(email) or len(email) > 200:
+        return refuse("auth.err.email")
+    if consent != "1":
+        return refuse("access.err.consent")
+    if len(message) > 1000 or len(organisation) > 200:
+        return refuse("access.err.too_long")
+    if account_type not in ACCOUNT_TYPES:
+        account_type = "professional"
+    recent = dt.datetime.now(dt.timezone.utc) - dt.timedelta(hours=24)
+    if db.scalar(select(AccessRequest).where(AccessRequest.email == email, AccessRequest.created_at > recent)):
+        return done  # the same person asking again within a day: one request is enough
+    req = AccessRequest(name=name, email=email, account_type=account_type, organisation=organisation, message=message, lang=request.state.lang)
+    db.add(req)
+    db.commit()
+    logging.getLogger("uvicorn.error").info("access request #%s received (%s, %s)", req.id, account_type, request.state.lang)
+    if config.CONTACT_EMAIL:
+        bg.add_task(mail.send, config.CONTACT_EMAIL, i18n.t("mail.access.subject", "fr", name=name),
+                    i18n.t("mail.access.body", "fr", name=name, email=email, kind=i18n.t(f"access.type.{account_type}", "fr"),
+                           organisation=organisation or "-", message=message or "-", language=request.state.lang, base=config.BASE_URL))
+    return done
+
+
+def require_admin(user: User) -> None:
+    if user.email.lower() not in config.ADMIN_EMAILS:
+        raise AppError(404, "err.not_found.case")  # same answer as an unknown page: the admin area is not advertised
+
+
+@app.get("/admin/requests")
+def admin_requests(request: Request, user: User = Depends(current_user), db: Session = Depends(get_db)):
+    require_admin(user)
+    rows = db.scalars(select(AccessRequest).order_by(AccessRequest.status.desc(), AccessRequest.id.desc()).limit(200)).all()
+    return templates.TemplateResponse(request, "admin_requests.html", {"user": user, "rows": rows, "invite": bool(config.INVITE_CODE)})
+
+
+@app.post("/admin/requests/{request_id}/done")
+def admin_request_done(request_id: int, user: User = Depends(current_user), db: Session = Depends(get_db)):
+    require_admin(user)
+    row = db.get(AccessRequest, request_id)
+    if row:
+        row.status = "done"
+        db.commit()
+    return RedirectResponse("/admin/requests", status_code=303)
 
 
 def _legal_page(request: Request, doc: str):
@@ -244,7 +313,8 @@ def send_verification(bg: BackgroundTasks, user: User, lang: str) -> None:
 
 def login_context(request: Request, error: str | None = None, info: str | None = None) -> dict:
     lang = request.state.lang
-    return {"error": i18n.t(error, lang) if error else None, "info": i18n.t(info, lang) if info else None, "invite": bool(config.INVITE_CODE)}
+    return {"error": i18n.t(error, lang) if error else None, "info": i18n.t(info, lang) if info else None, "invite": bool(config.INVITE_CODE),
+            "free_credits": config.FREE_CREDITS}
 
 
 # --- auth -------------------------------------------------------------------------------------------
@@ -255,8 +325,8 @@ def login_page(request: Request):
 
 
 @app.post("/register")
-def register(request: Request, bg: BackgroundTasks, org_name: str = Form(...), email: str = Form(...), password: str = Form(...),
-             invite_code: str = Form(""), accept_terms: str = Form(""), db: Session = Depends(get_db)):
+def register(request: Request, bg: BackgroundTasks, email: str = Form(...), password: str = Form(...), org_name: str = Form(""),
+             account_type: str = Form("professional"), invite_code: str = Form(""), accept_terms: str = Form(""), db: Session = Depends(get_db)):
     email = email.strip().lower()
     throttle(f"reg:{client_ip(request)}")
 
@@ -274,11 +344,15 @@ def register(request: Request, bg: BackgroundTasks, org_name: str = Form(...), e
         return refuse("auth.err.email", 400)
     if accept_terms != "1":
         return refuse("auth.err.terms", 400)
+    account_type = account_type if account_type in ACCOUNT_TYPES else "professional"
+    org_name = org_name.strip()
+    if account_type == "professional" and not org_name:
+        return refuse("auth.err.org_name", 400)  # a professional account is named after the agency / firm
     if len(password) < 10:
         return refuse("auth.err.password_short", 400)
     if db.scalar(select(User).where(User.email == email)):
         return refuse("auth.err.exists", 409)
-    org = Org(name=org_name.strip()[:200], credits=config.FREE_CREDITS)
+    org = Org(name=(org_name or email.split("@")[0])[:200], account_type=account_type, credits=config.FREE_CREDITS)
     db.add(org)
     db.flush()
     user = User(org_id=org.id, email=email, password_hash=hash_password(password), lang=request.state.lang,

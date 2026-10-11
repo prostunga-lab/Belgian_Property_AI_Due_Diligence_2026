@@ -53,7 +53,8 @@ def test_nothing_is_shown_for_unconfigured_identity():
     assert CATALOGS["en"]["contact.unavailable"] in body and "mailto:" not in body
     assert CATALOGS["en"]["contact.company.title"] not in body
     assert "Published by" not in page_text(get("en", "/about"))
-    assert "<form" not in get("en", "/contact").text.split("</header>")[1]  # no form that could silently lose a message
+    body_html = get("en", "/contact").text.split("</header>")[1]
+    assert 'action="/request-access"' in body_html  # no dead end: the visitor can always ask for access through a form that stores the request
 
 
 def test_configured_details_are_displayed_and_escaped(monkeypatch):

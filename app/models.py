@@ -32,6 +32,7 @@ class Org(Base):
     cancel_at_period_end: Mapped[bool] = mapped_column(Boolean, default=False, server_default=sa_false())
     cycle_started_at: Mapped[dt.datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)  # anchor of the MONTHLY quota clock
     cycle_used: Mapped[int] = mapped_column(Integer, default=0, server_default="0")  # dossiers consumed in the current monthly cycle
+    account_type: Mapped[str] = mapped_column(String(12), default="professional", server_default="professional")  # individual | professional
     created_at: Mapped[dt.datetime] = mapped_column(DateTime(timezone=True), default=now)
 
 
@@ -146,6 +147,20 @@ class StripeEvent(Base):
     __tablename__ = "stripe_events"
     id: Mapped[str] = mapped_column(String(100), primary_key=True)
     type: Mapped[str] = mapped_column(String(80))
+    created_at: Mapped[dt.datetime] = mapped_column(DateTime(timezone=True), default=now)
+
+
+class AccessRequest(Base):
+    """A visitor asking for access while registration is invitation-only (what the public contact form stores)."""
+    __tablename__ = "access_requests"
+    id: Mapped[int] = mapped_column(primary_key=True)
+    name: Mapped[str] = mapped_column(String(120))
+    email: Mapped[str] = mapped_column(String(200), index=True)
+    account_type: Mapped[str] = mapped_column(String(12), default="professional")  # individual | professional
+    organisation: Mapped[str] = mapped_column(String(200), default="")
+    message: Mapped[str] = mapped_column(Text, default="")
+    lang: Mapped[str] = mapped_column(String(5), default="fr")
+    status: Mapped[str] = mapped_column(String(12), default="new", server_default="new")  # new | done
     created_at: Mapped[dt.datetime] = mapped_column(DateTime(timezone=True), default=now)
 
 

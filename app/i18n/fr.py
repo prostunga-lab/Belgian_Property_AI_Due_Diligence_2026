@@ -23,7 +23,7 @@ MESSAGES: dict[str, str] = {
     "auth.login.button": "Se connecter",
     "auth.forgot_link": "Mot de passe oublié ?",
     "auth.register.title": "Créer un compte",
-    'auth.register.hint': "Des crédits d'essai peuvent être offerts à l'inscription. 1 crédit = 1 dossier complet analysé.",
+    'auth.register.hint': '1 crédit = 1 dossier complet analysé.',
     "auth.register.button": "S'inscrire",
     "auth.err.invite": "Code d'invitation invalide.",
     "auth.err.email": "Adresse e-mail invalide.",
@@ -388,7 +388,7 @@ MESSAGES.update({
     'contact.enterprise': "N° d'entreprise / TVA",
     'contact.phone': 'Téléphone',
     'contact.mail_subject': 'Question sur Belgian Property Due Diligence',
-    'contact.unavailable': 'Les coordonnées de contact seront publiées prochainement.',
+    'contact.unavailable': "Aucune adresse e-mail n'est publiée pour l'instant : utilisez le formulaire ci-dessous pour demander un accès ou poser une question.",
     'contact.home': "Retour à l'accueil",
 })
 
@@ -701,4 +701,34 @@ MESSAGES.update({
 MESSAGES.update({
     'err.title.405': 'Action non autorisée sur cette page',
     'err.title.500': 'Erreur inattendue',
+})
+
+
+MESSAGES.update({
+    'access.title': 'Demander un accès',
+    'access.intro': "Le service est en bêta, sur invitation. Laissez vos coordonnées : nous vous répondons avec un code d'invitation ou une réponse sur la suite.",
+    'access.f.name': 'Votre nom',
+    'access.f.type': 'Vous êtes',
+    'access.type.individual': 'Un particulier',
+    'access.type.professional': 'Un professionnel (agence, cabinet, société)',
+    'access.f.org': 'Agence / cabinet / société (facultatif)',
+    'access.f.message': 'Message (facultatif)',
+    'access.consent': "J'accepte que ces informations soient utilisées pour répondre à ma demande (voir la {privacy}).",
+    'access.submit': 'Envoyer ma demande',
+    'access.sent': 'Merci, votre demande est enregistrée. Nous vous répondons par e-mail.',
+    'access.err.name': 'Indiquez votre nom (120 caractères maximum).',
+    'access.err.consent': "Vous devez accepter l'utilisation de ces informations pour traiter votre demande.",
+    'access.err.too_long': "Le message ou le nom de l'organisation est trop long.",
+    'mail.access.subject': "Nouvelle demande d'accès : {name}",
+    'mail.access.body': "Nouvelle demande d'accès à Belgian Property Due Diligence.\n\nNom : {name}\nE-mail : {email}\nProfil : {kind}\nOrganisation : {organisation}\nLangue : {language}\n\nMessage :\n{message}\n\nToutes les demandes : {base}/admin/requests (réservé aux administrateurs).",
+    'auth.request_access': "Pas de code d'invitation ? Demandez un accès.",
+    'auth.account_type': 'Vous êtes',
+    'auth.org_name_hint': 'Obligatoire pour un professionnel ; facultatif pour un particulier.',
+    'auth.err.org_name': 'Indiquez le nom de votre agence, cabinet ou société, ou choisissez « Un particulier ».',
+    'landing.cta_request': 'Demander un accès',
+    'admin.requests.title': "Demandes d'accès",
+    'admin.requests.hint': "Répondez par e-mail avec un code d'invitation (généré avec docs/generer-secrets.html), puis marquez la demande comme traitée.",
+    'admin.requests.done': 'Traitée',
+    'admin.requests.empty': "Aucune demande pour l'instant.",
+    'landing.region_note': "Aujourd'hui : optimisé pour la Flandre. Bruxelles et la Wallonie : règles préliminaires, signalées dans chaque rapport.",
 })

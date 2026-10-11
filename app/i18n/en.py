@@ -23,7 +23,7 @@ MESSAGES: dict[str, str] = {
     "auth.login.button": "Log in",
     "auth.forgot_link": "Forgot your password?",
     "auth.register.title": "Create an account",
-    'auth.register.hint': 'Trial credits may be offered at sign-up. 1 credit = 1 complete case analysed.',
+    'auth.register.hint': '1 credit = 1 complete dossier analysed.',
     "auth.register.button": "Sign up",
     "auth.err.invite": "Invalid invitation code.",
     "auth.err.email": "Invalid e-mail address.",
@@ -388,7 +388,7 @@ MESSAGES.update({
     'contact.enterprise': 'Enterprise / VAT number',
     'contact.phone': 'Phone',
     'contact.mail_subject': 'Question about Belgian Property Due Diligence',
-    'contact.unavailable': 'Contact details will be published soon.',
+    'contact.unavailable': 'No e-mail address is published yet: use the form below to request access or ask a question.',
     'contact.home': 'Back to the home page',
 })
 
@@ -701,4 +701,34 @@ MESSAGES.update({
 MESSAGES.update({
     'err.title.405': 'Action not allowed on this page',
     'err.title.500': 'Unexpected error',
+})
+
+
+MESSAGES.update({
+    'access.title': 'Request access',
+    'access.intro': 'The service is in beta, by invitation. Leave your details: we will reply with an invitation code or an answer about what happens next.',
+    'access.f.name': 'Your name',
+    'access.f.type': 'You are',
+    'access.type.individual': 'An individual',
+    'access.type.professional': 'A professional (agency, firm, company)',
+    'access.f.org': 'Agency / firm / company (optional)',
+    'access.f.message': 'Message (optional)',
+    'access.consent': 'I agree that this information is used to answer my request (see the {privacy}).',
+    'access.submit': 'Send my request',
+    'access.sent': 'Thank you, your request is registered. We will reply by e-mail.',
+    'access.err.name': 'Enter your name (120 characters maximum).',
+    'access.err.consent': 'You must agree to this information being used to process your request.',
+    'access.err.too_long': 'The message or the organisation name is too long.',
+    'mail.access.subject': 'New access request: {name}',
+    'mail.access.body': 'New access request for Belgian Property Due Diligence.\n\nName: {name}\nE-mail: {email}\nProfile: {kind}\nOrganisation: {organisation}\nLanguage: {language}\n\nMessage:\n{message}\n\nAll requests: {base}/admin/requests (administrators only).',
+    'auth.request_access': 'No invitation code? Request access.',
+    'auth.account_type': 'You are',
+    'auth.org_name_hint': 'Required for a professional; optional for an individual.',
+    'auth.err.org_name': 'Enter the name of your agency, firm or company, or choose « An individual ».',
+    'landing.cta_request': 'Request access',
+    'admin.requests.title': 'Access requests',
+    'admin.requests.hint': 'Reply by e-mail with an invitation code (generated with docs/generer-secrets.html), then mark the request as handled.',
+    'admin.requests.done': 'Handled',
+    'admin.requests.empty': 'No requests yet.',
+    'landing.region_note': 'Today: optimised for Flanders. Brussels and Wallonia: preliminary rules, flagged in every report.',
 })
