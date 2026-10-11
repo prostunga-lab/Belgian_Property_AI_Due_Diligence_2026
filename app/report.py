@@ -10,7 +10,7 @@ from reportlab.lib.styles import getSampleStyleSheet
 from reportlab.lib.units import cm
 from reportlab.platypus import PageBreak, Paragraph, SimpleDocTemplate, Spacer, Table, TableStyle
 
-from . import renovation
+from . import config, renovation
 from . import summary as property_summary
 from .i18n import t
 from .models import Case
@@ -85,6 +85,7 @@ def build_pdf(case: Case, lang: str = "en") -> bytes:
         status = {"confirmed": t("pdf.validated", lang), "pending": t("pdf.not_validated", lang)}.get(f.review_status, "")
         story.append(Paragraph(f'<font color="#{color}"><b>[{escape(t("severity." + f.severity, lang).upper())}]</b></font> <b>{escape(text["title"])}</b> — '
                                f'<i>{escape(t("kind." + f.kind, lang))} · {escape(t("domain." + f.domain, lang))}</i>{escape(status)}', ss["BodyText"]))
+        story.append(Paragraph(f"<i>{escape(t('kind.explain.' + f.kind, lang))}</i>", small))
         story.append(Paragraph(escape(text["detail"]), small))
         if text["recommendation"]:
             story.append(Paragraph(escape(t("pdf.recommendation", lang, text=text["recommendation"])), small))
@@ -113,7 +114,8 @@ def build_pdf(case: Case, lang: str = "en") -> bytes:
 def _executive_summary(case, lang, ss, small, prop, plan, ranked, texts) -> list:
     """Page 1: everything a reader needs without opening the rest, with the professional-advice reserve stated up front."""
     story = [Paragraph(escape(t("pdf.exec.title", lang)), ss["Heading2"])]
-    reserve = Table([[Paragraph(escape(t("pdf.exec.reserve", lang)), small)]], colWidths=[17 * cm])
+    note = t("pdf.exec.reserve", lang) + ("" if config.RULES_VALIDATED else " " + t("pdf.exec.rules_unvalidated", lang))
+    reserve = Table([[Paragraph(escape(note), small)]], colWidths=[17 * cm])
     reserve.setStyle(TableStyle([("BOX", (0, 0), (-1, -1), 0.8, colors.HexColor("#b45309")), ("BACKGROUND", (0, 0), (-1, -1), colors.HexColor("#fef3c7")),
                                  ("LEFTPADDING", (0, 0), (-1, -1), 8), ("RIGHTPADDING", (0, 0), (-1, -1), 8), ("TOPPADDING", (0, 0), (-1, -1), 6), ("BOTTOMPADDING", (0, 0), (-1, -1), 6)]))
     story += [reserve, Spacer(1, 8)]
@@ -161,7 +163,7 @@ def _executive_summary(case, lang, ss, small, prop, plan, ranked, texts) -> list
         table.setStyle(TableStyle(style))
         story += [table, Paragraph(escape(" ".join(x for x in (plan["unestimated_text"], t("reno.priority_legend", lang), t("reno.disclaimer_short", lang)) if x)), small)]
 
-    asks = list(dict.fromkeys(texts[f.id]["recommendation"] for f in key if texts[f.id]["recommendation"]))[:3]
+    asks = list(dict.fromkeys(texts[f.id]["recommendation"] for f in key if texts[f.id]["recommendation"]))[:2]
     if asks:
         story.append(Paragraph(escape(t("pdf.exec.before_signing", lang)), ss["Heading3"]))
         for a in asks:

@@ -732,3 +732,23 @@ MESSAGES.update({
     'admin.requests.empty': 'Nog geen aanvragen.',
     'landing.region_note': 'Vandaag: geoptimaliseerd voor Vlaanderen. Brussel en Wallonië: voorlopige regels, vermeld in elk rapport.',
 })
+
+
+MESSAGES.update({
+    'kind.explain.inference': 'Afwijking tussen documenten: te controleren, geen bewijs van niet-conformiteit.',
+    'kind.explain.risk': 'Risico gemeld door een document: te bevestigen met een professional.',
+    'kind.explain.fact': 'Informatie zoals ze in een document staat.',
+    'kind.explain.action': 'Document of controle om op te vragen.',
+    'severity.explain': 'De ernst meet de mogelijke impact als het punt bevestigd wordt, niet de zekerheid dat het zo is.',
+    'rules.unvalidated': 'Regels in validatie door een professional (reikwijdte: Vlaanderen; Brussel en Wallonië: voorlopig). Controleer elke bevinding voor u erop vertrouwt.',
+    'pdf.exec.rules_unvalidated': 'De toegepaste regels worden momenteel door een professional gevalideerd (reikwijdte: Vlaanderen; Brussel en Wallonië: voorlopig).',
+    'demo.title': 'Demonstratierapport',
+    'demo.meta': 'Voorbeeld van een rapport op basis van demonstratiedocumenten.',
+    'demo.intro': 'Voorbeeld op basis van demonstratiedocumenten, met de echte analysemotor: samenvatting, bevindingen met bron, actieplan. Er wordt geen echt dossier gebruikt.',
+    'demo.limits': 'Beperkingen: een automatische analyse vervangt noch de notaris, noch de architect, noch de expert. Elke bevinding vermeldt haar bron en moet door een persoon worden gecontroleerd.',
+    'demo.findings': 'Belangrijkste bevindingen',
+    'demo.pdf': 'Demonstratierapport als PDF downloaden',
+    'demo.cta': 'Een demonstratierapport bekijken',
+    'demo.try': 'Een account aanmaken',
+    'demo.docs': 'Geanalyseerde demonstratiedocumenten',
+})

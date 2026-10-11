@@ -732,3 +732,23 @@ MESSAGES.update({
     'admin.requests.empty': "Aucune demande pour l'instant.",
     'landing.region_note': "Aujourd'hui : optimisé pour la Flandre. Bruxelles et la Wallonie : règles préliminaires, signalées dans chaque rapport.",
 })
+
+
+MESSAGES.update({
+    'kind.explain.inference': "Divergence entre documents : à vérifier, ce n'est pas une preuve de non-conformité.",
+    'kind.explain.risk': 'Risque signalé par un document : à confirmer avec un professionnel.',
+    'kind.explain.fact': 'Information lue telle quelle dans un document.',
+    'kind.explain.action': 'Document ou vérification à demander.',
+    'severity.explain': "La gravité mesure l'impact potentiel si le point est confirmé, pas la certitude qu'il le soit.",
+    'rules.unvalidated': 'Règles en cours de validation par un professionnel (périmètre : Flandre ; Bruxelles et Wallonie : préliminaires). Vérifiez chaque constat avant de vous y fier.',
+    'pdf.exec.rules_unvalidated': 'Les règles appliquées sont en cours de validation par un professionnel (périmètre : Flandre ; Bruxelles et Wallonie : préliminaires).',
+    'demo.title': 'Rapport de démonstration',
+    'demo.meta': 'Exemple de rapport produit à partir de documents de démonstration.',
+    'demo.intro': "Exemple construit à partir de documents de démonstration, avec le vrai moteur d'analyse : résumé, constats sourcés, plan d'action. Aucun dossier réel n'est utilisé.",
+    'demo.limits': "Limites : une analyse automatique ne remplace ni le notaire, ni l'architecte, ni l'expert. Chaque constat cite sa source et doit être vérifié par une personne.",
+    'demo.findings': 'Constats principaux',
+    'demo.pdf': 'Télécharger le rapport PDF de démonstration',
+    'demo.cta': 'Voir un rapport de démonstration',
+    'demo.try': 'Créer un compte',
+    'demo.docs': 'Documents de démonstration analysés',
+})

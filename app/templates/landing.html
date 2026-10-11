@@ -21,7 +21,7 @@ section.block{margin:36px 0}section.block>h2{font-size:22px;margin:0 0 12px}.ste
   <p class="eyebrow">{{ _('landing.eyebrow') }}</p>
   <h1>{{ _('landing.h1') }}</h1>
   <p class="lead">{{ _('landing.lead') }}</p>
-  <div class="cta"><a class="btn" href="/login#register">{{ _('landing.cta_register') }}</a><a class="btn sec" href="/login#login">{{ _('landing.cta_login') }}</a>{% if invite %}<a class="btn sec" href="/contact#access">{{ _('landing.cta_request') }}</a>{% endif %}</div>
+  <div class="cta"><a class="btn" href="/login#register">{{ _('landing.cta_register') }}</a><a class="btn sec" href="/login#login">{{ _('landing.cta_login') }}</a>{% if invite %}<a class="btn sec" href="/contact#access">{{ _('landing.cta_request') }}</a>{% endif %}<a class="btn sec" href="/demo">{{ _('demo.cta') }}</a></div>
   <p class="note mut">📍 {{ _('landing.region_note') }}</p>
   {% if invite %}<p class="note mut">🔒 {{ _('landing.invite_note') }}</p>{% endif %}
   <p class="note mut">⏱ {{ _('landing.promise', minutes=promise_minutes) }}</p>
@@ -36,7 +36,8 @@ section.block{margin:36px 0}section.block>h2{font-size:22px;margin:0 0 12px}.ste
   <ul class="ticks">{% for i in (1, 2, 3, 4, 5, 6) %}<li>{{ _('landing.checks.' ~ i) }}</li>{% endfor %}</ul></div>
   <div class="card example"><h2 style="margin-top:0;font-size:20px">{{ _('landing.example.title') }}</h2>
   <p class="mut">{{ _('landing.example.text') }}</p>
-  <div class="card" style="margin:12px 0 0"><div class="row"><span class="badge high">{{ _('severity.high') }}</span><b>{{ _('rule.X-SURFACE.title') }}</b></div>
+  <div class="card" style="margin:12px 0 0"><div class="row"><span class="badge high" title="{{ _('severity.explain') }}">{{ _('severity.high') }}</span><b>{{ _('rule.X-SURFACE.title') }}</b><span class="mut">{{ _('kind.inference') }}</span></div>
+  <p class="mut" style="margin:2px 0 6px">{{ _('kind.explain.inference') }} {{ _('severity.explain') }}</p>
   <p>{{ _('rule.X-SURFACE.detail', a=185, fa='akte.pdf', pa=1, b=240, fb='epc.pdf', pb=1, diff=30) }}</p>
   <p><b>{{ _('finding.recommendation') }} :</b> {{ _('rule.X-SURFACE.rec') }}</p></div></div>
 </section>

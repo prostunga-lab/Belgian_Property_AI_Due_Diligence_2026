@@ -1,0 +1,25 @@
+{% extends "base.html" %}
+{% block title %}{{ _('demo.title') }}{% endblock %}
+{% block head %}<meta name="description" content="{{ _('demo.meta') }}">
+{% for code in languages %}<link rel="alternate" hreflang="{{ code }}" href="{{ base_url }}/demo?lang={{ code }}">{% endfor %}
+<style>.prose{max-width:48em}.prose h1{font-size:clamp(26px,4.5vw,36px);margin:28px 0 8px}.demo-badge{display:inline-block;padding:2px 10px;border-radius:99px;border:1px solid var(--bd);color:var(--mut);font-size:12px}</style>{% endblock %}
+{% block content %}
+<article class="prose"><span class="demo-badge">{{ _('demo.title') }}</span><h1>{{ case.title }}</h1>
+<p>{{ _('demo.intro') }}</p>
+{% if not rules_validated %}<div class="card" role="note" style="border-left:4px solid var(--medium)">{{ _('rules.unvalidated') }}</div>{% endif %}</article>
+<div class="card"><b>{{ _('summary.title') }}</b>
+{% if prop.headline %}<p style="margin:6px 0;font-size:16px"><b>{{ prop.headline }}</b></p>{% endif %}
+<table class="kv"><tbody>{% for it in prop['items'] %}<tr><th scope="row">{{ it.label }}</th><td class="{{ it.flag }}">{{ it.value }}{% if it.sources %} <span class="mut">{% for s in it.sources[:3] %}{{ s.filename }}, {{ _('ui.page_abbr') }}{{ s.page }}{% if not loop.last %} · {% endif %}{% endfor %}</span>{% endif %}</td></tr>{% endfor %}</tbody></table></div>
+<h2 style="margin:22px 0 4px">{{ _('demo.findings') }}</h2>
+{% for f in findings %}<div class="card"><div class="row"><span class="badge {{ f.severity }}" title="{{ _('severity.explain') }}">{{ _('severity.' ~ f.severity) }}</span><b>{{ f.title }}</b><span class="mut">{{ _('kind.' ~ f.kind) }} · {{ _('domain.' ~ f.domain) }}</span></div>
+<p class="mut" style="margin:2px 0 6px">{{ _('kind.explain.' ~ f.kind) }}</p><p>{{ f.detail }}</p>{% if f.recommendation %}<p><b>{{ _('finding.recommendation') }} :</b> {{ f.recommendation }}</p>{% endif %}
+{% for s in f.sources %}<blockquote>{{ s.filename }}, {{ _('ui.page_abbr') }}{{ s.page }}{% if s.excerpt %} — {{ _('ui.quoted', text=s.excerpt) }}{% endif %}</blockquote>{% endfor %}</div>{% endfor %}
+{% if reno.rows %}<div class="card" id="renovation"><b>{{ _('reno.title') }}</b>
+<table class="reno"><thead><tr><th scope="col">{{ _('reno.col.work') }}</th><th scope="col">{{ _('reno.col.priority') }}</th><th scope="col" class="num">{{ _('reno.col.estimate') }}</th></tr></thead><tbody>
+{% for it in reno.rows %}<tr><td>{{ it.title }}</td><td><span class="dot {{ it.priority }}" aria-hidden="true"></span> {{ it.priority_label }}</td><td class="num"><b>{{ it.cost }}</b></td></tr>{% endfor %}
+{% if reno.total %}<tr class="total"><td colspan="2"><b>{{ _('reno.total') }}</b> <span class="mut">{{ reno.unestimated_text }}</span></td><td class="num"><b>{{ reno.total }}</b></td></tr>{% endif %}</tbody></table>
+<p class="mut" style="margin:8px 0 0">{{ _('reno.priority_legend') }} {{ _('reno.disclaimer') }}</p></div>{% endif %}
+<div class="card"><p style="margin:0 0 8px"><b>{{ _('demo.limits') }}</b></p><p class="mut" style="margin:0 0 12px">{{ _('demo.docs') }} : {% for d in case.documents %}{{ d.filename }}{% if not loop.last %}, {% endif %}{% endfor %}</p>
+<div class="row"><a href="/demo/report.pdf"><button type="button">{{ _('demo.pdf') }}</button></a>
+<a href="{{ '/contact#access' if invite else '/login#register' }}"><button type="button" class="sec">{{ _('landing.cta_request') if invite else _('demo.try') }}</button></a></div></div>
+{% endblock %}

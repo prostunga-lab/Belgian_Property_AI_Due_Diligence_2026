@@ -20,7 +20,7 @@ from starlette.exceptions import HTTPException as StarletteHTTPException
 from starlette.middleware.sessions import SessionMiddleware
 
 from . import billing, config, i18n, invite, legal, mail, pricing
-from . import renovation
+from . import demo, renovation
 from . import summary as property_summary
 from .api_v1 import router as api_v1_router
 from .auth import (ApiKey, current_user, get_db, hash_password, make_token, new_api_key, open_session, optional_user,
@@ -188,6 +188,28 @@ def health(db: Session = Depends(get_db)):
 @app.get("/about")
 def about(request: Request):
     return templates.TemplateResponse(request, "about.html", {"base_url": config.BASE_URL})
+
+
+def _demo_case():
+    case = demo.build()
+    return case, sorted(case.findings, key=lambda f: (SEVERITY_ORDER.get(f.severity, 9), f.id))
+
+
+@app.get("/demo")
+def demo_report(request: Request):
+    """Public demonstration: the real engine on synthetic documents, with sources, limits and the action plan."""
+    lang = request.state.lang
+    case, findings = _demo_case()
+    return templates.TemplateResponse(request, "demo.html", {
+        "case": case, "base_url": config.BASE_URL, "prop": property_summary.build(case.documents, lang),
+        "reno": renovation.build(findings, case.documents, lang), "rules_validated": config.RULES_VALIDATED,
+        "findings": [finding_view(f, lang) for f in findings if f.severity != "info"][:6], "invite": bool(config.INVITE_CODE)})
+
+
+@app.get("/demo/report.pdf")
+def demo_pdf(request: Request):
+    case, _ = _demo_case()
+    return Response(build_pdf(case, request.state.lang), media_type="application/pdf", headers={"Content-Disposition": 'inline; filename="demo-report.pdf"'})
 
 
 def contact_context(request: Request, error: str | None = None, **form) -> dict:
@@ -545,7 +567,7 @@ def create_case(title: str = Form(...), user: User = Depends(current_user), db: 
 def case_page(request: Request, case_id: int, user: User = Depends(current_user), db: Session = Depends(get_db)):
     case = get_case(db, user, case_id)
     return templates.TemplateResponse(request, "case.html", {
-        "case": case, "user": user, "org": db.get(Org, user.org_id), "version": RULESET_VERSION, "promise_minutes": config.PROCESSING_PROMISE_MINUTES, "doc_types": DOC_TYPES,
+        "case": case, "user": user, "org": db.get(Org, user.org_id), "version": RULESET_VERSION, "promise_minutes": config.PROCESSING_PROMISE_MINUTES, "doc_types": DOC_TYPES, "rules_validated": config.RULES_VALIDATED,
         "prop": property_summary.build(case.documents, request.state.lang), "events": property_summary.timeline(case.documents, request.state.lang),
         "reno": renovation.build([f for f in case.findings if f.review_status != "dismissed"], case.documents, request.state.lang),
         "findings": [finding_view(f, request.state.lang) | {"comments": f.comments}

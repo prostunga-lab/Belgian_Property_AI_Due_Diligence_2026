@@ -732,3 +732,23 @@ MESSAGES.update({
     'admin.requests.empty': 'No requests yet.',
     'landing.region_note': 'Today: optimised for Flanders. Brussels and Wallonia: preliminary rules, flagged in every report.',
 })
+
+
+MESSAGES.update({
+    'kind.explain.inference': 'Discrepancy between documents: to be checked, not proof of non-compliance.',
+    'kind.explain.risk': 'Risk flagged by a document: to be confirmed with a professional.',
+    'kind.explain.fact': 'Information read as it stands in a document.',
+    'kind.explain.action': 'Document or check to request.',
+    'severity.explain': 'Severity measures the potential impact if the point is confirmed, not the certainty that it is.',
+    'rules.unvalidated': 'Rules are being validated by a professional (scope: Flanders; Brussels and Wallonia: preliminary). Check every finding before relying on it.',
+    'pdf.exec.rules_unvalidated': 'The rules applied are being validated by a professional (scope: Flanders; Brussels and Wallonia: preliminary).',
+    'demo.title': 'Demonstration report',
+    'demo.meta': 'Example of a report produced from demonstration documents.',
+    'demo.intro': 'Example built from demonstration documents, with the real analysis engine: summary, sourced findings, action plan. No real dossier is used.',
+    'demo.limits': 'Limits: an automatic analysis replaces neither the notary, the architect nor the surveyor. Every finding cites its source and must be checked by a person.',
+    'demo.findings': 'Main findings',
+    'demo.pdf': 'Download the demonstration PDF report',
+    'demo.cta': 'See a demonstration report',
+    'demo.try': 'Create an account',
+    'demo.docs': 'Demonstration documents analysed',
+})

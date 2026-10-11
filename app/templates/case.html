@@ -18,6 +18,7 @@
 <p class="mut" style="margin:6px 0 0">{{ _('case.max_documents', max=max_documents) }}</p></div>
 
 {% if case.status == "analyzed" %}
+{% if not rules_validated %}<div class="card" role="note" style="border-left:4px solid var(--medium)">{{ _('rules.unvalidated') }}</div>{% endif %}
 <div class="card">{% if case.analysis_seconds is not none %}<p class="mut" style="margin:0 0 8px">⏱ {{ _('case.duration', seconds=case.analysis_seconds|round(1), minutes=promise_minutes) }}</p>{% endif %}<div class="row" style="justify-content:space-between"><b>{{ _('case.score') }} :
 <span class="{{ case.scores.level }}">{{ case.scores.overall }}/100 ({{ _('level.' ~ case.scores.level) }})</span></b>
 <a href="/cases/{{ case.id }}/report.pdf"><button class="sec" type="button">{{ _('case.pdf') }}</button></a></div>
@@ -61,7 +62,8 @@
 
 {% for f in findings %}
 <div class="card" id="f{{ f.id }}" {% if f.review_status=="dismissed" %}style="opacity:.5"{% endif %}>
-<div class="row"><span class="badge {{ f.severity }}">{{ _('severity.' ~ f.severity) }}</span><b>{{ f.title }}</b><span class="mut">{{ _('kind.' ~ f.kind) }} · {{ _('domain.' ~ f.domain) }} · {{ f.rule_id }}</span></div>
+<div class="row"><span class="badge {{ f.severity }}" title="{{ _('severity.explain') }}">{{ _('severity.' ~ f.severity) }}</span><b>{{ f.title }}</b><span class="mut">{{ _('kind.' ~ f.kind) }} · {{ _('domain.' ~ f.domain) }} · {{ f.rule_id }}</span></div>
+<p class="mut" style="margin:2px 0 6px">{{ _('kind.explain.' ~ f.kind) }}</p>
 <p>{{ f.detail }}</p>{% if f.recommendation %}<p><b>{{ _('finding.recommendation') }} :</b> {{ f.recommendation }}</p>{% endif %}
 {% for s in f.sources %}<blockquote>{{ s.filename }}, {{ _('ui.page_abbr') }}{{ s.page }}{% if s.excerpt %} — {{ _('ui.quoted', text=s.excerpt) }}{% endif %}</blockquote>{% endfor %}
 <form method="post" action="/cases/{{ case.id }}/findings/{{ f.id }}/review" class="row">
