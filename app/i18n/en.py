@@ -696,3 +696,9 @@ MESSAGES.update({
 MESSAGES.update({
     'reno.disclaimer_short': 'Orders of magnitude excl. VAT, not a quote: get several quotes.',
 })
+
+
+MESSAGES.update({
+    'err.title.405': 'Action not allowed on this page',
+    'err.title.500': 'Unexpected error',
+})

@@ -12,6 +12,7 @@ from urllib.parse import urlparse
 
 from fastapi import BackgroundTasks, Depends, FastAPI, File, Form, Request, UploadFile
 from fastapi.responses import JSONResponse, RedirectResponse, Response
+from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
 from sqlalchemy import delete, select, text
 from sqlalchemy.orm import Session
@@ -60,6 +61,7 @@ def template_context(request: Request) -> dict:
 
 app = FastAPI(title="Belgian Property Due Diligence")
 app.add_middleware(SessionMiddleware, secret_key=config.SECRET_KEY, same_site="lax", https_only=config.COOKIE_SECURE, max_age=60 * 60 * 12)
+app.mount("/static", StaticFiles(directory=str(Path(__file__).parent / "static")), name="static")
 templates = Jinja2Templates(directory=str(Path(__file__).parent / "templates"), context_processors=[template_context])
 app.include_router(billing.router)
 app.include_router(api_v1_router)
@@ -79,6 +81,27 @@ DASHBOARD_MESSAGES = {"verification_sent": "msg.verification_sent"}
 
 # --- cross-cutting: language, CSRF, security headers, rate limiting, errors -----------------------------
 
+# No inline scripts anywhere (behaviour lives in /static/app.js), so scripts are limited to this origin. Inline *styles* are still
+# used by the templates, hence 'unsafe-inline' for style-src only. form-action lists the payment provider's hosts because the
+# checkout/portal buttons are forms answered by a redirect to Stripe.
+CSP = ("default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; font-src 'self'; connect-src 'self'; "
+       "object-src 'none'; base-uri 'none'; frame-ancestors 'none'; form-action 'self' https://checkout.stripe.com https://billing.stripe.com")
+
+
+def secure_headers(resp: Response, lang: str | None = None) -> Response:
+    """The same protections on EVERY response: pages, redirects, 4xx/5xx errors, early refusals and static files."""
+    resp.headers.setdefault("X-Content-Type-Options", "nosniff")
+    resp.headers.setdefault("X-Frame-Options", "DENY")
+    resp.headers.setdefault("Referrer-Policy", "same-origin")
+    if lang:
+        resp.headers.setdefault("Content-Language", lang)
+    if config.COOKIE_SECURE:
+        resp.headers.setdefault("Strict-Transport-Security", "max-age=31536000; includeSubDomains")
+    if config.CSP_MODE != "off":
+        resp.headers.setdefault("Content-Security-Policy-Report-Only" if config.CSP_MODE == "report-only" else "Content-Security-Policy", CSP)
+    return resp
+
+
 @app.middleware("http")
 async def lang_csrf_headers(request: Request, call_next):
     """Resolve the language, reject cross-site state-changing requests, add security headers.
@@ -90,15 +113,9 @@ async def lang_csrf_headers(request: Request, call_next):
     if request.method in {"POST", "PUT", "PATCH", "DELETE"}:
         src = request.headers.get("origin") or request.headers.get("referer")
         if src and urlparse(src).netloc != request.headers.get("host"):
-            return JSONResponse({"detail": i18n.t("err.cross_site", request.state.lang), "code": "err.cross_site"}, status_code=403)
-    resp = await call_next(request)
-    resp.headers.setdefault("X-Content-Type-Options", "nosniff")
-    resp.headers.setdefault("X-Frame-Options", "DENY")
-    resp.headers.setdefault("Referrer-Policy", "same-origin")
-    resp.headers.setdefault("Content-Language", request.state.lang)
-    if config.COOKIE_SECURE:
-        resp.headers.setdefault("Strict-Transport-Security", "max-age=31536000; includeSubDomains")
-    return resp
+            refusal = JSONResponse({"detail": i18n.t("err.cross_site", request.state.lang), "code": "err.cross_site"}, status_code=403)
+            return secure_headers(refusal, request.state.lang)
+    return secure_headers(await call_next(request), request.state.lang)
 
 
 _attempts: dict[str, deque] = defaultdict(deque)
@@ -119,6 +136,32 @@ def client_ip(request: Request) -> str:
     return request.client.host if request.client else "?"
 
 
+API_PREFIXES = ("/v1", "/billing/webhook", "/docs", "/openapi.json", "/redoc", "/static")
+
+
+def _wants_html(request: Request, exc: StarletteHTTPException) -> bool:
+    """Browsers always get a readable page. Clients that send no Accept header (curl, checkers) get one too for an unknown page
+    or method, but never on API paths, which keep their JSON errors."""
+    accept = request.headers.get("accept", "")
+    if "text/html" in accept:
+        return True
+    path = request.url.path
+    return (exc.status_code in (404, 405) and not isinstance(exc, AppError) and not path.startswith(API_PREFIXES)
+            and "application/json" not in accept and "x-api-key" not in request.headers)
+
+
+@app.exception_handler(Exception)
+async def unexpected_error(request: Request, exc: Exception):
+    """Last resort: a generic answer (never a stack trace), with the same security headers as every other response."""
+    logging.getLogger("uvicorn.error").exception("Unhandled error on %s %s", request.method, request.url.path)
+    lang = getattr(request.state, "lang", None) or "en"
+    if "text/html" in request.headers.get("accept", ""):
+        resp = templates.TemplateResponse(request, "error.html", {"status": 500, "detail": i18n.t("err.title.500", lang) if i18n.has("err.title.500") else "Error", "title": i18n.t("err.title.default", lang)}, status_code=500)
+    else:
+        resp = JSONResponse({"detail": "Internal error"}, status_code=500)
+    return secure_headers(resp, lang)
+
+
 @app.exception_handler(StarletteHTTPException)
 async def http_exc(request: Request, exc: StarletteHTTPException):
     lang = getattr(request.state, "lang", None) or resolve_lang(request)
@@ -126,7 +169,7 @@ async def http_exc(request: Request, exc: StarletteHTTPException):
         code, detail = exc.key, i18n.t(exc.key, lang, **exc.params)
     else:  # framework errors (unknown route, method not allowed…)
         code, detail = None, i18n.t(f"err.title.{exc.status_code}", lang) if i18n.has(f"err.title.{exc.status_code}") else str(exc.detail)
-    if "text/html" in request.headers.get("accept", ""):
+    if _wants_html(request, exc):
         if exc.status_code == 401:
             return RedirectResponse("/login", status_code=303)
         title = i18n.t(f"err.title.{exc.status_code}", lang) if i18n.has(f"err.title.{exc.status_code}") else i18n.t("err.title.default", lang)

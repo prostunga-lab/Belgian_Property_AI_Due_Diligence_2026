@@ -696,3 +696,9 @@ MESSAGES.update({
 MESSAGES.update({
     'reno.disclaimer_short': 'Ordes van grootte excl. btw, geen offerte: vraag meerdere offertes.',
 })
+
+
+MESSAGES.update({
+    'err.title.405': 'Actie niet toegestaan op deze pagina',
+    'err.title.500': 'Onverwachte fout',
+})

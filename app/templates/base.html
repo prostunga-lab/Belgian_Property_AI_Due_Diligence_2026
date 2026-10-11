@@ -42,20 +42,4 @@ footer .mut{display:grid;gap:6px}.footnav{display:flex;gap:16px;flex-wrap:wrap}.
 <main>{% block content %}{% endblock %}</main>
 <footer><main class="mut"><nav class="footnav" aria-label="Legal">{% for href, key in (("/legal", "nav.legal"), ("/privacy", "nav.privacy"), ("/terms", "nav.terms")) %}<a href="{{ href }}">{{ _(key) }}</a>{% endfor %}</nav>
 <div>{{ _('ui.disclaimer') }}</div><div>{{ _('footer.copyright', year=year, name=company_name or 'Belgian Property Due Diligence') }}</div></main></footer>
-<script>
-document.documentElement.classList.add("js");
-document.addEventListener("click",function(e){
-  var b=e.target.closest(".pwtoggle"); if(!b) return;
-  var input=b.parentElement.querySelector("input"), show=input.type==="password";
-  input.type=show?"text":"password";
-  b.setAttribute("aria-pressed",show?"true":"false");
-  var label=show?b.dataset.hide:b.dataset.show; b.setAttribute("aria-label",label); b.title=label;
-});
-// Never leave a password visible when coming back to the page (back button / bfcache).
-window.addEventListener("pageshow",function(){
-  document.querySelectorAll(".pwtoggle").forEach(function(b){
-    var input=b.parentElement.querySelector("input"); input.type="password";
-    b.setAttribute("aria-pressed","false"); b.setAttribute("aria-label",b.dataset.show); b.title=b.dataset.show;
-  });
-});
-</script></body></html>
+<script src="/static/app.js" defer></script></body></html>

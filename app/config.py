@@ -28,6 +28,7 @@ INVITE_CODE = _clean("INVITE_CODE") or None
 AUTO_MIGRATE = os.environ.get("AUTO_MIGRATE", "1") == "1"
 SECRET_KEY = os.environ.get("SECRET_KEY", "dev-only-change-me")
 COOKIE_SECURE = _clean("COOKIE_SECURE", "0") == "1"  # set to 1 behind HTTPS
+CSP_MODE = _clean("CSP_MODE", "enforce").lower()  # enforce | report-only | off (report-only lets you watch the browser console before enforcing)
 ANTHROPIC_API_KEY = os.environ.get("ANTHROPIC_API_KEY")
 LLM_MODEL = os.environ.get("LLM_MODEL", "claude-sonnet-5-5")
 MAX_UPLOAD_MB = int(os.environ.get("MAX_UPLOAD_MB", "25"))

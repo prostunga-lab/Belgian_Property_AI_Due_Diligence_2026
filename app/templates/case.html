@@ -1,13 +1,13 @@
 {% extends "base.html" %}{% block content %}
 <p><a href="/">← {{ _('nav.cases') }}</a></p>
 <div class="row" style="justify-content:space-between"><h2>{{ case.title }}</h2>
-<form method="post" action="/cases/{{ case.id }}/delete" onsubmit='return confirm({{ _("case.delete_confirm")|tojson }})'><button class="sec">🗑 {{ _('case.delete') }}</button></form></div>
+<form method="post" action="/cases/{{ case.id }}/delete" data-confirm="{{ _('case.delete_confirm') }}"><button class="sec">🗑 {{ _('case.delete') }}</button></form></div>
 <p class="mut">{{ case.address or _('case.address_unknown') }} · {{ _('case.region') }} {{ _('region.' ~ case.region) }} · {{ _('case.ruleset') }} {{ version }}</p>
 
 <div class="card"><b>{{ _('case.documents') }}</b>
 <table>{% for d in case.documents %}<tr><td>{{ d.filename }}</td><td>
 <form method="post" action="/cases/{{ case.id }}/documents/{{ d.id }}/type" class="row">
-<select name="doc_type" aria-label="{{ _('case.doc_type') }}" onchange="this.form.submit()">{% for k in doc_types %}<option value="{{ k }}" {{ "selected" if d.doc_type==k }}>{{ _('doctype.' ~ k) }}</option>{% endfor %}</select>
+<select name="doc_type" aria-label="{{ _('case.doc_type') }}" data-autosubmit>{% for k in doc_types %}<option value="{{ k }}" {{ "selected" if d.doc_type==k }}>{{ _('doctype.' ~ k) }}</option>{% endfor %}</select>
 <span class="mut">{{ (d.classification_confidence*100)|round|int }}% · {{ _('case.fields', n=d.fields|length) }}{% if d.ocr_pages %} · {{ _('case.ocr_pages', pages=d.ocr_pages|map(attribute="page")|join(", ")) }}{% endif %}{% if case.billed %} · {{ _('case.analysed') }}{% endif %}</span></form></td></tr>
 {% else %}<tr><td class="mut">{{ _('case.no_documents') }}</td></tr>{% endfor %}</table>
 <form method="post" action="/cases/{{ case.id }}/documents" enctype="multipart/form-data" class="row" style="margin-top:8px">

@@ -696,3 +696,9 @@ MESSAGES.update({
 MESSAGES.update({
     'reno.disclaimer_short': 'Ordres de grandeur hors TVA, pas un devis : demandez plusieurs devis.',
 })
+
+
+MESSAGES.update({
+    'err.title.405': 'Action non autorisée sur cette page',
+    'err.title.500': 'Erreur inattendue',
+})

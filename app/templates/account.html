@@ -33,6 +33,6 @@
 
 <div class="card"><b>{{ _('acct.delete_title') }}</b>
 <p class="mut">{{ _('acct.delete_hint') }}</p>
-<form method="post" action="/account/delete" class="row" onsubmit='return confirm({{ _("acct.delete_confirm")|tojson }})'>
+<form method="post" action="/account/delete" class="row" data-confirm="{{ _('acct.delete_confirm') }}">
 {{ password_field('password', _('auth.password'), 'current-password', None, 'min-width:220px') }}<button class="sec">{{ _('acct.delete_btn') }}</button></form></div>
 {% endblock %}
