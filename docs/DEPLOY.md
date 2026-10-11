@@ -59,8 +59,13 @@ Le contrôle de santé est `GET /health` (vérifie aussi la base). Un premier bu
 - **API** : *Compte → Clés API*, puis `curl -H "X-API-Key: sk_live_…" -F "files=@epc.pdf" -F "files=@akte.pdf" <url>/v1/dossier`. Documentation interactive : `/docs`.
 - **IA (facultatif)** : `ANTHROPIC_API_KEY` active la lecture IA et le remplissage des champs manquants ; indicative, jamais intégrée au score.
 
+- **Demandes d'accès** : le formulaire de `/contact` enregistre les demandes ; elles sont envoyées à `CONTACT_EMAIL` (si `SMTP_HOST` est configuré) et lisibles par les comptes listés dans `ADMIN_EMAILS` (adresses séparées par des virgules) sur `/admin/requests`.
+- **Sécurité HTTP** : en-têtes de sécurité sur toutes les réponses et CSP stricte. `CSP_MODE=report-only` pour observer sans bloquer, `off` pour désactiver (déconseillé).
+- **Règles** : `RULES_VALIDATED=1` supprime le bandeau « règles en cours de validation » (à ne faire qu'après validation documentée, voir `docs/REGLES.md`).
+- **Avant de lancer** : `docs/CHECKLIST-LANCEMENT.md` (état de chaque constat de la revue et ce qui reste).
+
 ## Variables d'environnement (récapitulatif)
-`DATABASE_URL`, `DATA_DIR`, `SECRET_KEY`, `FILE_ENCRYPTION_KEY`, `INVITE_CODE`, `COOKIE_SECURE`, `APP_ENV`, `BASE_URL`, `FREE_CREDITS`, `DOSSIER_MAX_DOCUMENTS`, `PRICES_VAT`, `PLAN_*`, `DISCOUNT_*`, `PROCESSING_PROMISE_MINUTES`, `HOSTING_*`, `LEGAL_REVIEWED`, `COMPANY_*`, `CONTACT_EMAIL`, `STRIPE_*`, `SMTP_*`, `MAIL_FROM`, `ANTHROPIC_API_KEY`, `LLM_MODEL`, `RETENTION_DAYS`, `OCR_ENABLED`, `OCR_LANGS`, `OCR_DPI`, `MAX_UPLOAD_MB`, `MAX_FILES_PER_REQUEST`. Voir `.env.example`.
+`DATABASE_URL`, `DATA_DIR`, `SECRET_KEY`, `FILE_ENCRYPTION_KEY`, `INVITE_CODE`, `COOKIE_SECURE`, `APP_ENV`, `BASE_URL`, `FREE_CREDITS`, `DOSSIER_MAX_DOCUMENTS`, `PRICES_VAT`, `PLAN_*`, `DISCOUNT_*`, `PROCESSING_PROMISE_MINUTES`, `HOSTING_*`, `LEGAL_REVIEWED`, `RULES_VALIDATED`, `CSP_MODE`, `ADMIN_EMAILS`, `COMPANY_*`, `CONTACT_EMAIL`, `STRIPE_*`, `SMTP_*`, `MAIL_FROM`, `ANTHROPIC_API_KEY`, `LLM_MODEL`, `RETENTION_DAYS`, `OCR_ENABLED`, `OCR_LANGS`, `OCR_DPI`, `MAX_UPLOAD_MB`, `MAX_FILES_PER_REQUEST`. Voir `.env.example`.
 
 ## Sauvegardes
 - **Base** : activer les sauvegardes du plugin PostgreSQL de Railway et **tester une restauration**.
