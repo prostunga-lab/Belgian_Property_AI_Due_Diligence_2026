@@ -67,7 +67,7 @@ app.include_router(billing.router)
 app.include_router(api_v1_router)
 init_db()
 logging.getLogger("uvicorn.error").info(
-    "startup: build=%s invite_code=%s", (os.environ.get("RAILWAY_GIT_COMMIT_SHA") or "unknown")[:7],
+    "startup: build=%s mail=%s invite_code=%s", (os.environ.get("RAILWAY_GIT_COMMIT_SHA") or "unknown")[:7], mail.transport(),
     f"configured ({len(invite.normalize(config.INVITE_CODE))} chars after normalisation)" if config.INVITE_CODE else "not set (registration open)")
 
 SEVERITY_ORDER = {"high": 0, "medium": 1, "low": 2, "info": 3}
@@ -182,7 +182,8 @@ async def http_exc(request: Request, exc: StarletteHTTPException):
 def health(db: Session = Depends(get_db)):
     db.execute(text("SELECT 1"))
     return {"status": "ok", "ruleset": RULESET_VERSION, "build": (os.environ.get("RAILWAY_GIT_COMMIT_SHA") or "unknown")[:7],
-            "invite_required": bool(config.INVITE_CODE), "terms_version": legal.VERSION}
+            "invite_required": bool(config.INVITE_CODE), "terms_version": legal.VERSION, "mail": mail.transport(),
+            "access_notifications": bool(config.CONTACT_EMAIL) and mail.transport() != "log"}
 
 
 @app.get("/about")
@@ -230,11 +231,11 @@ ACCOUNT_TYPES = ("individual", "professional")
 
 @app.post("/request-access")
 def request_access(request: Request, bg: BackgroundTasks, name: str = Form(""), email: str = Form(""), account_type: str = Form("professional"),
-                   organisation: str = Form(""), message: str = Form(""), consent: str = Form(""), website: str = Form(""),
+                   organisation: str = Form(""), message: str = Form(""), consent: str = Form(""), hp_check: str = Form(""),
                    db: Session = Depends(get_db)):
-    """Store a request for access (invitation-only beta) and tell the owner. A hidden 'website' field catches simple bots."""
+    """Store a request for access (invitation-only beta) and tell the owner. A hidden 'hp_check' field catches simple bots."""
     done = RedirectResponse("/contact?sent=1#access", status_code=303)
-    if website.strip():  # honeypot: looks like success, stores nothing
+    if hp_check.strip():  # honeypot: looks like success, stores nothing
         return done
     throttle(f"access:{client_ip(request)}", 3, 3600)
     name, email, organisation, message = name.strip(), email.strip().lower(), organisation.strip(), message.strip()
@@ -260,6 +261,10 @@ def request_access(request: Request, bg: BackgroundTasks, name: str = Form(""), 
     db.add(req)
     db.commit()
     logging.getLogger("uvicorn.error").info("access request #%s received (%s, %s)", req.id, account_type, request.state.lang)
+    if not config.CONTACT_EMAIL:
+        logging.getLogger("uvicorn.error").warning("access request #%s stored but NOT e-mailed: CONTACT_EMAIL is not set (read it at /admin/requests)", req.id)
+    elif mail.transport() == "log":
+        logging.getLogger("uvicorn.error").warning("access request #%s stored but NOT e-mailed: no RESEND_API_KEY or SMTP_HOST configured (read it at /admin/requests)", req.id)
     if config.CONTACT_EMAIL:
         bg.add_task(mail.send, config.CONTACT_EMAIL, i18n.t("mail.access.subject", "fr", name=name),
                     i18n.t("mail.access.body", "fr", name=name, email=email, kind=i18n.t(f"access.type.{account_type}", "fr"),

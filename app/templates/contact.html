@@ -28,7 +28,7 @@
       <label><input type="radio" name="account_type" value="professional" {{ 'checked' if form.get('account_type', 'professional') != 'individual' }}> {{ _('access.type.professional') }}</label></fieldset>
     <p><label for="ar-org">{{ _('access.f.org') }}</label><input id="ar-org" name="organisation" maxlength="200" value="{{ form.get('organisation', '') }}"></p>
     <p><label for="ar-msg">{{ _('access.f.message') }}</label><textarea id="ar-msg" name="message" rows="4" maxlength="1000">{{ form.get('message', '') }}</textarea></p>
-    <p class="hp" aria-hidden="true"><label>Website <input name="website" tabindex="-1" autocomplete="off"></label></p>
+    <p class="hp" aria-hidden="true"><label>Leave this empty <input name="hp_check" tabindex="-1" autocomplete="off" value=""></label></p>
     <p style="display:flex;gap:8px;align-items:flex-start"><input type="checkbox" name="consent" value="1" id="ar-consent" required style="width:auto;margin-top:3px"><label for="ar-consent">{{ _('access.consent', privacy='@P@')|e|replace('@P@', '<a href="/privacy" target="_blank" rel="noopener">'|safe ~ _('nav.privacy') ~ '</a>'|safe) }}</label></p>
     <button>{{ _('access.submit') }}</button>
   </form></div>

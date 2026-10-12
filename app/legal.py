@@ -28,7 +28,7 @@ def _values(lang: str) -> dict:
 
 
 def _enabled() -> set:
-    return {name for name, on in (("stripe", config.STRIPE_SECRET_KEY), ("ai", config.ANTHROPIC_API_KEY), ("smtp", config.SMTP_HOST)) if on}
+    return {name for name, on in (("stripe", config.STRIPE_SECRET_KEY), ("ai", config.ANTHROPIC_API_KEY), ("smtp", config.MAIL_ENABLED)) if on}
 
 
 def render(doc: str, lang: str) -> list[dict]:

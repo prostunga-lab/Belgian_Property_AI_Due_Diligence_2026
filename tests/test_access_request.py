@@ -50,7 +50,7 @@ def test_invalid_requests_are_refused_with_a_message_and_keep_the_typed_values(c
 
 
 def test_the_hidden_honeypot_field_makes_bots_look_successful_but_stores_nothing():
-    r = anon().post("/request-access", data={**GOOD, "email": "bot@x.be", "website": "http://spam.example"}, follow_redirects=False)
+    r = anon().post("/request-access", data={**GOOD, "email": "bot@x.be", "hp_check": "http://spam.example"}, follow_redirects=False)
     assert r.status_code == 303 and requests_of("bot@x.be") == []
 
 
