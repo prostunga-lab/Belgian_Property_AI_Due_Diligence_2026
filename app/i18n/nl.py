@@ -765,3 +765,16 @@ MESSAGES.update({
     'access.intro.open': 'Een vraag, feedback of hulp nodig? Laat uw gegevens achter: wij antwoorden per e-mail.',
     'access.submit.open': 'Verzenden',
 })
+
+
+MESSAGES.update({
+    'rule.DOC-URBANISM.title': 'Ontbrekend document: stedenbouwkundige inlichtingen',
+    'rule.DOC-URBANISM.detail': 'In Brussel is de stedenbouwkundige inlichtingenbrief van de gemeente vereist vóór de ondertekening (te verifiëren bij de notaris).',
+})
+
+
+MESSAGES.update({
+    'rule.URB-HERITAGE.title': 'Beschermd pand of opgenomen in de erfgoedinventaris',
+    'rule.URB-HERITAGE.detail': 'De stedenbouwkundige inlichtingen vermelden een bescherming, een beschermingszone of een opname in de erfgoedinventaris.',
+    'rule.URB-HERITAGE.rec': 'Vraag de notaris naar de beperkingen voor werken (specifieke vergunning, advies van de overlegcommissie).',
+})

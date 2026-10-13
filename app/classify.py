@@ -63,6 +63,7 @@ KEYWORDS: dict[str, list[tuple[str, int]]] = {
         (r"stedenbouwkundig uittreksel|stedenbouwkundige inlichtingen|uittreksel uit het vergunningenregister|vergunningenregister", 8),
         (r"renseignements urbanistiques|attestation urbanistique|certificat d'urbanisme", 8),
         (r"gewestplan|plan de secteur|woongebied|zone d'habitat|bestemming|voorkooprecht|droit de préemption", 2),
+        (r"\bpras\b|\bppas\b|\bcobat\b|urban\.brussels|zone d'habitation|inventaire du patrimoine", 3),
     ],
     "copro": [
         (r"mede-?eigendom|medeëigendom|vereniging van mede-?eigenaars|copropriété|association des copropriétaires", 5),

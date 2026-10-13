@@ -117,10 +117,10 @@ def _cadastral_ref(pages: list[str], f: dict) -> None:
 def extract_epc(pages: list[str]) -> dict:
     f: dict = {}
     _common(pages, f)
-    _put(f, "epc_score", find(pages, r"(?:energiescore|spec\w*\s+energieverbruik|score|consommation)\D{0,40}?(\d{2,4})\s*kWh/m²"), float)
+    _put(f, "epc_score", find(pages, r"(?:energiescore|spec\w*\s+energieverbruik|score|consommation)\D{0,40}?(\d{2,4})\s*kWh\s*/\s*\(?m(?:²|2)"), float)
     if "epc_score" not in f:
-        _put(f, "epc_score", find(pages, r"(\d{2,4})\s*kWh/m²"), float)
-    _put(f, "epc_label", find(pages, r"(?i:energielabel|label|classe(?: énergétique)?)\s*:?\s*([A-F]\+{0,2})\b", flags=0), str.upper)
+        _put(f, "epc_score", find(pages, r"(\d{2,4})\s*kWh\s*/\s*\(?m(?:²|2)"), float)
+    _put(f, "epc_label", find(pages, r"(?i:energielabel|label|classe(?: énergétique)?)\s*:?\s*([A-G]\+{0,2})\b", flags=0), str.upper)
     _put(f, "epc_number", find(pages, r"(\d{8}-\d{7})"))
     _put(f, "epc_valid_until", find(pages, r"(?:geldig tot|valable jusqu'au|valid until)\s*:?\s*" + DATE_RE), _iso)
     _put(f, "epc_issue_date", find(pages, r"(?:opgesteld op|datum van opmaak|date d'établissement|issued on|datum)\s*:?\s*" + DATE_RE), _iso)
@@ -294,11 +294,11 @@ def extract_urbanism(pages: list[str]) -> dict:
     f: dict = {}
     _common(pages, f)
     _put(f, "info_date", find(pages, r"(?:datum|date|afgeleverd op|délivré le)\s*:?\s*" + DATE_RE), _iso)
-    _put(f, "planning_zone", find(pages, r"(woongebied|zone d'habitat|agrarisch gebied|zone agricole|industriegebied|natuurgebied|zone forestière|parkgebied|recreatiegebied)", flags=re.I), str.lower)
+    _put(f, "planning_zone", find(pages, r"(woongebied|zone d'habitation|zone d'habitat|zone mixte|zone administrative|zone d'équipements|agrarisch gebied|zone agricole|industriegebied|natuurgebied|zone forestière|parkgebied|recreatiegebied)", flags=re.I), str.lower)
     for name, topic, neg in (
         ("infraction", r"proces-verbaal|inbreuk|infraction|procès-verbal|stakingsbevel|ordre d'arrêt|herstelmaatregel", NEGATION),
         ("flood_risk", r"overstromingsgevoelig|signaalgebied|zone inondable|aléa d'inondation|risque d'inondation|overstroming", NEGATION + r"|niet[- ]overstromingsgevoelig"),
-        ("heritage", r"beschermd (?:monument|erfgoed)|vastgoedinventaris|bien classé|patrimoine classé|zone de protection", NEGATION),
+        ("heritage", r"beschermd (?:monument|erfgoed)|vastgoedinventaris|bien classé|patrimoine classé|zone de protection|inventaire du patrimoine|inventaire légal", NEGATION),
     ):
         hit = _sentence_flag(pages, topic, neg)
         if hit:

@@ -765,3 +765,16 @@ MESSAGES.update({
     'access.intro.open': "Une question, un retour ou besoin d'aide ? Laissez vos coordonnées : nous vous répondons par e-mail.",
     'access.submit.open': 'Envoyer',
 })
+
+
+MESSAGES.update({
+    'rule.DOC-URBANISM.title': 'Document manquant : renseignements urbanistiques',
+    'rule.DOC-URBANISM.detail': 'À Bruxelles, la lettre de renseignements urbanistiques de la commune est exigée avant la signature (à vérifier auprès du notaire).',
+})
+
+
+MESSAGES.update({
+    'rule.URB-HERITAGE.title': "Bien protégé ou inscrit à l'inventaire du patrimoine",
+    'rule.URB-HERITAGE.detail': "Les renseignements urbanistiques indiquent un classement, une zone de protection ou une inscription à l'inventaire du patrimoine.",
+    'rule.URB-HERITAGE.rec': 'Demandez au notaire les contraintes applicables aux travaux (permis spécifique, avis de la commission de concertation).',
+})

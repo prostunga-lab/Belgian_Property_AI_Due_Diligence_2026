@@ -36,7 +36,7 @@ class Region:
 REGIONS = {
     FLANDERS: Region(FLANDERS, ("epc", "asbestos", "electrical", "soil", "deed"), True, True),
     # Brussels and Wallonia: an asbestos attest is not required for a sale (to verify with the notary), the soil certificate is.
-    BRUSSELS: Region(BRUSSELS, ("epc", "electrical", "soil", "deed"), False, False),
+    BRUSSELS: Region(BRUSSELS, ("epc", "electrical", "soil", "deed", "urbanism"), False, False),
     WALLONIA: Region(WALLONIA, ("epc", "electrical", "soil", "deed"), False, False),
 }
 DEFAULT = REGIONS[FLANDERS]  # used when the region cannot be determined: the original (Flemish) behaviour

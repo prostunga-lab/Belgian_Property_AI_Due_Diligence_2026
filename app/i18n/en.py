@@ -765,3 +765,16 @@ MESSAGES.update({
     'access.intro.open': 'A question, feedback or need help? Leave your details: we reply by e-mail.',
     'access.submit.open': 'Send',
 })
+
+
+MESSAGES.update({
+    'rule.DOC-URBANISM.title': 'Missing document: urban-planning information',
+    'rule.DOC-URBANISM.detail': "In Brussels the municipality's urban-planning information letter is required before signing (to be verified with the notary).",
+})
+
+
+MESSAGES.update({
+    'rule.URB-HERITAGE.title': 'Listed property or on the heritage inventory',
+    'rule.URB-HERITAGE.detail': 'The urban-planning information mentions a listing, a protection zone or an entry on the heritage inventory.',
+    'rule.URB-HERITAGE.rec': 'Ask the notary which constraints apply to works (specific permit, opinion of the consultation committee).',
+})

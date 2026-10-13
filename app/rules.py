@@ -68,6 +68,7 @@ REQUIRED = {  # doc type -> (domain, default severity, party to ask)
     "electrical": ("technical", "medium", "seller"),
     "soil": ("environmental", "medium", "seller"),
     "deed": ("legal", "medium", "notary"),
+    "urbanism": ("urbanistic", "high", "notary"),  # required in Brussels only (see regions.py): the notary asks the commune for it before the compromise
 }
 
 
@@ -140,12 +141,15 @@ def r_epc_label(docs, ctx):
     if not d:
         return
     score, label = val(d, "epc_score"), val(d, "epc_label")
-    if score is not None and label and _label_for(score) != label[0]:
+    # The label/score consistency check uses the FLEMISH thresholds (A..F): it is not applied to Brussels or Walloon certificates,
+    # whose scales differ (A..G), where it would raise false alarms.
+    if (ctx or {}).get("region") in (None, "flanders") and score is not None and label and _label_for(score) != label[0]:
         yield F("EPC-LABEL-MISMATCH", "energy", "medium", "inference",
                 {"score": f"{score:.0f}", "expected": _label_for(score), "label": label}, "seller", [src(d, "epc_score"), src(d, "epc_label")])
-    lab = (label or (_label_for(score) if score is not None else "") or "")[:1]
-    if lab in ("E", "F"):
-        sev = "high" if lab == "F" else "medium"
+    flemish = (ctx or {}).get("region") in (None, "flanders")
+    lab = (label or (_label_for(score) if score is not None and flemish else "") or "")[:1]
+    if lab in ("E", "F", "G"):
+        sev = "high" if lab in ("F", "G") else "medium"
         yield F("EPC-POOR", "energy", sev, "risk", {"label": lab}, "notary",
                 [src(d, "epc_label" if "epc_label" in d.fields else "epc_score")])
 
@@ -339,6 +343,8 @@ def r_urbanism_doc(docs, ctx):
         yield F("URB-INFRACTION", "urbanistic", "high", "risk", {}, "notary", [src(d, "infraction")])
     if val(d, "flood_risk") is True:
         yield F("URB-FLOOD", "environmental", "medium", "risk", {}, "notary", [src(d, "flood_risk")])
+    if val(d, "heritage") is True:
+        yield F("URB-HERITAGE", "urbanistic", "medium", "risk", {}, "notary", [src(d, "heritage")])
 
 
 def r_copro(docs, ctx):
@@ -378,11 +384,11 @@ def r_region(docs, ctx):
 
 # Every rule id a finding can carry; tests check that each one has title/detail text in every language.
 RULE_IDS = [
-    "DOC-EPC", "DOC-ASBESTOS", "DOC-ELECTRICAL", "DOC-SOIL", "DOC-DEED", "DOC-OCR", "DOC-OCR-LOWQ", "DOC-OCR-USED", "DOC-WARN",
+    "DOC-EPC", "DOC-ASBESTOS", "DOC-ELECTRICAL", "DOC-SOIL", "DOC-DEED", "DOC-URBANISM", "DOC-OCR", "DOC-OCR-LOWQ", "DOC-OCR-USED", "DOC-WARN",
     "DOC-UNK", "EPC-EXPIRED", "EPC-OLD", "EPC-LABEL-MISMATCH", "EPC-POOR", "ASB-PRESENT", "ASB-CLEAR", "ASB-UNCLEAR",
     "ASB-OLD-NEG", "ELEC-NONCONFORM", "ELEC-OLD", "SOIL-POLLUTION", "SOIL-CLEAR", "SOIL-UNCLEAR", "CAD-UNBUILT", "X-CADASTRE",
     "X-ADDRESS", "X-SURFACE", "URB-EXT-NOPERMIT", "URB-NO-INFO", "X-BUILDYEAR", "LEG-CADASTRE", "X-DATES",
-    "WORK-EPC-STALE", "WORK-ELEC-STALE", "X-WORKS-BEFORE-BUILD", "URB-INFRACTION", "URB-FLOOD", "COPRO-DISPUTE", "COPRO-ARREARS",
+    "WORK-EPC-STALE", "WORK-ELEC-STALE", "X-WORKS-BEFORE-BUILD", "URB-INFRACTION", "URB-FLOOD", "URB-HERITAGE", "COPRO-DISPUTE", "COPRO-ARREARS",
     "COPRO-OLD-AG", "DOC-PHOTO", "REG-UNKNOWN", "REG-CONFLICT", "REG-PRELIM",
 ]
 

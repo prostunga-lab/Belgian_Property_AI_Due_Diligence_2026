@@ -46,7 +46,7 @@ def test_every_rule_has_text_in_every_language():
 
 def test_rule_ids_list_matches_the_rules_source():
     src = Path("app/rules.py").read_text()
-    used = set(re.findall(r'F\(\s*"([A-Z][A-Z\-]+)"', src)) | {f"DOC-{t}" for t in ("EPC", "ASBESTOS", "ELECTRICAL", "SOIL", "DEED")}
+    used = set(re.findall(r'F\(\s*"([A-Z][A-Z\-]+)"', src)) | {f"DOC-{t}" for t in ("EPC", "ASBESTOS", "ELECTRICAL", "SOIL", "DEED", "URBANISM")}
     assert used <= set(RULE_IDS), f"rules emit ids missing from RULE_IDS: {used - set(RULE_IDS)}"
 
 

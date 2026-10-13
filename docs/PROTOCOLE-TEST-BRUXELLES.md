@@ -8,6 +8,14 @@ Objectif : savoir si l'outil fait gagner du temps et si ses constats sont justes
 3. **Données** : demandez des documents **anonymisés** (noms, adresses exactes, numéros de registre national et coordonnées bancaires masqués), ou des dossiers dont l'agent a le droit de partager le contenu. Les pages légales sont encore des projets non relus par un juriste : n'acceptez pas de dossiers de clients réels tant que la politique de confidentialité n'est pas validée.
 4. **Consentement et confidentialité** : convenez par écrit que les documents ne seront utilisés que pour le test et que l'agent peut demander leur suppression (bouton de suppression du dossier).
 
+## Jeu de test fictif (avant de toucher à de vrais dossiers)
+Un dossier bruxellois **entièrement inventé** (Ixelles, 1050) est fourni en deux variantes : `coherent` (rien d'important à signaler) et `problematique` (PEB G, électricité non conforme, surface incohérente, infraction urbanistique, bien à l'inventaire du patrimoine, litige et arriérés de copropriété).
+```
+python scripts/make_brussels_pack.py pack-bruxelles
+```
+Déposez les 6 PDF d'une variante dans un dossier, lancez l'analyse et comparez avec `tests/test_brussels.py` (résultats attendus). Documents attendus à Bruxelles : PEB, contrôle électrique, attestation du sol, acte/compromis, **renseignements urbanistiques** (l'attestation amiante n'est pas exigée dans le moteur ; ces choix sont préliminaires et à valider par un professionnel).
+Particularités appliquées à Bruxelles : pas de contrôle étiquette/score à la flamande, étiquettes E/F/G jugées faibles, vocabulaire PRAS/PPAS/CoBAT/urban.brussels et « inventaire du patrimoine » reconnus.
+
 ## Scénarios à faire tester (3 à 5 dossiers)
 | # | Dossier | Ce qu'on vérifie |
 |---|---|---|

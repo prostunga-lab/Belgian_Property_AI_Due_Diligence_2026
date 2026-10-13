@@ -39,7 +39,7 @@ def render() -> str:
         "|---|---|---|---|---|---|---|---|---|---|",
     ]
     for rid in RULE_IDS:
-        if rid in ("DOC-EPC", "DOC-ASBESTOS", "DOC-ELECTRICAL", "DOC-SOIL", "DOC-DEED"):
+        if rid in ("DOC-EPC", "DOC-ASBESTOS", "DOC-ELECTRICAL", "DOC-SOIL", "DOC-DEED", "DOC-URBANISM"):
             domain, severity, kind = "documentation", "selon le document", "action"  # severity set per missing document in r_missing_docs
         else:
             domain, severity, kind = facts.get(rid, ("?", "?", "?"))
