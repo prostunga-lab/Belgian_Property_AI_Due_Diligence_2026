@@ -59,7 +59,7 @@ def template_context(request: Request) -> dict:
             "switch_next": switch_target(request), "year": dt.date.today().year, "company_name": config.COMPANY_NAME}
 
 
-app = FastAPI(title="Belgian Property Due Diligence")
+app = FastAPI(title="Belgian Immo Due Diligence")
 app.add_middleware(SessionMiddleware, secret_key=config.SECRET_KEY, same_site="lax", https_only=config.COOKIE_SECURE, max_age=60 * 60 * 12)
 app.mount("/static", StaticFiles(directory=str(Path(__file__).parent / "static")), name="static")
 templates = Jinja2Templates(directory=str(Path(__file__).parent / "templates"), context_processors=[template_context])

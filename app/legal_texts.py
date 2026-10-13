@@ -12,7 +12,7 @@ DOCS = ("legal", "privacy", "terms")
 FR = {
     "legal": [
         ("Éditeur du service", [
-            "Le service « Belgian Property Due Diligence » est édité par :",
+            "Le service « Belgian Immo Due Diligence » est édité par :",
             "- Dénomination : {company}", "- Adresse : {address}", "- Numéro d'entreprise (BCE/TVA) : {enterprise}",
             "- E-mail : {email}", "- Téléphone : {phone}"]),
         ("Hébergement", ["Le service est hébergé par {hosting} (région : {hosting_region})."]),
@@ -58,7 +58,7 @@ FR = {
             "Vous pouvez aussi introduire une réclamation auprès de l'Autorité de protection des données (www.autoriteprotectiondonnees.be)."]),
     ],
     "terms": [
-        ("Objet", ["Les présentes conditions régissent l'utilisation du service « Belgian Property Due Diligence » édité par {company}. En créant un compte, vous les acceptez."]),
+        ("Objet", ["Les présentes conditions régissent l'utilisation du service « Belgian Immo Due Diligence » édité par {company}. En créant un compte, vous les acceptez."]),
         ("Le service", [
             "Le service analyse des documents de dossier immobilier et signale des points d'attention. Le résultat est une aide à la lecture : il peut être incomplet ou erroné et doit être vérifié. "
             "Il ne remplace ni un notaire, ni un expert, ni un conseil juridique. Vous restez responsable des décisions prises.",
@@ -88,7 +88,7 @@ FR = {
 NL = {
     "legal": [
         ("Uitgever van de dienst", [
-            "De dienst « Belgian Property Due Diligence » wordt uitgegeven door:",
+            "De dienst « Belgian Immo Due Diligence » wordt uitgegeven door:",
             "- Naam: {company}", "- Adres: {address}", "- Ondernemingsnummer (KBO/btw): {enterprise}",
             "- E-mail: {email}", "- Telefoon: {phone}"]),
         ("Hosting", ["De dienst wordt gehost door {hosting} (regio: {hosting_region})."]),
@@ -134,7 +134,7 @@ NL = {
             "U kunt ook klacht indienen bij de Gegevensbeschermingsautoriteit (www.gegevensbeschermingsautoriteit.be)."]),
     ],
     "terms": [
-        ("Doel", ["Deze voorwaarden regelen het gebruik van de dienst « Belgian Property Due Diligence » van {company}. Door een account aan te maken aanvaardt u ze."]),
+        ("Doel", ["Deze voorwaarden regelen het gebruik van de dienst « Belgian Immo Due Diligence » van {company}. Door een account aan te maken aanvaardt u ze."]),
         ("De dienst", [
             "De dienst analyseert documenten van een vastgoeddossier en signaleert aandachtspunten. Het resultaat is een leeshulp: het kan onvolledig of onjuist zijn en moet worden gecontroleerd. "
             "Het vervangt geen notaris, expert of juridisch advies. U blijft verantwoordelijk voor uw beslissingen.",
@@ -164,7 +164,7 @@ NL = {
 EN = {
     "legal": [
         ("Publisher", [
-            "The « Belgian Property Due Diligence » service is published by:",
+            "The « Belgian Immo Due Diligence » service is published by:",
             "- Name: {company}", "- Address: {address}", "- Enterprise number (BCE/VAT): {enterprise}",
             "- E-mail: {email}", "- Phone: {phone}"]),
         ("Hosting", ["The service is hosted by {hosting} (region: {hosting_region})."]),
@@ -210,7 +210,7 @@ EN = {
             "You may also lodge a complaint with the Belgian Data Protection Authority (www.dataprotectionauthority.be)."]),
     ],
     "terms": [
-        ("Purpose", ["These terms govern the use of the « Belgian Property Due Diligence » service published by {company}. By creating an account you accept them."]),
+        ("Purpose", ["These terms govern the use of the « Belgian Immo Due Diligence » service published by {company}. By creating an account you accept them."]),
         ("The service", [
             "The service analyses property-file documents and flags points of attention. The result is a reading aid: it may be incomplete or wrong and must be checked. "
             "It does not replace a notary, a surveyor or legal advice. You remain responsible for your decisions.",

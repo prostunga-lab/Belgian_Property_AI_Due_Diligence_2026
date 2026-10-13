@@ -111,7 +111,7 @@ def test_about_and_contact_are_in_the_header_menu_not_the_footer_on_every_kind_o
         assert 'href="/about"' not in footer and 'href="/contact"' not in footer, f"{name}: footer must not link About/Contact"
         header = r.text.split("<header>")[1].split("</header>")[0]
         assert 'href="/about"' in header and 'href="/contact"' in header, f"{name}: header menu links missing"
-        assert f"© {dt.date.today().year} Belgian Property Due Diligence" in html.unescape(footer)
+        assert f"© {dt.date.today().year} Belgian Immo Due Diligence" in html.unescape(footer)
 
 
 def test_footer_uses_the_company_name_when_set(monkeypatch):
@@ -123,3 +123,14 @@ def test_header_menu_order_is_about_pricing_contact():
     for lang in ("fr", "nl", "en"):
         header = get(lang, "/").text.split("<header>")[1].split("</nav>")[0]
         assert header.index('href="/about"') < header.index('href="/pricing"') < header.index('href="/contact"'), lang
+
+
+def test_the_brand_is_belgian_immo_due_diligence_everywhere_users_see_it():
+    from pathlib import Path
+    for lang in ("fr", "nl", "en"):
+        for path in ("/", "/about", "/pricing", "/contact", "/legal", "/terms", "/demo"):
+            html = get(lang, path).text
+            assert "Belgian Immo Due Diligence" in html and "Belgian Property" not in html, (lang, path)
+    for path in Path("app").rglob("*"):
+        if path.suffix in (".py", ".html", ".js"):
+            assert "Belgian Property Due Diligence" not in path.read_text(encoding="utf-8"), path

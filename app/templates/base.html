@@ -1,6 +1,6 @@
 <!doctype html>
 <html lang="{{ lang }}"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
-<title>{% block title %}Property Due Diligence{% endblock %}</title>
+<title>{% block title %}Belgian Immo Due Diligence{% endblock %}</title>
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Ctext y='.9em' font-size='90'%3E%F0%9F%8F%A0%3C/text%3E%3C/svg%3E">
 {% block head %}{% endblock %}
 <style>
@@ -33,7 +33,7 @@ table.reno{margin:8px 0 0}table.reno th{color:var(--mut);font-size:13px}table.re
 ol.tl{list-style:none;margin:8px 0 0;padding:0;border-left:2px solid var(--bd)}ol.tl li{padding:4px 0 4px 14px;position:relative}ol.tl li:before{content:'';position:absolute;left:-6px;top:11px;width:10px;height:10px;border-radius:50%;background:var(--acc)}ol.tl li.flagged:before{background:var(--high)}ol.tl time{font-variant-numeric:tabular-nums;color:var(--mut);margin-right:6px}
 footer .mut{display:grid;gap:6px}.footnav{display:flex;gap:16px;flex-wrap:wrap}.footnav a{color:var(--fg);font-weight:600}
 </style></head><body>
-<header><div class="hl"><a href="/" class="brand"><b>🏠 Belgian Property Due Diligence</b></a>
+<header><div class="hl"><a href="/" class="brand"><b>🏠 Belgian Immo Due Diligence</b></a>
 <nav class="mainnav" aria-label="Menu">{% for href, key in (("/about", "nav.about"), ("/pricing", "nav.pricing"), ("/contact", "nav.contact")) %}<a href="{{ href }}"{% if request.url.path == href %} aria-current="page"{% endif %}>{{ _(key) }}</a>{% endfor %}</nav></div>
 <div class="row">
 <nav class="row" aria-label="{{ _('ui.language') }}" style="gap:2px">{% for code in languages %}<a href="/lang/{{ code }}?next={{ switch_next|urlencode }}" class="langbtn{{ ' on' if code == lang }}" hreflang="{{ code }}" lang="{{ code }}" {{ 'aria-current=true' if code == lang }} title="{{ lang_names[code] }}">{{ code|upper }}</a>{% endfor %}</nav>
@@ -41,5 +41,5 @@ footer .mut{display:grid;gap:6px}.footnav{display:flex;gap:16px;flex-wrap:wrap}.
 <form method="post" action="/logout"><button class="sec">{{ _('nav.logout') }}</button></form>{% elif request.url.path != '/login' %}<a href="/login">{{ _('nav.login') }}</a>{% endif %}</div></header>
 <main>{% block content %}{% endblock %}</main>
 <footer><main class="mut"><nav class="footnav" aria-label="Legal">{% for href, key in (("/legal", "nav.legal"), ("/privacy", "nav.privacy"), ("/terms", "nav.terms")) %}<a href="{{ href }}">{{ _(key) }}</a>{% endfor %}</nav>
-<div>{{ _('ui.disclaimer') }}</div><div>{{ _('footer.copyright', year=year, name=company_name or 'Belgian Property Due Diligence') }}</div></main></footer>
+<div>{{ _('ui.disclaimer') }}</div><div>{{ _('footer.copyright', year=year, name=company_name or 'Belgian Immo Due Diligence') }}</div></main></footer>
 <script src="/static/app.js" defer></script></body></html>

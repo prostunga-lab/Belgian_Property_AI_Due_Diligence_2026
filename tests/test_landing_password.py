@@ -28,7 +28,7 @@ def test_visitors_see_the_landing_page_in_their_language(lang, h1, cta, login):
     assert f'<html lang="{lang}"' in body and h1 in body and cta in body and login in body
     assert 'href="/login#register"' in body and 'href="/login#login"' in body
     assert re.search(r'<h1>', body) and body.count("<h1") == 1  # one main heading
-    assert '<meta name="description"' in body and "<title>Belgian Property Due Diligence" in body
+    assert '<meta name="description"' in body and "<title>Belgian Immo Due Diligence" in body
     for code in LANGS:  # alternate-language links for search engines + the visible switcher
         assert f'hreflang="{code}"' in body and f"/lang/{code}?next=" in body
 

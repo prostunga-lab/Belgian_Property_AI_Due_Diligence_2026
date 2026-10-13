@@ -1,4 +1,4 @@
-# Belgian Property Due Diligence (MVP)
+# Belgian Immo Due Diligence (MVP)
 
 SaaS construit à partir de `docs/strategy.md` (§9 « MVP recommandé »): **Flandre, 4 documents** – EPC, acte, asbestattest, contrôle électrique.
 
