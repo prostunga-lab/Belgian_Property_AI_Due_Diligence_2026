@@ -47,7 +47,7 @@ section.block{margin:36px 0}section.block>h2{font-size:22px;margin:0 0 12px}.ste
 
 <section class="block two">
   <div class="card"><h2 style="margin-top:0;font-size:20px">{{ _('landing.coverage.title') }}</h2><p class="mut">{{ _('landing.coverage.text') }}</p></div>
-  <div class="card"><h2 style="margin-top:0;font-size:20px">{{ _('landing.pricing.title') }}</h2><p class="mut">{{ _('landing.pricing.text') }}</p><p style="margin:10px 0 0"><a href="/pricing">{{ _('landing.pricing.link') }} →</a></p></div>
+  <div class="card"><h2 style="margin-top:0;font-size:20px">{{ _('landing.pricing.title') }}</h2><p class="mut">{{ _('landing.pricing.text') }}</p>{% if trial_days %}<p><b>{{ _('landing.trial', days=trial_days) }}</b></p>{% endif %}<p style="margin:10px 0 0"><a href="/pricing">{{ _('landing.pricing.link') }} →</a></p></div>
 </section>
 
 <section class="block faq" aria-labelledby="faq"><h2 id="faq">{{ _('landing.faq.title') }}</h2>

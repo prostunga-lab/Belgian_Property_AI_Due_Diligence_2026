@@ -16,8 +16,8 @@
     {% if invite %}<p style="margin:12px 0 0">{{ _('contact.invite') }}</p>{% endif %}
     <p class="mut" style="margin:12px 0 0">{{ _('contact.privacy') }}</p></div>
   {% else %}<div class="card"><p style="margin:0">{{ _('contact.unavailable') }}</p></div>{% endif %}
-  <div class="card" id="access"><h2 style="margin:0 0 6px;font-size:18px">{{ _('access.title') }}</h2>
-  <p class="mut" style="margin:0 0 10px">{{ _('access.intro') }}</p>
+  <div class="card" id="access"><h2 style="margin:0 0 6px;font-size:18px">{{ _('access.title') if invite else _('access.title.open') }}</h2>
+  <p class="mut" style="margin:0 0 10px">{{ _('access.intro') if invite else _('access.intro.open') }}</p>
   {% if sent %}<p class="ok" role="status"><b>{{ _('access.sent') }}</b></p>{% endif %}
   {% if error %}<p class="high" role="alert">{{ error }}</p>{% endif %}
   <form method="post" action="/request-access" class="accessform">
@@ -30,7 +30,7 @@
     <p><label for="ar-msg">{{ _('access.f.message') }}</label><textarea id="ar-msg" name="message" rows="4" maxlength="1000">{{ form.get('message', '') }}</textarea></p>
     <p class="hp" aria-hidden="true"><label>Leave this empty <input name="hp_check" tabindex="-1" autocomplete="off" value=""></label></p>
     <p style="display:flex;gap:8px;align-items:flex-start"><input type="checkbox" name="consent" value="1" id="ar-consent" required style="width:auto;margin-top:3px"><label for="ar-consent">{{ _('access.consent', privacy='@P@')|e|replace('@P@', '<a href="/privacy" target="_blank" rel="noopener">'|safe ~ _('nav.privacy') ~ '</a>'|safe) }}</label></p>
-    <button>{{ _('access.submit') }}</button>
+    <button>{{ _('access.submit') if invite else _('access.submit.open') }}</button>
   </form></div>
   {% if company_name or company_address or enterprise_number or company_phone %}
   <div class="card"><h2 style="margin:0 0 10px;font-size:18px">{{ _('contact.company.title') }}</h2><dl class="details">

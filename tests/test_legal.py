@@ -10,7 +10,7 @@ from app.main import app
 from tests.helpers import page_text
 
 PLACEHOLDER = re.compile(r"\{(\w+)\}")
-KNOWN = {"company", "address", "enterprise", "email", "phone", "hosting", "hosting_region", "todo", "minutes"}
+KNOWN = {"company", "address", "enterprise", "email", "phone", "hosting", "hosting_region", "todo", "minutes", "trial_days", "trial_dossiers"}
 
 
 def get(lang, path):

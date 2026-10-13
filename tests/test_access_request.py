@@ -77,8 +77,12 @@ def test_the_owner_is_notified_by_e_mail_when_a_contact_address_is_configured(mo
 
 
 def test_contact_form_shows_on_the_page_and_is_linked_from_landing_and_login_when_invitation_only(monkeypatch):
+    monkeypatch.setattr(config, "INVITE_CODE", "abcd-efgh")
     for lang in LANGS:
         assert CATALOGS[lang]["access.title"] in page_text(anon(lang).get("/contact"))
+    monkeypatch.setattr(config, "INVITE_CODE", None)
+    for lang in LANGS:  # open registration: the same form is just a way to write to the owner
+        assert CATALOGS[lang]["access.title.open"] in page_text(anon(lang).get("/contact"))
     monkeypatch.setattr(config, "INVITE_CODE", None)
     assert 'href="/contact#access"' not in anon().get("/").text and 'href="/contact#access"' not in anon().get("/login").text
     monkeypatch.setattr(config, "INVITE_CODE", "abcd-efgh")

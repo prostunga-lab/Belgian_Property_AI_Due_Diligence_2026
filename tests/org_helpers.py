@@ -13,7 +13,8 @@ def get_org(org_id: int) -> dict:
     with SessionLocal() as db:
         o = db.get(Org, org_id)
         return {"credits": o.credits, "plan": o.plan, "status": o.subscription_status, "cycle_used": o.cycle_used,
-                "customer": o.stripe_customer_id, "subscription": o.stripe_subscription_id, "cancel_at_period_end": o.cancel_at_period_end}
+                "customer": o.stripe_customer_id, "subscription": o.stripe_subscription_id, "cancel_at_period_end": o.cancel_at_period_end,
+                "trial_used": o.trial_used, "trial_ends_at": o.trial_ends_at}
 
 
 def org_credits(org_id: int) -> int:

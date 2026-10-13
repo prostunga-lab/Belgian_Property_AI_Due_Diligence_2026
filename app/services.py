@@ -81,15 +81,23 @@ def quota_state(org: Org, now: dt.datetime | None = None) -> tuple[int, dt.datet
     return (0 if elapsed else org.cycle_used), plans.add_months(start, 1)
 
 
+def quota_cap(org: Org, plan: plans.Plan) -> int:
+    """Dossiers per monthly cycle. During the free trial the quota is limited (TRIAL_DOSSIERS), so a trial cannot be used up and cancelled."""
+    if org.subscription_status == "trialing":
+        return min(plan.dossiers, config.TRIAL_DOSSIERS)
+    return plan.dossiers
+
+
 def balance(org: Org, now: dt.datetime | None = None) -> dict:
     """What an organisation can still spend: monthly quota left (subscribers) + purchased dossier credits."""
     plan = plans.get(org.plan) if subscription_active(org) else None
-    quota = plan.dossiers if plan else 0
+    quota = quota_cap(org, plan) if plan else 0
     used, renews_on = quota_state(org, now) if plan else (0, None)
     left = max(0, quota - used) if plan else 0
     return {"credits": org.credits, "subscribed": bool(plan), "plan": plan, "quota": quota, "used": used, "quota_left": left,
             "renews_on": renews_on, "period": org.billing_period, "status": org.subscription_status,
-            "cancel_at_period_end": bool(org.cancel_at_period_end), "available": left + org.credits}
+            "cancel_at_period_end": bool(org.cancel_at_period_end), "available": left + org.credits,
+            "trialing": org.subscription_status == "trialing", "trial_ends_at": org.trial_ends_at}
 
 
 def _roll_quota_cycle(db: Session, org: Org) -> None:
@@ -130,7 +138,7 @@ def charge_for_analysis(db: Session, case: Case) -> str | None:
     if plan and plan.kind == "subscription":
         if org.subscription_status in plans.SUBSCRIPTION_ACTIVE:
             _roll_quota_cycle(db, org)
-        res = db.execute(update(Org).where(Org.id == org.id, Org.subscription_status.in_(plans.SUBSCRIPTION_ACTIVE), Org.cycle_used < plan.dossiers)
+        res = db.execute(update(Org).where(Org.id == org.id, Org.subscription_status.in_(plans.SUBSCRIPTION_ACTIVE), Org.cycle_used < quota_cap(org, plan))
                          .values(cycle_used=Org.cycle_used + 1))
         source = "quota" if res.rowcount else None
     if source is None:

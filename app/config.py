@@ -25,6 +25,12 @@ APP_ENV = _clean("APP_ENV", "development").lower()  # "production" enforces secr
 FILE_ENCRYPTION_KEY = os.environ.get("FILE_ENCRYPTION_KEY")
 # Registration: "open" (anyone) or "invite" (requires INVITE_CODE).
 INVITE_CODE = _clean("INVITE_CODE") or None
+# Open registration: anyone may create an account (no invitation code). Explicit opt-in, because it also opens the free trial to everybody.
+OPEN_REGISTRATION = _clean("OPEN_REGISTRATION", "0") == "1" and not INVITE_CODE  # an invitation code, when set, always wins
+REGISTRATIONS_PER_IP_PER_DAY = int(os.environ.get("REGISTRATIONS_PER_IP_PER_DAY", "5"))
+# Free trial of the subscription plans (Stripe trial period): days, and the dossiers that can be analysed during it. 0 days = no trial.
+TRIAL_DAYS = int(os.environ.get("TRIAL_DAYS", "3"))
+TRIAL_DOSSIERS = int(os.environ.get("TRIAL_DOSSIERS", "3"))
 ADMIN_EMAILS = {e.strip().lower() for e in _clean("ADMIN_EMAILS").split(",") if e.strip()}  # may read the access requests at /admin/requests
 AUTO_MIGRATE = os.environ.get("AUTO_MIGRATE", "1") == "1"
 SECRET_KEY = os.environ.get("SECRET_KEY", "dev-only-change-me")
@@ -84,7 +90,7 @@ OCR_TIMEOUT_S = int(os.environ.get("OCR_TIMEOUT_S", "120"))
 
 if APP_ENV == "production":
     missing = [n for n, ok in [("SECRET_KEY", SECRET_KEY != "dev-only-change-me"), ("FILE_ENCRYPTION_KEY", bool(FILE_ENCRYPTION_KEY)),
-                               ("INVITE_CODE", bool(INVITE_CODE)), ("COOKIE_SECURE=1", COOKIE_SECURE)] if not ok]
+                               ("INVITE_CODE (or OPEN_REGISTRATION=1)", bool(INVITE_CODE) or OPEN_REGISTRATION), ("COOKIE_SECURE=1", COOKIE_SECURE)] if not ok]
     if missing:
         raise RuntimeError(f"APP_ENV=production but not configured: {', '.join(missing)}")
 

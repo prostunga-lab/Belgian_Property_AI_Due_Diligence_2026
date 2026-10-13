@@ -181,7 +181,7 @@ def test_checkout_charges_exactly_the_catalogue_price(plan_id):
         o, u = db.get(Org, oid), db.scalar(select(User).where(User.org_id == oid))
         kw = billing.checkout_kwargs(o, u, plan, "nl")
     line = kw["line_items"][0]
-    expected = {"org_id": str(oid), "plan_id": plan_id, **({"period": "monthly"} if plan.kind == "subscription" else {})}
+    expected = {"org_id": str(oid), "plan_id": plan_id, **({"period": "monthly", "trial": "1"} if plan.kind == "subscription" else {})}
     assert line["quantity"] == 1 and line["price_data"]["unit_amount"] == plan.price_cents and line["price_data"]["currency"] == "eur"
     assert kw["metadata"] == expected and kw["client_reference_id"] == str(oid) and kw["locale"] == "nl"
     assert kw["customer_email"] == f"st-kw-{plan_id}@x.be" and kw["success_url"].endswith("/account?paid=1") and kw["cancel_url"].endswith("/pricing")

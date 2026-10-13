@@ -752,3 +752,16 @@ MESSAGES.update({
     'demo.try': 'Create an account',
     'demo.docs': 'Demonstration documents analysed',
 })
+
+
+MESSAGES.update({
+    'pricing.trial_badge': '{days}-day free trial',
+    'pricing.cta_trial': 'Try free for {days} days',
+    'pricing.trial_note': 'Credit card required. No payment during the {days} days; the subscription is then charged automatically unless you cancel before the trial ends. During the trial: {dossiers} dossiers at most. One trial per organisation.',
+    'acct.trial_line': 'Free trial until {date}: {quota} dossiers at most during the trial. After that the full subscription is charged automatically unless you cancel before that date (« Manage my subscription » button).',
+    'billing.trial_message': '{days}-day free trial (up to {dossiers} dossiers), then {price} ({period}) charged automatically. Cancel any time before the trial ends to pay nothing.',
+    'landing.trial': 'Agent and agency subscriptions: {days}-day free trial (card required, cancel before it ends).',
+    'access.title.open': 'Write to us',
+    'access.intro.open': 'A question, feedback or need help? Leave your details: we reply by e-mail.',
+    'access.submit.open': 'Send',
+})

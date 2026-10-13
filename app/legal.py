@@ -24,11 +24,12 @@ def _values(lang: str) -> dict:
         "hosting_region": fact(config.HOSTING_REGION, {"fr": "région", "nl": "regio", "en": "region"}[lang]),
         "todo": f'<mark class="todo">[{escape(i18n.t("legal.todo_decision", lang))}]</mark>',
         "minutes": escape(str(config.PROCESSING_PROMISE_MINUTES)),
+        "trial_days": escape(str(config.TRIAL_DAYS)), "trial_dossiers": escape(str(config.TRIAL_DOSSIERS)),
     }
 
 
 def _enabled() -> set:
-    return {name for name, on in (("stripe", config.STRIPE_SECRET_KEY), ("ai", config.ANTHROPIC_API_KEY), ("smtp", config.MAIL_ENABLED)) if on}
+    return {name for name, on in (("stripe", config.STRIPE_SECRET_KEY), ("ai", config.ANTHROPIC_API_KEY), ("smtp", config.MAIL_ENABLED), ("trial", config.TRIAL_DAYS > 0)) if on}
 
 
 def render(doc: str, lang: str) -> list[dict]:

@@ -40,6 +40,11 @@ def plan_name(plan: plans.Plan, lang: str) -> str:
     return i18n.t(f"plan.{plan.id}.name", lang, n=plan.dossiers)
 
 
+def trial_available(org: Org | None) -> bool:
+    """A free trial is offered when it is configured and this organisation has not had one yet."""
+    return config.TRIAL_DAYS > 0 and not (org is not None and org.trial_used)
+
+
 def checkout_kwargs(org: Org, user: User, plan: plans.Plan, lang: str, period: str = "monthly") -> dict:
     """Arguments for stripe.checkout.Session.create (kept separate so they can be inspected without calling Stripe)."""
     meta = {"org_id": str(org.id), "plan_id": plan.id}
@@ -60,7 +65,14 @@ def checkout_kwargs(org: Org, user: User, plan: plans.Plan, lang: str, period: s
         kwargs["customer_email"] = user.email
     if plan.kind == "subscription":
         price_data["recurring"] = {"interval": "year"} if offer.months == 12 else {"interval": "month", "interval_count": offer.months}
-        kwargs.update(mode="subscription", subscription_data={"metadata": meta})
+        sub_data = {"metadata": meta}
+        if trial_available(org):  # free trial, once per organisation: the card is collected now and charged when the trial ends
+            meta["trial"] = "1"
+            sub_data["trial_period_days"] = config.TRIAL_DAYS
+            kwargs["payment_method_collection"] = "always"
+            kwargs["custom_text"] = {"submit": {"message": i18n.t("billing.trial_message", lang, days=config.TRIAL_DAYS, dossiers=config.TRIAL_DOSSIERS,
+                                                                   price=plans.format_price(offer.total_cents, lang), period=i18n.t("period." + period, lang).lower())}}
+        kwargs.update(mode="subscription", subscription_data=sub_data)
     else:
         kwargs.update(mode="payment", payment_intent_data={"metadata": meta})
     kwargs["line_items"] = [{"quantity": 1, "price_data": price_data}]
@@ -158,6 +170,9 @@ def _on_checkout(db: Session, event_type: str, s: dict) -> str:
         org.billing_period = period if period in plans.PERIODS else "monthly"
         org.plan, org.stripe_customer_id, org.stripe_subscription_id = plan.id, s.get("customer") or org.stripe_customer_id, s.get("subscription")
         org.subscription_status = "active" if paid in ("paid", "no_payment_required") else "incomplete"
+        if _metadata(s).get("trial") == "1" and paid == "no_payment_required":  # started with a free trial: limited quota until the first payment
+            org.subscription_status, org.trial_used = "trialing", True
+            org.trial_ends_at = _now() + dt.timedelta(days=config.TRIAL_DAYS)
         org.cancel_at_period_end, org.cycle_started_at, org.cycle_used = False, _now(), 0
         return "subscription started"
     return "ignored: mode/plan mismatch"
@@ -169,7 +184,9 @@ def _on_invoice_paid(db: Session, inv: dict) -> str:
         return "ignored: unknown organisation"
     if not _record_payment(db, inv["id"], org, credits=0, kind="subscription", plan_id=org.plan, amount=inv.get("amount_paid")):
         return "duplicate invoice"
-    org.subscription_status = "active"  # a paid invoice means the subscription is (again) in good standing
+    if (inv.get("amount_paid") or 0) > 0 or org.subscription_status != "trialing":
+        org.subscription_status = "active"  # a paid invoice means the subscription is (again) in good standing
+    # (the 0 EUR invoice that opens a free trial must NOT end the trial: only a real payment does)
     # The monthly QUOTA is not renewed here: with 6-monthly or yearly billing an invoice only comes every 6/12 months, while the quota
     # must come back every month. It follows its own clock (services._roll_quota_cycle).
     return "invoice recorded"
@@ -186,6 +203,10 @@ def _on_subscription(db: Session, event_type: str, sub: dict) -> str:
     if status in ("incomplete", "incomplete_expired") and org.subscription_status in plans.SUBSCRIPTION_ACTIVE:
         return "ignored: stale status"  # an early 'incomplete' event arriving after the subscription became active
     org.subscription_status, org.cancel_at_period_end = status, bool(sub.get("cancel_at_period_end"))
+    if status == "trialing":
+        org.trial_used = True
+    if isinstance(sub.get("trial_end"), (int, float)):
+        org.trial_ends_at = dt.datetime.fromtimestamp(sub["trial_end"], dt.timezone.utc)
     if sub.get("id"):
         org.stripe_subscription_id = sub["id"]
     return f"status={status}"

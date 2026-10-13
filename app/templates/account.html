@@ -6,6 +6,7 @@
 <div class="card"><b>{{ _('acct.plan_title') }}</b>
 {% if bal.subscribed %}<p>{{ _('acct.sub_line', name=sub_name, period=_('period.' ~ (bal.period or 'monthly')), used=bal.used, quota=bal.quota) }}
 <span class="badge ok">{{ _('acct.sub_status.' ~ bal.status) }}</span></p>
+{% if bal.trialing and bal.trial_ends_at %}<p role="note" class="card" style="margin:8px 0">{{ _('acct.trial_line', date=bal.trial_ends_at.date().isoformat(), quota=bal.quota) }}</p>{% endif %}
 {% if bal.renews_on %}<p class="mut">{{ _('acct.quota_renews', date=bal.renews_on.date().isoformat()) }}</p>{% endif %}
 {% if bal.cancel_at_period_end %}<p class="mut">{{ _('acct.sub_cancel_at_end') }}</p>{% endif %}
 {% elif org.subscription_status %}<p>{{ _('acct.sub_none') }} <span class="badge {{ 'warn' if org.subscription_status in ('past_due', 'unpaid') else 'info' }}">{{ _('acct.sub_status.' ~ org.subscription_status) }}</span></p>

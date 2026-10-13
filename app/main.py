@@ -67,7 +67,8 @@ app.include_router(billing.router)
 app.include_router(api_v1_router)
 init_db()
 logging.getLogger("uvicorn.error").info(
-    "startup: build=%s mail=%s invite_code=%s", (os.environ.get("RAILWAY_GIT_COMMIT_SHA") or "unknown")[:7], mail.transport(),
+    "startup: build=%s mail=%s registration=%s invite_code=%s", (os.environ.get("RAILWAY_GIT_COMMIT_SHA") or "unknown")[:7], mail.transport(),
+    "open" if config.OPEN_REGISTRATION else "invitation-only" if config.INVITE_CODE else "open (no invite code, dev)",
     f"configured ({len(invite.normalize(config.INVITE_CODE))} chars after normalisation)" if config.INVITE_CODE else "not set (registration open)")
 
 SEVERITY_ORDER = {"high": 0, "medium": 1, "low": 2, "info": 3}
@@ -183,7 +184,8 @@ def health(db: Session = Depends(get_db)):
     db.execute(text("SELECT 1"))
     return {"status": "ok", "ruleset": RULESET_VERSION, "build": (os.environ.get("RAILWAY_GIT_COMMIT_SHA") or "unknown")[:7],
             "invite_required": bool(config.INVITE_CODE), "terms_version": legal.VERSION, "mail": mail.transport(),
-            "access_notifications": bool(config.CONTACT_EMAIL) and mail.transport() != "log"}
+            "access_notifications": bool(config.CONTACT_EMAIL) and mail.transport() != "log",
+            "registration": "invitation-only" if config.INVITE_CODE else "open", "trial_days": config.TRIAL_DAYS}
 
 
 @app.get("/about")
@@ -379,6 +381,7 @@ def register(request: Request, bg: BackgroundTasks, email: str = Form(...), pass
         return refuse("auth.err.password_short", 400)
     if db.scalar(select(User).where(User.email == email)):
         return refuse("auth.err.exists", 409)
+    throttle(f"regday:{client_ip(request)}", config.REGISTRATIONS_PER_IP_PER_DAY, 86400)  # counts completed registrations only
     org = Org(name=(org_name or email.split("@")[0])[:200], account_type=account_type, credits=config.FREE_CREDITS)
     db.add(org)
     db.flush()
@@ -504,10 +507,11 @@ def pricing_page(request: Request, user: User | None = Depends(optional_user), d
     """Public pricing: pay per complete dossier (investors) or monthly subscription with a quota (agents)."""
     ctx = {"cards": pricing.cards(request.state.lang), "stripe_ready": billing.configured(), "free_credits": config.FREE_CREDITS,
            "max_documents": config.DOSSIER_MAX_DOCUMENTS, "vat": config.PRICES_VAT, "base_url": config.BASE_URL, "signed_in": user is not None,
-           "promise_minutes": config.PROCESSING_PROMISE_MINUTES}
+           "promise_minutes": config.PROCESSING_PROMISE_MINUTES, "trial_days": config.TRIAL_DAYS if billing.trial_available(None) else 0,
+           "trial_dossiers": config.TRIAL_DOSSIERS}
     if user:
         org = db.get(Org, user.org_id)
-        ctx |= {"user": user, "org": org, "bal": balance(org)}
+        ctx |= {"user": user, "org": org, "bal": balance(org), "trial_days": config.TRIAL_DAYS if billing.trial_available(org) else 0}
     return templates.TemplateResponse(request, "pricing.html", ctx)
 
 
@@ -549,7 +553,8 @@ def home(request: Request, user: User | None = Depends(optional_user), db: Sessi
     if user is None:
         return templates.TemplateResponse(request, "landing.html", {
             "invite": bool(config.INVITE_CODE), "free_credits": config.FREE_CREDITS, "max_files": config.MAX_FILES_PER_REQUEST,
-            "max_mb": config.MAX_UPLOAD_MB, "base_url": config.BASE_URL, "promise_minutes": config.PROCESSING_PROMISE_MINUTES})
+            "max_mb": config.MAX_UPLOAD_MB, "base_url": config.BASE_URL, "promise_minutes": config.PROCESSING_PROMISE_MINUTES,
+            "trial_days": config.TRIAL_DAYS})
     cases = db.scalars(select(Case).where(Case.org_id == user.org_id).order_by(Case.id.desc())).all()
     org = db.get(Org, user.org_id)
     return templates.TemplateResponse(request, "dashboard.html", {

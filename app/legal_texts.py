@@ -73,6 +73,7 @@ FR = {
             "- Paiement à l'unité : les crédits achetés servent à analyser des dossiers ; validité et remboursement des crédits non utilisés : {todo}.",
             "- Abonnements (agent, agence) : un quota de dossiers par mois, renouvelé chaque mois à la date anniversaire, non reportable. La formule peut être payée par mois, par semestre ou par an, avec les remises affichées sur la page Tarifs.",
             "- L'abonnement se renouvelle automatiquement à la fin de chaque période. Vous pouvez le résilier à tout moment depuis le portail de facturation ; il reste actif jusqu'à la fin de la période payée.",
+            ("trial", "- Essai gratuit : les abonnements (agent, agence) peuvent être essayés pendant {trial_days} jours, dans la limite de {trial_dossiers} dossiers, une fois par organisation. Une carte bancaire est demandée au départ ; à la fin de l'essai l'abonnement est facturé automatiquement, sauf résiliation avant cette date depuis le portail de facturation."),
             "- Les prix affichés sont ceux de la page Tarifs au moment de l'achat."]),
         ("Droit de rétractation", [
             "Les consommateurs disposent en principe de 14 jours pour se rétracter, sauf pour un contenu numérique ou un service pleinement exécuté avec leur accord préalable exprès et la reconnaissance de la perte du droit de rétractation. Modalités applicables : {todo}."]),
@@ -148,6 +149,7 @@ NL = {
             "- Betaling per stuk: gekochte tegoeden dienen om dossiers te analyseren; geldigheid en terugbetaling van ongebruikte tegoeden: {todo}.",
             "- Abonnementen (makelaar, kantoor): een quotum dossiers per maand, elke maand vernieuwd op de verjaardatum, niet overdraagbaar. De formule kan per maand, per halfjaar of per jaar worden betaald, met de korting op de pagina Tarieven.",
             "- Het abonnement wordt automatisch verlengd aan het einde van elke periode. U kunt op elk moment opzeggen via het factureringsportaal; het blijft actief tot het einde van de betaalde periode.",
+            ("trial", "- Gratis proefperiode: de abonnementen (makelaar, kantoor) kunnen {trial_days} dagen worden uitgeprobeerd, beperkt tot {trial_dossiers} dossiers, eenmaal per organisatie. Bij de start wordt een bankkaart gevraagd; na de proefperiode wordt het abonnement automatisch aangerekend, tenzij u vóór die datum opzegt via het factureringsportaal."),
             "- De getoonde prijzen zijn die van de pagina Tarieven op het moment van aankoop."]),
         ("Herroepingsrecht", [
             "Consumenten hebben in principe 14 dagen om te herroepen, behalve voor digitale inhoud of een volledig uitgevoerde dienst met hun voorafgaande uitdrukkelijke instemming en erkenning van het verlies van het herroepingsrecht. Toepasselijke regeling: {todo}."]),
@@ -223,6 +225,7 @@ EN = {
             "- Pay as you go: purchased credits are used to analyse cases; validity and refund of unused credits: {todo}.",
             "- Subscriptions (agent, agency): a monthly case quota, renewed every month on the anniversary date, not carried over. The plan can be paid monthly, every six months or yearly, with the discounts shown on the Pricing page.",
             "- The subscription renews automatically at the end of each period. You can cancel at any time from the billing portal; it stays active until the end of the paid period.",
+            ("trial", "- Free trial: the subscriptions (agent, agency) can be tried for {trial_days} days, limited to {trial_dossiers} cases, once per organisation. A card is requested at the start; when the trial ends the subscription is charged automatically unless you cancel before that date from the billing portal."),
             "- Displayed prices are those of the Pricing page at the time of purchase."]),
         ("Right of withdrawal", [
             "Consumers have in principle 14 days to withdraw, except for digital content or a fully performed service with their prior express consent and acknowledgement that the right of withdrawal is lost. Applicable arrangements: {todo}."]),

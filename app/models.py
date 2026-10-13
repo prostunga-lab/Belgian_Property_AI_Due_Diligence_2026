@@ -33,6 +33,8 @@ class Org(Base):
     cycle_started_at: Mapped[dt.datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)  # anchor of the MONTHLY quota clock
     cycle_used: Mapped[int] = mapped_column(Integer, default=0, server_default="0")  # dossiers consumed in the current monthly cycle
     account_type: Mapped[str] = mapped_column(String(12), default="professional", server_default="professional")  # individual | professional
+    trial_used: Mapped[bool] = mapped_column(Boolean, default=False, server_default=sa_false())  # the free trial of a subscription is granted once per organisation
+    trial_ends_at: Mapped[dt.datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
     created_at: Mapped[dt.datetime] = mapped_column(DateTime(timezone=True), default=now)
 
 

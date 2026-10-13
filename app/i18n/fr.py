@@ -752,3 +752,16 @@ MESSAGES.update({
     'demo.try': 'Créer un compte',
     'demo.docs': 'Documents de démonstration analysés',
 })
+
+
+MESSAGES.update({
+    'pricing.trial_badge': "{days} jours d'essai gratuit",
+    'pricing.cta_trial': 'Essayer {days} jours gratuitement',
+    'pricing.trial_note': "Carte bancaire requise. Aucun paiement pendant les {days} jours ; l'abonnement est ensuite facturé automatiquement, sauf résiliation avant la fin de l'essai. Pendant l'essai : {dossiers} dossiers au maximum. Un essai par organisation.",
+    'acct.trial_line': "Essai gratuit jusqu'au {date} : {quota} dossiers au maximum pendant l'essai. Ensuite, l'abonnement complet est facturé automatiquement, sauf résiliation avant cette date (bouton « Gérer mon abonnement »).",
+    'billing.trial_message': "Essai gratuit de {days} jours (jusqu'à {dossiers} dossiers), puis {price} ({period}) facturé automatiquement. Résiliable à tout moment avant la fin de l'essai pour ne rien payer.",
+    'landing.trial': "Abonnements agent et agence : {days} jours d'essai gratuit (carte requise, résiliable avant la fin).",
+    'access.title.open': 'Nous écrire',
+    'access.intro.open': "Une question, un retour ou besoin d'aide ? Laissez vos coordonnées : nous vous répondons par e-mail.",
+    'access.submit.open': 'Envoyer',
+})

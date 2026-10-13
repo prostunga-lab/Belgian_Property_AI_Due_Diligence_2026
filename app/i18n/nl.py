@@ -752,3 +752,16 @@ MESSAGES.update({
     'demo.try': 'Een account aanmaken',
     'demo.docs': 'Geanalyseerde demonstratiedocumenten',
 })
+
+
+MESSAGES.update({
+    'pricing.trial_badge': '{days} dagen gratis proefperiode',
+    'pricing.cta_trial': '{days} dagen gratis proberen',
+    'pricing.trial_note': 'Bankkaart vereist. Geen betaling tijdens de {days} dagen; daarna wordt het abonnement automatisch aangerekend, tenzij u vóór het einde van de proefperiode opzegt. Tijdens de proefperiode: maximaal {dossiers} dossiers. Eén proefperiode per organisatie.',
+    'acct.trial_line': 'Gratis proefperiode tot {date}: maximaal {quota} dossiers tijdens de proefperiode. Daarna wordt het volledige abonnement automatisch aangerekend, tenzij u vóór die datum opzegt (knop « Mijn abonnement beheren »).',
+    'billing.trial_message': 'Gratis proefperiode van {days} dagen (tot {dossiers} dossiers), daarna {price} ({period}) automatisch aangerekend. Op elk moment opzegbaar vóór het einde van de proefperiode om niets te betalen.',
+    'landing.trial': 'Abonnementen voor makelaars en kantoren: {days} dagen gratis proefperiode (bankkaart vereist, opzegbaar vóór het einde).',
+    'access.title.open': 'Schrijf ons',
+    'access.intro.open': 'Een vraag, feedback of hulp nodig? Laat uw gegevens achter: wij antwoorden per e-mail.',
+    'access.submit.open': 'Verzenden',
+})
