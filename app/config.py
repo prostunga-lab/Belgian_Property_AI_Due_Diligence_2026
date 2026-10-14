@@ -77,6 +77,8 @@ PROCESSING_PROMISE_MINUTES = int(os.environ.get("PROCESSING_PROMISE_MINUTES", "2
 SMTP_HOST = os.environ.get("SMTP_HOST")
 RESEND_API_KEY = os.environ.get("RESEND_API_KEY")  # HTTPS e-mail API (works where outbound SMTP is blocked, e.g. Railway trial/hobby)
 MAIL_ENABLED = bool(SMTP_HOST or RESEND_API_KEY)
+TURNSTILE_SITE_KEY = os.environ.get("TURNSTILE_SITE_KEY")  # Cloudflare Turnstile captcha on registration (optional: both keys needed)
+TURNSTILE_SECRET_KEY = os.environ.get("TURNSTILE_SECRET_KEY")
 # E-mail confirmation is enforced only when mail can actually be delivered (otherwise nobody could ever confirm).
 REQUIRE_EMAIL_VERIFICATION = os.environ.get("REQUIRE_EMAIL_VERIFICATION", "1" if MAIL_ENABLED else "0") == "1"
 MAX_FILES_PER_REQUEST = int(os.environ.get("MAX_FILES_PER_REQUEST", "25"))

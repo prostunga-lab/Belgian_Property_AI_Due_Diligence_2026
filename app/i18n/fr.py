@@ -797,3 +797,8 @@ MESSAGES.update({
 MESSAGES.update({
     'pricing.cta_choose': 'Choisissez votre formule',
 })
+
+
+MESSAGES.update({
+    'auth.err.captcha': 'La vérification anti-robot a échoué. Rechargez la page et réessayez.',
+})

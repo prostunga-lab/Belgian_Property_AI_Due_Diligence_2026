@@ -797,3 +797,8 @@ MESSAGES.update({
 MESSAGES.update({
     'pricing.cta_choose': 'Kies uw formule',
 })
+
+
+MESSAGES.update({
+    'auth.err.captcha': 'De anti-robotcontrole is mislukt. Laad de pagina opnieuw en probeer het nog eens.',
+})

@@ -19,7 +19,7 @@ from sqlalchemy.orm import Session
 from starlette.exceptions import HTTPException as StarletteHTTPException
 from starlette.middleware.sessions import SessionMiddleware
 
-from . import billing, config, i18n, invite, legal, mail, pricing
+from . import billing, captcha, config, i18n, invite, legal, mail, pricing
 from . import demo, renovation
 from . import summary as property_summary
 from .api_v1 import router as api_v1_router
@@ -85,8 +85,10 @@ DASHBOARD_MESSAGES = {"verification_sent": "msg.verification_sent"}
 # No inline scripts anywhere (behaviour lives in /static/app.js), so scripts are limited to this origin. Inline *styles* are still
 # used by the templates, hence 'unsafe-inline' for style-src only. form-action lists the payment provider's hosts because the
 # checkout/portal buttons are forms answered by a redirect to Stripe.
-CSP = ("default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; font-src 'self'; connect-src 'self'; "
-       "object-src 'none'; base-uri 'none'; frame-ancestors 'none'; form-action 'self' https://checkout.stripe.com https://billing.stripe.com")
+def csp() -> str:
+    cf = f" {captcha.HOST}" if captcha.enabled() else ""  # the Turnstile widget: its script and its iframe
+    return (f"default-src 'self'; script-src 'self'{cf}; style-src 'self' 'unsafe-inline'; img-src 'self' data:; font-src 'self'; connect-src 'self'; "
+            f"frame-src 'self'{cf}; object-src 'none'; base-uri 'none'; frame-ancestors 'none'; form-action 'self' https://checkout.stripe.com https://billing.stripe.com")
 
 
 def secure_headers(resp: Response, lang: str | None = None) -> Response:
@@ -99,7 +101,7 @@ def secure_headers(resp: Response, lang: str | None = None) -> Response:
     if config.COOKIE_SECURE:
         resp.headers.setdefault("Strict-Transport-Security", "max-age=31536000; includeSubDomains")
     if config.CSP_MODE != "off":
-        resp.headers.setdefault("Content-Security-Policy-Report-Only" if config.CSP_MODE == "report-only" else "Content-Security-Policy", CSP)
+        resp.headers.setdefault("Content-Security-Policy-Report-Only" if config.CSP_MODE == "report-only" else "Content-Security-Policy", csp())
     return resp
 
 
@@ -348,7 +350,7 @@ def after_auth(raw: str) -> str:
 def login_context(request: Request, error: str | None = None, info: str | None = None, next_url: str = "") -> dict:
     lang = request.state.lang
     return {"next_url": after_auth(next_url) if next_url == "/pricing" else "", "error": i18n.t(error, lang) if error else None, "info": i18n.t(info, lang) if info else None, "invite": bool(config.INVITE_CODE),
-            "free_credits": config.FREE_CREDITS}
+            "turnstile_site_key": config.TURNSTILE_SITE_KEY if captcha.enabled() else None, "free_credits": config.FREE_CREDITS}
 
 
 # --- auth -------------------------------------------------------------------------------------------
@@ -360,7 +362,7 @@ def login_page(request: Request):
 
 @app.post("/register")
 def register(request: Request, bg: BackgroundTasks, email: str = Form(...), password: str = Form(...), org_name: str = Form(""),
-             account_type: str = Form("professional"), invite_code: str = Form(""), accept_terms: str = Form(""), next: str = Form(""), db: Session = Depends(get_db)):
+             account_type: str = Form("professional"), invite_code: str = Form(""), accept_terms: str = Form(""), next: str = Form(""), cf_turnstile_response: str = Form("", alias="cf-turnstile-response"), db: Session = Depends(get_db)):
     email = email.strip().lower()
     throttle(f"reg:{client_ip(request)}")
 
@@ -374,6 +376,8 @@ def register(request: Request, bg: BackgroundTasks, email: str = Form(...), pass
             "A difference usually means the dashboard value changed without a redeploy, or a different value was typed.",
             len(invite.normalize(invite_code)), len(invite.normalize(config.INVITE_CODE)))
         return refuse("auth.err.invite", 403)
+    if not captcha.verify(cf_turnstile_response, client_ip(request)):
+        return refuse("auth.err.captcha", 400)
     if not EMAIL_RE.fullmatch(email) or len(email) > 254:
         return refuse("auth.err.email", 400)
     if accept_terms != "1":

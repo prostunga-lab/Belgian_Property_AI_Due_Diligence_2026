@@ -797,3 +797,8 @@ MESSAGES.update({
 MESSAGES.update({
     'pricing.cta_choose': 'Choose your plan',
 })
+
+
+MESSAGES.update({
+    'auth.err.captcha': 'The anti-bot check failed. Reload the page and try again.',
+})

@@ -104,3 +104,33 @@ def test_unexpected_errors_return_a_generic_answer_with_the_same_protections(mon
     assert r.status_code == 500 and "secret internal detail" not in r.text and "Traceback" not in r.text
     assert_protected(r)
     app.router.routes[:] = [x for x in app.router.routes if getattr(x, "path", "") != "/__boom"]
+
+
+# --- optional Turnstile captcha on registration --------------------------------------------------------------
+
+def test_registration_without_turnstile_keys_is_unchanged_and_csp_stays_strict():
+    from app import captcha, config
+    assert not captcha.enabled() and captcha.verify("") is True
+    csp = TestClient(app).get("/login").headers["content-security-policy"]
+    assert "challenges.cloudflare.com" not in csp and "script-src 'self';" in csp
+
+
+def test_turnstile_when_enabled_is_required_checked_server_side_and_allowed_by_the_csp(monkeypatch):
+    from app import captcha, config
+    monkeypatch.setattr(config, "TURNSTILE_SITE_KEY", "1x0000000000000000000000000000000AA")
+    monkeypatch.setattr(config, "TURNSTILE_SECRET_KEY", "secret")
+    c = TestClient(app)
+    page = c.get("/login")
+    assert 'class="cf-turnstile"' in page.text and "challenges.cloudflare.com" in page.headers["content-security-policy"]
+    data = {"org_name": "Org", "email": "captcha@example.com", "password": "supersecret12", "accept_terms": "1"}
+    assert c.post("/register", data=data).status_code == 400  # no token
+    monkeypatch.setattr(captcha, "verify", lambda token, ip=None: token == "good")
+    assert c.post("/register", data={**data, "cf-turnstile-response": "bad"}).status_code == 400
+    assert c.post("/register", data={**data, "cf-turnstile-response": "good"}, follow_redirects=False).status_code == 303
+
+
+def test_turnstile_fails_closed_when_cloudflare_is_unreachable(monkeypatch):
+    from app import captcha, config
+    monkeypatch.setattr(config, "TURNSTILE_SITE_KEY", "k"); monkeypatch.setattr(config, "TURNSTILE_SECRET_KEY", "s")
+    monkeypatch.setattr(captcha.urllib.request, "urlopen", lambda *a, **k: (_ for _ in ()).throw(OSError("down")))
+    assert captcha.verify("token") is False
