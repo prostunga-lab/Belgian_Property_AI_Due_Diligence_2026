@@ -68,11 +68,11 @@ Où regarder : dans Stripe, la page du webhook liste chaque envoi (code 200 atte
 | Message « Paiement non configuré » | `STRIPE_WEBHOOK_SECRET` absente |
 | Webhook en erreur 400 (signature) | mauvaise clé `whsec_…`, ou clé du mode test avec un webhook du mode live (ou l'inverse) |
 | Le paiement réussit mais le compte ne change pas | webhook non reçu : vérifier l'URL, les événements cochés et les logs |
-| « Vous avez déjà un abonnement » | un compte ne peut avoir qu'un abonnement actif ; changer de formule = résilier puis se réabonner |
+| « Vous avez déjà un abonnement » | un compte ne peut avoir qu'un abonnement actif ; pour changer de formule ou de période, utiliser « Changer de formule » (page Compte ou Tarifs) |
 | Retour vers une mauvaise adresse après paiement | fixer `BASE_URL` |
 
 ## 9. Ce que Stripe ne fait pas à votre place
 - **TVA et factures** : les prix affichés incluent la TVA (`PRICES_VAT=incl`). Vérifier avec votre comptable la TVA applicable, les mentions des factures et, éventuellement, activer Stripe Tax. Pour les achats uniques, activer la création de factures dans Stripe si vous en avez besoin.
 - **Remboursements** : à faire dans Stripe ; ils ne retirent pas automatiquement les dossiers déjà crédités.
 - **Conditions** : l'essai gratuit et le renouvellement automatique doivent être décrits dans les conditions générales (déjà le cas dans le texte-projet) et validés par votre conseil, notamment pour les consommateurs (information avant achat, droit de rétractation).
-- **Changement de formule en cours d'abonnement** : non géré (résilier puis se réabonner).
+- **Changement de formule en cours d'abonnement** : géré (`POST /billing/change`). Même abonnement Stripe, nouveau prix ; Stripe crédite le temps non utilisé et facture le nouveau prix tout de suite (`always_invoice`), y compris pour une formule inférieure (le crédit est déduit des prochaines factures). Pendant l'essai gratuit, aucun prorata et l'essai continue. Une carte refusée laisse l'abonnement inchangé. Le quota suit la nouvelle formule immédiatement ; les dossiers déjà utilisés ce mois-ci restent comptés. À tester en mode test : passer de Agent mensuel à Agence annuelle et vérifier la facture au prorata dans Stripe.

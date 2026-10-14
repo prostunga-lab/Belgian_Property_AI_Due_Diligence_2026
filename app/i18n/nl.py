@@ -778,3 +778,17 @@ MESSAGES.update({
     'rule.URB-HERITAGE.detail': 'De stedenbouwkundige inlichtingen vermelden een bescherming, een beschermingszone of een opname in de erfgoedinventaris.',
     'rule.URB-HERITAGE.rec': 'Vraag de notaris naar de beperkingen voor werken (specifieke vergunning, advies van de overlegcommissie).',
 })
+
+
+MESSAGES.update({
+    'err.same_plan': 'Dit is al uw huidige formule.',
+    'err.change_failed': 'De formulewissel is mislukt (betaling geweigerd of Stripe-fout). Uw huidige abonnement is niet gewijzigd.',
+    'acct.changed_ok': 'Uw formule is gewijzigd. Stripe berekent de pro-rata en vermeldt die op uw volgende factuur.',
+    'acct.change_title': 'Van formule veranderen',
+    'acct.change_hint': 'De wissel gaat meteen in op hetzelfde abonnement: ongebruikte tijd wordt gecrediteerd en de nieuwe formule pro rata gefactureerd. Tijdens de gratis proefperiode wordt niets aangerekend.',
+    'acct.change_btn': 'Overstappen naar {name} — {price}',
+    'acct.change_confirm': 'Nu van formule veranderen? Stripe berekent de pro-rata.',
+    'acct.change_current': 'Huidige formule',
+    'pricing.cta_change': 'Overstappen op deze formule',
+    'pricing.current_plan': 'Uw huidige formule',
+})

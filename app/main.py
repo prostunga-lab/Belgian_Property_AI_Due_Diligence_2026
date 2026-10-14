@@ -475,11 +475,11 @@ def reset(request: Request, token: str = Form(...), password: str = Form(...), d
 
 # --- account: credits, API keys, erasure --------------------------------------------------------------
 
-def account_context(request: Request, user: User, db: Session, new_key: str | None = None, paid: str | None = None) -> dict:
+def account_context(request: Request, user: User, db: Session, new_key: str | None = None, paid: str | None = None, changed: str | None = None) -> dict:
     org = db.get(Org, user.org_id)
     keys = db.scalars(select(ApiKey).where(ApiKey.user_id == user.id, ApiKey.revoked == False).order_by(ApiKey.id)).all()  # noqa: E712
     bal = balance(org)
-    return {"user": user, "org": org, "bal": bal, "keys": keys, "new_key": new_key, "paid": paid, "base_url": config.BASE_URL,
+    return {"user": user, "org": org, "bal": bal, "keys": keys, "new_key": new_key, "paid": paid, "changed": changed, "base_url": config.BASE_URL,
             "stripe_ready": billing.configured(), "verification_on": config.REQUIRE_EMAIL_VERIFICATION,
             "cards": pricing.cards(request.state.lang), "max_documents": config.DOSSIER_MAX_DOCUMENTS, "vat": config.PRICES_VAT,
             "sub_name": billing.plan_name(bal["plan"], request.state.lang) if bal["plan"] else None,
@@ -488,7 +488,7 @@ def account_context(request: Request, user: User, db: Session, new_key: str | No
 
 @app.get("/account")
 def account(request: Request, user: User = Depends(current_user), db: Session = Depends(get_db)):
-    return templates.TemplateResponse(request, "account.html", account_context(request, user, db, paid=request.query_params.get("paid")))
+    return templates.TemplateResponse(request, "account.html", account_context(request, user, db, paid=request.query_params.get("paid"), changed=request.query_params.get("changed")))
 
 
 @app.post("/account/keys")

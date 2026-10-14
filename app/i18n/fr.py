@@ -778,3 +778,17 @@ MESSAGES.update({
     'rule.URB-HERITAGE.detail': "Les renseignements urbanistiques indiquent un classement, une zone de protection ou une inscription à l'inventaire du patrimoine.",
     'rule.URB-HERITAGE.rec': 'Demandez au notaire les contraintes applicables aux travaux (permis spécifique, avis de la commission de concertation).',
 })
+
+
+MESSAGES.update({
+    'err.same_plan': "C'est déjà votre formule actuelle.",
+    'err.change_failed': "Le changement de formule a échoué (paiement refusé ou erreur Stripe). Votre abonnement actuel n'a pas été modifié.",
+    'acct.changed_ok': 'Votre formule a été modifiée. Stripe calcule le prorata et le détaille sur votre prochaine facture.',
+    'acct.change_title': 'Changer de formule',
+    'acct.change_hint': "Le changement s'applique tout de suite sur le même abonnement : le temps non utilisé est crédité et la nouvelle formule facturée au prorata. Pendant l'essai gratuit, rien n'est facturé.",
+    'acct.change_btn': 'Passer à {name} — {price}',
+    'acct.change_confirm': 'Changer de formule maintenant ? Le prorata est calculé par Stripe.',
+    'acct.change_current': 'Formule actuelle',
+    'pricing.cta_change': 'Passer à cette formule',
+    'pricing.current_plan': 'Votre formule actuelle',
+})

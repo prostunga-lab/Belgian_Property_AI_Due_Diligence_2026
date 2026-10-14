@@ -91,13 +91,61 @@ def checkout(plan_id: str, request: Request, period: str = Form("monthly"), user
     require_verified(user)
     org = db.get(Org, user.org_id)
     if plan.kind == "subscription" and org.subscription_status in plans.SUBSCRIPTION_ACTIVE:
-        raise AppError(409, "err.already_subscribed")  # change or cancel through the customer portal, never a second subscription
+        raise AppError(409, "err.already_subscribed")  # switch via /billing/change or cancel in the portal, never a second subscription
     import stripe
 
     session = stripe.checkout.Session.create(**checkout_kwargs(org, user, plan, request.state.lang, period))
     audit(db, user, "billing.checkout", detail=f"{plan.id}:{period if plan.kind == 'subscription' else 'once'}:{session.id}")
     db.commit()
     return RedirectResponse(session.url, status_code=303)
+
+
+def change_items(plan: plans.Plan, period: str, lang: str, product_id: str, item_id: str) -> list[dict]:
+    """The single subscription item re-priced with the new plan/period (same inline-price logic as the checkout)."""
+    offer = plans.offer(plan, period)
+    recurring = {"interval": "year"} if offer.months == 12 else {"interval": "month", "interval_count": offer.months}
+    return [{"id": item_id, "price_data": {"currency": "eur", "product": product_id, "unit_amount": offer.total_cents, "recurring": recurring}}]
+
+
+@router.post("/billing/change")
+def change_plan(request: Request, plan_id: str = Form(...), period: str = Form("monthly"), user: User = Depends(current_user),
+                db: Session = Depends(get_db)):
+    """Switch an active subscription to another plan and/or billing period on the SAME Stripe subscription.
+
+    Stripe credits the unused time of the old price and invoices the new one immediately (proration); during a free trial nothing is
+    charged and the trial continues. The dossier quota follows the new plan at once; dossiers already used this month still count."""
+    plan = plans.get(plan_id)
+    if not plan or plan.kind != "subscription":
+        raise AppError(404, "err.unknown_plan")
+    if period not in plans.PERIODS:
+        raise AppError(400, "err.unknown_period")
+    if not configured():
+        raise AppError(503, "err.payment_not_configured")
+    require_verified(user)
+    org = db.get(Org, user.org_id)
+    if org.subscription_status not in plans.SUBSCRIPTION_ACTIVE or not org.stripe_subscription_id:
+        raise AppError(409, "err.no_subscription")
+    if org.plan == plan.id and org.billing_period == period:
+        raise AppError(409, "err.same_plan")
+    import stripe
+
+    lang, key = request.state.lang, config.STRIPE_SECRET_KEY
+    try:
+        sub = stripe.Subscription.retrieve(org.stripe_subscription_id, api_key=key)
+        item = sub["items"]["data"][0]
+        product = stripe.Product.create(api_key=key, name=f"{plan_name(plan, lang)} — {i18n.t('period.' + period, lang)}")
+        meta = {**dict(sub.get("metadata") or {}), "org_id": str(org.id), "plan_id": plan.id, "period": period}
+        stripe.Subscription.modify(
+            org.stripe_subscription_id, api_key=key, items=change_items(plan, period, lang, product["id"], item["id"]), metadata=meta,
+            proration_behavior="none" if org.subscription_status == "trialing" else "always_invoice",
+            payment_behavior="error_if_incomplete")  # a refused card leaves the old subscription untouched
+    except stripe.error.StripeError as exc:
+        log.warning("stripe plan change failed for org %s: %s", org.id, exc)
+        raise AppError(502, "err.change_failed")
+    audit(db, user, "billing.change", detail=f"{org.plan}:{org.billing_period}->{plan.id}:{period}")
+    org.plan, org.billing_period = plan.id, period
+    db.commit()
+    return RedirectResponse("/account?changed=1", status_code=303)
 
 
 @router.post("/billing/portal")

@@ -778,3 +778,17 @@ MESSAGES.update({
     'rule.URB-HERITAGE.detail': 'The urban-planning information mentions a listing, a protection zone or an entry on the heritage inventory.',
     'rule.URB-HERITAGE.rec': 'Ask the notary which constraints apply to works (specific permit, opinion of the consultation committee).',
 })
+
+
+MESSAGES.update({
+    'err.same_plan': 'This is already your current plan.',
+    'err.change_failed': 'The plan change failed (payment declined or Stripe error). Your current subscription was not changed.',
+    'acct.changed_ok': 'Your plan has been changed. Stripe calculates the proration and details it on your next invoice.',
+    'acct.change_title': 'Change plan',
+    'acct.change_hint': 'The change applies immediately on the same subscription: unused time is credited and the new plan is invoiced pro rata. During the free trial nothing is charged.',
+    'acct.change_btn': 'Switch to {name} — {price}',
+    'acct.change_confirm': 'Change plan now? Stripe calculates the proration.',
+    'acct.change_current': 'Current plan',
+    'pricing.cta_change': 'Switch to this plan',
+    'pricing.current_plan': 'Your current plan',
+})
