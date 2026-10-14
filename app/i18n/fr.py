@@ -792,3 +792,8 @@ MESSAGES.update({
     'pricing.cta_change': 'Passer à cette formule',
     'pricing.current_plan': 'Votre formule actuelle',
 })
+
+
+MESSAGES.update({
+    'pricing.cta_choose': 'Choisissez votre formule',
+})

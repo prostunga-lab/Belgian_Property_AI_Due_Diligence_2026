@@ -1,11 +1,11 @@
 {% extends "base.html" %}{% from "_macros.html" import password_field with context %}{% block content %}
 {% if error %}<p class="high" role="alert">{{ error }}</p>{% endif %}{% if info %}<p class="ok">{{ info }}</p>{% endif %}
 <div class="row" style="align-items:flex-start">
-<form method="post" action="/login" id="login" class="card" style="flex:1;min-width:260px"><h3>{{ _('auth.login.title') }}</h3>
+<form method="post" action="/login" id="login" class="card" style="flex:1;min-width:260px">{% if next_url %}<input type="hidden" name="next" value="{{ next_url }}">{% endif %}<h3>{{ _('auth.login.title') }}</h3>
 <p><input name="email" type="email" placeholder="{{ _('auth.email') }}" aria-label="{{ _('auth.email') }}" autocomplete="username" required style="width:100%"></p>
 <p>{{ password_field('password', _('auth.password'), 'current-password') }}</p>
 <div class="row"><button>{{ _('auth.login.button') }}</button><a href="/forgot" class="mut">{{ _('auth.forgot_link') }}</a></div></form>
-<form method="post" action="/register" id="register" class="card" style="flex:1;min-width:260px"><h3>{{ _('auth.register.title') }}</h3>
+<form method="post" action="/register" id="register" class="card" style="flex:1;min-width:260px">{% if next_url %}<input type="hidden" name="next" value="{{ next_url }}">{% endif %}<h3>{{ _('auth.register.title') }}</h3>
 <p class="mut">{% if free_credits %}<b>{{ _('landing.free_note', n=free_credits) }}</b> {% endif %}{{ _('auth.register.hint') }}</p>
 <fieldset style="border:0;padding:0;margin:0 0 10px"><legend class="mut" style="padding:0 0 4px">{{ _('auth.account_type') }}</legend>
 <label style="margin-right:14px"><input type="radio" name="account_type" value="individual"> {{ _('access.type.individual') }}</label>

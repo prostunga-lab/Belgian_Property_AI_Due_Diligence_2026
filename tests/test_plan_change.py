@@ -118,3 +118,28 @@ def test_quota_follows_the_new_plan_but_used_dossiers_still_count(monkeypatch):
     with SessionLocal() as db:
         b = services.balance(db.get(Org, oid))
     assert b["quota"] == plans.get("agency").dossiers and b["used"] == 7
+
+
+# --- pricing page for visitors without an account -----------------------------------------------------------
+
+@pytest.mark.parametrize("lang,label", [("fr", "Choisissez votre formule"), ("nl", "Kies uw formule"), ("en", "Choose your plan")])
+def test_visitors_are_asked_to_choose_a_plan_then_create_an_account_and_come_back(lang, label):
+    from fastapi.testclient import TestClient
+    from app.main import app
+    c = TestClient(app)
+    c.get(f"/lang/{lang}")
+    body = page_text(c.get("/pricing"))
+    assert body.count(label) >= 3 and 'href="/login?next=/pricing#register"' in body
+    login = page_text(c.get("/login?next=/pricing"))
+    assert login.count('name="next" value="/pricing"') == 2
+    r = c.post("/register", data={"org_name": "Org", "email": f"next-{lang}@example.com", "password": "supersecret12", "accept_terms": "1", "next": "/pricing"}, follow_redirects=False)
+    assert r.status_code == 303 and r.headers["location"] == "/pricing"
+
+
+def test_the_return_target_is_whitelisted():
+    from fastapi.testclient import TestClient
+    from app.main import app
+    c = TestClient(app)
+    assert 'name="next"' not in c.get("/login?next=https://evil.example").text
+    r = c.post("/register", data={"org_name": "Org", "email": "next-evil@example.com", "password": "supersecret12", "accept_terms": "1", "next": "//evil.example"}, follow_redirects=False)
+    assert r.headers["location"] == "/"

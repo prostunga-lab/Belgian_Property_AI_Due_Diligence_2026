@@ -340,9 +340,14 @@ def send_verification(bg: BackgroundTasks, user: User, lang: str) -> None:
     bg.add_task(mail.send, user.email, i18n.t("mail.verify.subject", lang), i18n.t("mail.verify.body", lang, link=link))
 
 
-def login_context(request: Request, error: str | None = None, info: str | None = None) -> dict:
+def after_auth(raw: str) -> str:
+    """Where to go after signing in / registering: only the pricing page is allowed as a return target (no open redirect)."""
+    return "/pricing" if raw == "/pricing" else "/"
+
+
+def login_context(request: Request, error: str | None = None, info: str | None = None, next_url: str = "") -> dict:
     lang = request.state.lang
-    return {"error": i18n.t(error, lang) if error else None, "info": i18n.t(info, lang) if info else None, "invite": bool(config.INVITE_CODE),
+    return {"next_url": after_auth(next_url) if next_url == "/pricing" else "", "error": i18n.t(error, lang) if error else None, "info": i18n.t(info, lang) if info else None, "invite": bool(config.INVITE_CODE),
             "free_credits": config.FREE_CREDITS}
 
 
@@ -350,17 +355,17 @@ def login_context(request: Request, error: str | None = None, info: str | None =
 
 @app.get("/login")
 def login_page(request: Request):
-    return templates.TemplateResponse(request, "login.html", login_context(request, info=LOGIN_MESSAGES.get(request.query_params.get("msg", ""))))
+    return templates.TemplateResponse(request, "login.html", login_context(request, info=LOGIN_MESSAGES.get(request.query_params.get("msg", "")), next_url=request.query_params.get("next", "")))
 
 
 @app.post("/register")
 def register(request: Request, bg: BackgroundTasks, email: str = Form(...), password: str = Form(...), org_name: str = Form(""),
-             account_type: str = Form("professional"), invite_code: str = Form(""), accept_terms: str = Form(""), db: Session = Depends(get_db)):
+             account_type: str = Form("professional"), invite_code: str = Form(""), accept_terms: str = Form(""), next: str = Form(""), db: Session = Depends(get_db)):
     email = email.strip().lower()
     throttle(f"reg:{client_ip(request)}")
 
     def refuse(key: str, status: int):
-        return templates.TemplateResponse(request, "login.html", login_context(request, error=key), status_code=status)
+        return templates.TemplateResponse(request, "login.html", login_context(request, error=key, next_url=next), status_code=status)
 
     if config.INVITE_CODE and not invite.matches(invite_code, config.INVITE_CODE):
         # Diagnostic for the operator (Railway logs). Lengths only (after normalisation): the code itself is never logged.
@@ -393,18 +398,18 @@ def register(request: Request, bg: BackgroundTasks, email: str = Form(...), pass
     db.commit()
     send_verification(bg, user, request.state.lang)
     open_session(request, user)
-    return RedirectResponse("/", status_code=303)
+    return RedirectResponse(after_auth(next), status_code=303)
 
 
 @app.post("/login")
-def login(request: Request, email: str = Form(...), password: str = Form(...), db: Session = Depends(get_db)):
+def login(request: Request, email: str = Form(...), password: str = Form(...), next: str = Form(""), db: Session = Depends(get_db)):
     email = email.strip().lower()
     throttle(f"login:{client_ip(request)}:{email}")
     user = db.scalar(select(User).where(User.email == email))
     if not user or not verify_password(password, user.password_hash):
-        return templates.TemplateResponse(request, "login.html", login_context(request, error="auth.err.credentials"), status_code=400)
+        return templates.TemplateResponse(request, "login.html", login_context(request, error="auth.err.credentials", next_url=next), status_code=400)
     open_session(request, user)
-    resp = RedirectResponse("/", status_code=303)
+    resp = RedirectResponse(after_auth(next), status_code=303)
     if user.lang:  # the account's preferred language follows the person across devices
         resp.set_cookie(i18n.COOKIE, user.lang, max_age=365 * 86400, samesite="lax", secure=config.COOKIE_SECURE, httponly=True)
     return resp

@@ -792,3 +792,8 @@ MESSAGES.update({
     'pricing.cta_change': 'Overstappen op deze formule',
     'pricing.current_plan': 'Uw huidige formule',
 })
+
+
+MESSAGES.update({
+    'pricing.cta_choose': 'Kies uw formule',
+})
