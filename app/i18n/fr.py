@@ -802,3 +802,27 @@ MESSAGES.update({
 MESSAGES.update({
     'auth.err.captcha': 'La vérification anti-robot a échoué. Rechargez la page et réessayez.',
 })
+
+
+MESSAGES.update({
+    'pricing.trial_badge.other': "{days} jours d'essai gratuit",
+    'pricing.trial_badge.one': "{days} jour d'essai gratuit",
+    'pricing.cta_trial.other': 'Essayer {days} jours gratuitement',
+    'pricing.cta_trial.one': 'Essayer {days} jour gratuitement',
+    'pricing.trial_note.other': "Carte bancaire requise. Aucun paiement pendant les {days} jours ; l'abonnement est ensuite facturé automatiquement, sauf résiliation avant la fin de l'essai. Pendant l'essai : {dossiers} dossiers au maximum. Un essai par organisation.",
+    'pricing.trial_note.one': "Carte bancaire requise. Aucun paiement pendant {days} jour ; l'abonnement est ensuite facturé automatiquement, sauf résiliation avant la fin de l'essai. Pendant l'essai : {dossiers} dossiers au maximum. Un essai par organisation.",
+    'billing.trial_message.other': "Essai gratuit de {days} jours (jusqu'à {dossiers} dossiers), puis {price} ({period}) facturé automatiquement. Résiliable à tout moment avant la fin de l'essai pour ne rien payer.",
+    'billing.trial_message.one': "Essai gratuit de {days} jour (jusqu'à {dossiers} dossiers), puis {price} ({period}) facturé automatiquement. Résiliable à tout moment avant la fin de l'essai pour ne rien payer.",
+    'landing.trial.other': "Abonnements agent et agence : {days} jours d'essai gratuit (carte requise, résiliable avant la fin).",
+    'landing.trial.one': "Abonnements agent et agence : {days} jour d'essai gratuit (carte requise, résiliable avant la fin).",
+})
+
+
+MESSAGES.update({
+    'trial.days.one': '{n} jour',
+    'trial.days.other': '{n} jours',
+    'trial.split': '{individual} pour les particuliers / {professional} pour les professionnels',
+    'pricing.trial_badge_any': 'Essai gratuit',
+    'pricing.trial_split': "Carte bancaire requise. Essai gratuit : {ind} jour(s) pour les particuliers, {pro} jours pour les professionnels. Aucun paiement pendant l'essai ; l'abonnement est ensuite facturé automatiquement, sauf résiliation avant la fin. Pendant l'essai : {dossiers} dossiers au maximum. Un essai par organisation.",
+    'landing.trial_split': 'Abonnements : essai gratuit de {ind} jour(s) pour les particuliers, {pro} jours pour les professionnels (carte requise, résiliable avant la fin).',
+})

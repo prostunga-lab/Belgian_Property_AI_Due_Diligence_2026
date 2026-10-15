@@ -802,3 +802,27 @@ MESSAGES.update({
 MESSAGES.update({
     'auth.err.captcha': 'The anti-bot check failed. Reload the page and try again.',
 })
+
+
+MESSAGES.update({
+    'pricing.trial_badge.other': '{days}-day free trial',
+    'pricing.trial_badge.one': '{days}-day free trial',
+    'pricing.cta_trial.other': 'Try free for {days} days',
+    'pricing.cta_trial.one': 'Try free for {days} day',
+    'pricing.trial_note.other': 'Credit card required. No payment during the {days} days; the subscription is then charged automatically unless you cancel before the trial ends. During the trial: {dossiers} dossiers at most. One trial per organisation.',
+    'pricing.trial_note.one': 'Credit card required. No payment during the {days} day; the subscription is then charged automatically unless you cancel before the trial ends. During the trial: {dossiers} dossiers at most. One trial per organisation.',
+    'billing.trial_message.other': '{days}-day free trial (up to {dossiers} dossiers), then {price} ({period}) charged automatically. Cancel any time before the trial ends to pay nothing.',
+    'billing.trial_message.one': '{days}-day free trial (up to {dossiers} dossiers), then {price} ({period}) charged automatically. Cancel any time before the trial ends to pay nothing.',
+    'landing.trial.other': 'Agent and agency subscriptions: {days}-day free trial (card required, cancel before it ends).',
+    'landing.trial.one': 'Agent and agency subscriptions: {days}-day free trial (card required, cancel before it ends).',
+})
+
+
+MESSAGES.update({
+    'trial.days.one': '{n} day',
+    'trial.days.other': '{n} days',
+    'trial.split': '{individual} for private individuals / {professional} for professionals',
+    'pricing.trial_badge_any': 'Free trial',
+    'pricing.trial_split': 'Credit card required. Free trial: {ind} day(s) for private individuals, {pro} days for professionals. No payment during the trial; the subscription is then charged automatically unless you cancel before it ends. During the trial: {dossiers} dossiers at most. One trial per organisation.',
+    'landing.trial_split': 'Subscriptions: free trial of {ind} day(s) for private individuals, {pro} days for professionals (card required, cancel before it ends).',
+})

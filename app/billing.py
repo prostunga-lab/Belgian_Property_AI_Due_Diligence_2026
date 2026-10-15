@@ -40,9 +40,14 @@ def plan_name(plan: plans.Plan, lang: str) -> str:
     return i18n.t(f"plan.{plan.id}.name", lang, n=plan.dossiers)
 
 
+def trial_days_for(org: Org | None) -> int:
+    """Length of the free trial: shorter for private (individual) accounts than for professionals."""
+    return config.TRIAL_DAYS_INDIVIDUAL if org is not None and org.account_type == "individual" else config.TRIAL_DAYS
+
+
 def trial_available(org: Org | None) -> bool:
     """A free trial is offered when it is configured and this organisation has not had one yet."""
-    return config.TRIAL_DAYS > 0 and not (org is not None and org.trial_used)
+    return trial_days_for(org) > 0 and not (org is not None and org.trial_used)
 
 
 def checkout_kwargs(org: Org, user: User, plan: plans.Plan, lang: str, period: str = "monthly") -> dict:
@@ -68,9 +73,10 @@ def checkout_kwargs(org: Org, user: User, plan: plans.Plan, lang: str, period: s
         sub_data = {"metadata": meta}
         if trial_available(org):  # free trial, once per organisation: the card is collected now and charged when the trial ends
             meta["trial"] = "1"
-            sub_data["trial_period_days"] = config.TRIAL_DAYS
+            days = trial_days_for(org)
+            sub_data["trial_period_days"] = days
             kwargs["payment_method_collection"] = "always"
-            kwargs["custom_text"] = {"submit": {"message": i18n.t("billing.trial_message", lang, days=config.TRIAL_DAYS, dossiers=config.TRIAL_DOSSIERS,
+            kwargs["custom_text"] = {"submit": {"message": i18n.t("billing.trial_message", lang, n=days, days=days, dossiers=config.TRIAL_DOSSIERS,
                                                                    price=plans.format_price(offer.total_cents, lang), period=i18n.t("period." + period, lang).lower())}}
         kwargs.update(mode="subscription", subscription_data=sub_data)
     else:
@@ -220,7 +226,7 @@ def _on_checkout(db: Session, event_type: str, s: dict) -> str:
         org.subscription_status = "active" if paid in ("paid", "no_payment_required") else "incomplete"
         if _metadata(s).get("trial") == "1" and paid == "no_payment_required":  # started with a free trial: limited quota until the first payment
             org.subscription_status, org.trial_used = "trialing", True
-            org.trial_ends_at = _now() + dt.timedelta(days=config.TRIAL_DAYS)
+            org.trial_ends_at = _now() + dt.timedelta(days=trial_days_for(org))
         org.cancel_at_period_end, org.cycle_started_at, org.cycle_used = False, _now(), 0
         return "subscription started"
     return "ignored: mode/plan mismatch"

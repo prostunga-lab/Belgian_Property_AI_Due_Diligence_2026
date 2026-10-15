@@ -187,7 +187,8 @@ def health(db: Session = Depends(get_db)):
     return {"status": "ok", "ruleset": RULESET_VERSION, "build": (os.environ.get("RAILWAY_GIT_COMMIT_SHA") or "unknown")[:7],
             "invite_required": bool(config.INVITE_CODE), "terms_version": legal.VERSION, "mail": mail.transport(),
             "access_notifications": bool(config.CONTACT_EMAIL) and mail.transport() != "log",
-            "registration": "invitation-only" if config.INVITE_CODE else "open", "trial_days": config.TRIAL_DAYS}
+            "registration": "invitation-only" if config.INVITE_CODE else "open", "trial_days": config.TRIAL_DAYS,
+            "trial_days_individual": config.TRIAL_DAYS_INDIVIDUAL}
 
 
 @app.get("/about")
@@ -340,6 +341,16 @@ def set_language(code: str, request: Request, next: str = "/", user: User | None
 def send_verification(bg: BackgroundTasks, user: User, lang: str) -> None:
     link = f"{config.BASE_URL}/verify?token={make_token('verify', user.id, user.email)}"
     bg.add_task(mail.send, user.email, i18n.t("mail.verify.subject", lang), i18n.t("mail.verify.body", lang, link=link))
+
+
+def trial_context(org: Org | None) -> dict:
+    """Trial wording for templates: the exact length for a known account; for an anonymous visitor the single length, or both when they differ."""
+    ind, pro = config.TRIAL_DAYS_INDIVIDUAL, config.TRIAL_DAYS
+    if org is None:
+        if ind > 0 and pro > 0 and ind != pro:
+            return {"trial_days": 0, "trial_split": {"individual": ind, "professional": pro}}
+        return {"trial_days": pro or ind, "trial_split": None}
+    return {"trial_days": billing.trial_days_for(org) if billing.trial_available(org) else 0, "trial_split": None}
 
 
 def after_auth(raw: str) -> str:
@@ -516,11 +527,11 @@ def pricing_page(request: Request, user: User | None = Depends(optional_user), d
     """Public pricing: pay per complete dossier (investors) or monthly subscription with a quota (agents)."""
     ctx = {"cards": pricing.cards(request.state.lang), "stripe_ready": billing.configured(), "free_credits": config.FREE_CREDITS,
            "max_documents": config.DOSSIER_MAX_DOCUMENTS, "vat": config.PRICES_VAT, "base_url": config.BASE_URL, "signed_in": user is not None,
-           "promise_minutes": config.PROCESSING_PROMISE_MINUTES, "trial_days": config.TRIAL_DAYS if billing.trial_available(None) else 0,
+           "promise_minutes": config.PROCESSING_PROMISE_MINUTES, **trial_context(None),
            "trial_dossiers": config.TRIAL_DOSSIERS}
     if user:
         org = db.get(Org, user.org_id)
-        ctx |= {"user": user, "org": org, "bal": balance(org), "trial_days": config.TRIAL_DAYS if billing.trial_available(org) else 0}
+        ctx |= {"user": user, "org": org, "bal": balance(org), **trial_context(org)}
     return templates.TemplateResponse(request, "pricing.html", ctx)
 
 
@@ -563,7 +574,7 @@ def home(request: Request, user: User | None = Depends(optional_user), db: Sessi
         return templates.TemplateResponse(request, "landing.html", {
             "invite": bool(config.INVITE_CODE), "free_credits": config.FREE_CREDITS, "max_files": config.MAX_FILES_PER_REQUEST,
             "max_mb": config.MAX_UPLOAD_MB, "base_url": config.BASE_URL, "promise_minutes": config.PROCESSING_PROMISE_MINUTES,
-            "trial_days": config.TRIAL_DAYS})
+            **trial_context(None)})
     cases = db.scalars(select(Case).where(Case.org_id == user.org_id).order_by(Case.id.desc())).all()
     org = db.get(Org, user.org_id)
     return templates.TemplateResponse(request, "dashboard.html", {

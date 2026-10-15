@@ -802,3 +802,27 @@ MESSAGES.update({
 MESSAGES.update({
     'auth.err.captcha': 'De anti-robotcontrole is mislukt. Laad de pagina opnieuw en probeer het nog eens.',
 })
+
+
+MESSAGES.update({
+    'pricing.trial_badge.other': '{days} dagen gratis proefperiode',
+    'pricing.trial_badge.one': '{days} dag gratis proefperiode',
+    'pricing.cta_trial.other': '{days} dagen gratis proberen',
+    'pricing.cta_trial.one': '{days} dag gratis proberen',
+    'pricing.trial_note.other': 'Bankkaart vereist. Geen betaling tijdens de {days} dagen; daarna wordt het abonnement automatisch aangerekend, tenzij u vóór het einde van de proefperiode opzegt. Tijdens de proefperiode: maximaal {dossiers} dossiers. Eén proefperiode per organisatie.',
+    'pricing.trial_note.one': 'Bankkaart vereist. Geen betaling tijdens de {days} dag; daarna wordt het abonnement automatisch aangerekend, tenzij u vóór het einde van de proefperiode opzegt. Tijdens de proefperiode: maximaal {dossiers} dossiers. Eén proefperiode per organisatie.',
+    'billing.trial_message.other': 'Gratis proefperiode van {days} dagen (tot {dossiers} dossiers), daarna {price} ({period}) automatisch aangerekend. Op elk moment opzegbaar vóór het einde van de proefperiode om niets te betalen.',
+    'billing.trial_message.one': 'Gratis proefperiode van {days} dag (tot {dossiers} dossiers), daarna {price} ({period}) automatisch aangerekend. Op elk moment opzegbaar vóór het einde van de proefperiode om niets te betalen.',
+    'landing.trial.other': 'Abonnementen voor makelaars en kantoren: {days} dagen gratis proefperiode (bankkaart vereist, opzegbaar vóór het einde).',
+    'landing.trial.one': 'Abonnementen voor makelaars en kantoren: {days} dag gratis proefperiode (bankkaart vereist, opzegbaar vóór het einde).',
+})
+
+
+MESSAGES.update({
+    'trial.days.one': '{n} dag',
+    'trial.days.other': '{n} dagen',
+    'trial.split': '{individual} voor particulieren / {professional} voor professionals',
+    'pricing.trial_badge_any': 'Gratis proefperiode',
+    'pricing.trial_split': 'Bankkaart vereist. Gratis proefperiode: {ind} dag(en) voor particulieren, {pro} dagen voor professionals. Geen betaling tijdens de proefperiode; daarna wordt het abonnement automatisch aangerekend, tenzij u vóór het einde opzegt. Tijdens de proefperiode: maximaal {dossiers} dossiers. Eén proefperiode per organisatie.',
+    'landing.trial_split': 'Abonnementen: gratis proefperiode van {ind} dag(en) voor particulieren, {pro} dagen voor professionals (bankkaart vereist, opzegbaar vóór het einde).',
+})

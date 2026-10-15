@@ -29,7 +29,8 @@ INVITE_CODE = _clean("INVITE_CODE") or None
 OPEN_REGISTRATION = _clean("OPEN_REGISTRATION", "0") == "1" and not INVITE_CODE  # an invitation code, when set, always wins
 REGISTRATIONS_PER_IP_PER_DAY = int(os.environ.get("REGISTRATIONS_PER_IP_PER_DAY", "5"))
 # Free trial of the subscription plans (Stripe trial period): days, and the dossiers that can be analysed during it. 0 days = no trial.
-TRIAL_DAYS = int(os.environ.get("TRIAL_DAYS", "3"))
+TRIAL_DAYS = int(os.environ.get("TRIAL_DAYS", "3"))  # professional accounts
+TRIAL_DAYS_INDIVIDUAL = int(os.environ.get("TRIAL_DAYS_INDIVIDUAL", "1"))  # private (individual) accounts
 TRIAL_DOSSIERS = int(os.environ.get("TRIAL_DOSSIERS", "3"))
 ADMIN_EMAILS = {e.strip().lower() for e in _clean("ADMIN_EMAILS").split(",") if e.strip()}  # may read the access requests at /admin/requests
 AUTO_MIGRATE = os.environ.get("AUTO_MIGRATE", "1") == "1"

@@ -178,7 +178,8 @@ def test_during_the_trial_only_three_dossiers_can_be_analysed():
 # --- pages ------------------------------------------------------------------------------------------------
 
 @pytest.mark.parametrize("lang", LANGS)
-def test_pricing_and_landing_announce_the_trial_with_its_conditions(lang):
+def test_pricing_and_landing_announce_the_trial_with_its_conditions(lang, monkeypatch):
+    monkeypatch.setattr(config, "TRIAL_DAYS_INDIVIDUAL", 3)  # same length for both account types: one number is shown
     pricing = page_text(anon(lang).get("/pricing"))
     assert CATALOGS[lang]["pricing.trial_badge"].format(days=3) in pricing
     note = CATALOGS[lang]["pricing.trial_note"].format(days=3, dossiers=3)
@@ -205,4 +206,47 @@ def test_the_account_page_shows_the_trial_end_and_what_happens_next():
 def test_the_terms_describe_the_trial_when_one_is_offered(monkeypatch):
     assert "Essai gratuit" in page_text(anon("fr").get("/terms")) and "3 jours" in page_text(anon("fr").get("/terms"))
     monkeypatch.setattr(config, "TRIAL_DAYS", 0)
+    monkeypatch.setattr(config, "TRIAL_DAYS_INDIVIDUAL", 0)
     assert "Essai gratuit" not in page_text(anon("fr").get("/terms"))
+
+
+# --- shorter trial for private (individual) accounts -----------------------------------------------------
+
+def _org_of_type(email, account_type):
+    c = new_client(email)
+    set_org(org_of(email), account_type=account_type)
+    from app.models import Org, SessionLocal, User
+    with SessionLocal() as db:
+        user = db.scalar(select(User).where(User.email == email))
+        return c, db.get(Org, user.org_id), user
+
+
+def test_a_private_account_gets_a_one_day_trial_and_a_professional_three_days():
+    _, org_i, user_i = _org_of_type("trial-ind@x.be", "individual")
+    _, org_p, user_p = _org_of_type("trial-pro@x.be", "professional")
+    kw_i = billing.checkout_kwargs(org_i, user_i, plans.get("agent"), "fr")
+    kw_p = billing.checkout_kwargs(org_p, user_p, plans.get("agent"), "fr")
+    assert kw_i["subscription_data"]["trial_period_days"] == 1 and kw_p["subscription_data"]["trial_period_days"] == 3
+    msg = kw_i["custom_text"]["submit"]["message"]
+    assert "1 jour " in msg and "1 jours" not in msg  # singular
+
+
+@pytest.mark.parametrize("lang,expected", [("fr", "1 jour d'essai gratuit"), ("nl", "1 dag gratis proefperiode"), ("en", "1-day free trial")])
+def test_the_individual_sees_the_singular_one_day_trial_on_the_pricing_page(lang, expected):
+    c, _, _ = _org_of_type(f"trial-ind-{lang}@x.be", "individual")
+    c.get(f"/lang/{lang}")
+    assert expected in page_text(c.get("/pricing"))
+
+
+def test_an_anonymous_visitor_sees_both_lengths_and_the_trial_end_date_follows_the_account_type():
+    body = page_text(anon("fr").get("/pricing"))
+    assert "1 jour(s) pour les particuliers, 3 jours pour les professionnels" in body
+    c, org_i, _ = _org_of_type("trial-end-ind@x.be", "individual")
+    ev = event("checkout.session.completed", {**checkout_obj(org_i.id, "agent", mode="subscription", paid="no_payment_required", customer="cus_i", subscription="sub_i", amount=0),
+                                              "metadata": {"org_id": str(org_i.id), "plan_id": "agent", "period": "monthly", "trial": "1"}})
+    assert hook(c, ev).status_code == 200
+    with SessionLocal() as db:
+        o = db.get(Org, org_i.id)
+        ends = o.trial_ends_at if o.trial_ends_at.tzinfo else o.trial_ends_at.replace(tzinfo=dt.timezone.utc)
+        hours = (ends - dt.datetime.now(dt.timezone.utc)).total_seconds() / 3600
+        assert o.subscription_status == "trialing" and 22 < hours <= 24.1

@@ -11,6 +11,14 @@ def titles(lang: str) -> dict:
     return TITLES[lang]
 
 
+def _trial_label(lang: str) -> str:
+    """'3 jours', or '1 jour (particuliers) / 3 jours (professionnels)' when the two account types differ."""
+    ind, pro = config.TRIAL_DAYS_INDIVIDUAL, config.TRIAL_DAYS
+    if ind == pro or not ind or not pro:
+        return i18n.t("trial.days", lang, n=ind or pro)
+    return i18n.t("trial.split", lang, individual=i18n.t("trial.days", lang, n=ind), professional=i18n.t("trial.days", lang, n=pro))
+
+
 def _values(lang: str) -> dict:
     def fact(value: str, what: str) -> str:
         return escape(value) if value else f'<mark class="todo">[{escape(i18n.t("legal.todo", lang, what=what))}]</mark>'
@@ -24,12 +32,12 @@ def _values(lang: str) -> dict:
         "hosting_region": fact(config.HOSTING_REGION, {"fr": "région", "nl": "regio", "en": "region"}[lang]),
         "todo": f'<mark class="todo">[{escape(i18n.t("legal.todo_decision", lang))}]</mark>',
         "minutes": escape(str(config.PROCESSING_PROMISE_MINUTES)),
-        "trial_days": escape(str(config.TRIAL_DAYS)), "trial_dossiers": escape(str(config.TRIAL_DOSSIERS)),
+        "trial_days": escape(_trial_label(lang)), "trial_dossiers": escape(str(config.TRIAL_DOSSIERS)),
     }
 
 
 def _enabled() -> set:
-    return {name for name, on in (("stripe", config.STRIPE_SECRET_KEY), ("ai", config.ANTHROPIC_API_KEY), ("smtp", config.MAIL_ENABLED), ("trial", config.TRIAL_DAYS > 0)) if on}
+    return {name for name, on in (("stripe", config.STRIPE_SECRET_KEY), ("ai", config.ANTHROPIC_API_KEY), ("smtp", config.MAIL_ENABLED), ("trial", config.TRIAL_DAYS > 0 or config.TRIAL_DAYS_INDIVIDUAL > 0)) if on}
 
 
 def render(doc: str, lang: str) -> list[dict]:

@@ -33,7 +33,7 @@ Tableau de bord → **Developers → API keys** → « Secret key » (`sk_test_�
 | `STRIPE_SECRET_KEY` | `sk_test_…` (puis `sk_live_…` au lancement) |
 | `STRIPE_WEBHOOK_SECRET` | `whsec_…` du webhook correspondant |
 | `BASE_URL` | l'adresse publique du site, sans `/` final (déduite de Railway si absente ; à fixer si vous avez un domaine à vous) |
-| `TRIAL_DAYS` / `TRIAL_DOSSIERS` | facultatif : durée de l'essai (3 par défaut, `0` pour le supprimer) et dossiers autorisés pendant l'essai (3 par défaut) |
+| `TRIAL_DAYS` / `TRIAL_DAYS_INDIVIDUAL` / `TRIAL_DOSSIERS` | facultatif : durée de l'essai des professionnels (3 par défaut) et des particuliers (1 par défaut), `0` pour le supprimer) et dossiers autorisés pendant l'essai (3 par défaut) |
 | `PLAN_*_PRICE_EUR`, `DISCOUNT_*_PCT` | facultatif : prix et remises (voir `docs/DEPLOY.md`) |
 
 Puis **Deploy** (ou `railway up`). Quand `STRIPE_SECRET_KEY` est présent, les boutons d'achat et d'abonnement apparaissent sur la page Tarifs et dans le compte ; sans elle, ils sont masqués.
