@@ -134,3 +134,8 @@ def test_turnstile_fails_closed_when_cloudflare_is_unreachable(monkeypatch):
     monkeypatch.setattr(config, "TURNSTILE_SITE_KEY", "k"); monkeypatch.setattr(config, "TURNSTILE_SECRET_KEY", "s")
     monkeypatch.setattr(captcha.urllib.request, "urlopen", lambda *a, **k: (_ for _ in ()).throw(OSError("down")))
     assert captcha.verify("token") is False
+
+
+def test_health_reports_the_database_kind():
+    body = TestClient(app).get("/health").json()
+    assert body["database"] in ("sqlite", "postgresql")

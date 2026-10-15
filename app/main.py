@@ -71,6 +71,12 @@ logging.getLogger("uvicorn.error").info(
     "open" if config.OPEN_REGISTRATION else "invitation-only" if config.INVITE_CODE else "open (no invite code, dev)",
     f"configured ({len(invite.normalize(config.INVITE_CODE))} chars after normalisation)" if config.INVITE_CODE else "not set (registration open)")
 
+DB_KIND = "sqlite" if config.DB_URL.startswith("sqlite") else "postgresql"
+if DB_KIND == "sqlite" and config.APP_ENV == "production":
+    logging.getLogger("uvicorn.error").warning(
+        "DATABASE: SQLite at %s. Accounts survive a redeploy ONLY if a volume is mounted on %s; otherwise they are lost. Set DATABASE_URL (PostgreSQL).",
+        config.DB_URL.removeprefix("sqlite:///"), config.DATA_DIR)
+
 SEVERITY_ORDER = {"high": 0, "medium": 1, "low": 2, "info": 3}
 VERIFY_MAX_AGE = 2 * 86400
 RESET_MAX_AGE = 3600
@@ -187,7 +193,7 @@ def health(db: Session = Depends(get_db)):
     return {"status": "ok", "ruleset": RULESET_VERSION, "build": (os.environ.get("RAILWAY_GIT_COMMIT_SHA") or "unknown")[:7],
             "invite_required": bool(config.INVITE_CODE), "terms_version": legal.VERSION, "mail": mail.transport(),
             "access_notifications": bool(config.CONTACT_EMAIL) and mail.transport() != "log",
-            "registration": "invitation-only" if config.INVITE_CODE else "open", "trial_days": config.TRIAL_DAYS,
+            "database": DB_KIND, "registration": "invitation-only" if config.INVITE_CODE else "open", "trial_days": config.TRIAL_DAYS,
             "trial_days_individual": config.TRIAL_DAYS_INDIVIDUAL}
 
 
