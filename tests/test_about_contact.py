@@ -50,7 +50,7 @@ def test_about_only_states_facts_about_the_product():
 
 def test_nothing_is_shown_for_unconfigured_identity():
     body = page_text(get("en", "/contact"))
-    assert CATALOGS["en"]["contact.unavailable"] in body and "mailto:" not in body
+    assert "mailto:" not in body
     assert CATALOGS["en"]["contact.company.title"] not in body
     assert "Published by" not in page_text(get("en", "/about"))
     body_html = get("en", "/contact").text.split("</header>")[1]
@@ -72,13 +72,10 @@ def test_configured_details_are_displayed_and_escaped(monkeypatch):
 
 
 @pytest.mark.parametrize("lang", LANGS)
-def test_mailto_link_has_translated_subject_and_the_exact_address(monkeypatch, lang):
+def test_the_contact_address_is_never_displayed_on_the_contact_page(monkeypatch, lang):
     monkeypatch.setattr(config, "CONTACT_EMAIL", "info@example.be")
     body = get(lang, "/contact").text
-    href = re.search(r'href="(mailto:[^"]+)"', body).group(1)
-    assert href.startswith("mailto:info@example.be?subject=")
-    assert unquote(href.split("subject=")[1]) == html.unescape(CATALOGS[lang]["contact.mail_subject"])
-    assert "?" not in href.split("?subject=")[0] and href.count("?") == 1
+    assert "info@example.be" not in body and "mailto:" not in body and 'action="/request-access"' in body
 
 
 def test_invalid_contact_email_values_are_ignored(monkeypatch):

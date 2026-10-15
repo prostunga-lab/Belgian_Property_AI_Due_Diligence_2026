@@ -10,12 +10,8 @@
 <article class="prose">
   <h1>{{ _('contact.h1') }}</h1>
   <p>{{ _('contact.intro') }}</p>
-  {% if contact_email %}
-  <div class="card"><p class="mut" style="margin:0 0 8px">{{ _('contact.email_label') }}</p>
-    <a class="mailbtn" href="mailto:{{ contact_email }}?subject={{ _('contact.mail_subject')|urlencode }}">{{ contact_email }}</a>
-    {% if invite %}<p style="margin:12px 0 0">{{ _('contact.invite') }}</p>{% endif %}
-    <p class="mut" style="margin:12px 0 0">{{ _('contact.privacy') }}</p></div>
-  {% else %}<div class="card"><p style="margin:0">{{ _('contact.unavailable') }}</p></div>{% endif %}
+  {% if invite %}<p>{{ _('contact.invite') }}</p>{% endif %}
+  <p class="mut">{{ _('contact.privacy') }}</p>
   <div class="card" id="access"><h2 style="margin:0 0 6px;font-size:18px">{{ _('access.title') if invite else _('access.title.open') }}</h2>
   <p class="mut" style="margin:0 0 10px">{{ _('access.intro') if invite else _('access.intro.open') }}</p>
   {% if sent %}<p class="ok" role="status"><b>{{ _('access.sent') }}</b></p>{% endif %}
