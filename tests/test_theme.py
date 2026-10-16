@@ -43,7 +43,7 @@ def test_palette_keeps_aa_contrast(theme):
     pairs = [("fg on bg", p["fg"], p["bg"]), ("fg on bg2 (gradient top)", p["fg"], p["bg2"]), ("muted on bg", p["mut"], p["bg"]),
              ("muted on bg2", p["mut"], p["bg2"]), ("muted on card", p["mut"], p["card"]), ("link on bg", p["acc"], p["bg"]),
              ("error on bg", p["high"], p["bg"]), ("ok on bg", p["ok"], p["bg"]), ("button text on button", "#ffffff", p["btn"]),
-             ("muted on code chip", p["mut"], p["code"]), ("header text", "#ffffff", p["hdr"]), ("header links", "#dbe6f3", p["hdr"])]
+             ("muted on code chip", p["mut"], p["code"]), ("saffron CTA text", p["hi-fg"], p["hi"]), ("header text", "#ffffff", p["hdr"]), ("header links", "#dbe6f3", p["hdr"])]
     if theme == "light":  # severity colours are used on white cards
         pairs += [(f"{k} on card", p[k], p["card"]) for k in ("high", "medium", "low", "info")]
     low = [(n, round(ratio(a, b), 2)) for n, a, b in pairs if ratio(a, b) < 4.5]

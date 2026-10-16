@@ -12,19 +12,22 @@ from urllib.parse import urlparse
 
 from fastapi import BackgroundTasks, Depends, FastAPI, File, Form, Request, UploadFile
 from fastapi.responses import JSONResponse, RedirectResponse, Response
+from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
 from sqlalchemy import delete, select, text
 from sqlalchemy.orm import Session
 from starlette.exceptions import HTTPException as StarletteHTTPException
 from starlette.middleware.sessions import SessionMiddleware
 
-from . import billing, config, i18n, invite, mail, pricing
+from . import billing, captcha, config, i18n, invite, legal, mail, pricing
+from . import demo, renovation
+from . import summary as property_summary
 from .api_v1 import router as api_v1_router
 from .auth import (ApiKey, current_user, get_db, hash_password, make_token, new_api_key, open_session, optional_user,
                    pw_fingerprint, read_token, verify_password)
 from .classify import DOC_TYPES
 from .errors import AppError
-from .models import AuditLog, Case, Comment, Org, User, init_db
+from .models import AccessRequest, AuditLog, Case, Comment, Org, User, init_db
 from .report import build_pdf
 from .rules import RULESET_VERSION
 from .services import (add_document, audit, balance, billing_preview, case_payload, delete_case_data, finding_view, get_case,
@@ -56,12 +59,23 @@ def template_context(request: Request) -> dict:
             "switch_next": switch_target(request), "year": dt.date.today().year, "company_name": config.COMPANY_NAME}
 
 
-app = FastAPI(title="Belgian Property Due Diligence")
+app = FastAPI(title="Belgian Immo Due Diligence")
 app.add_middleware(SessionMiddleware, secret_key=config.SECRET_KEY, same_site="lax", https_only=config.COOKIE_SECURE, max_age=60 * 60 * 12)
+app.mount("/static", StaticFiles(directory=str(Path(__file__).parent / "static")), name="static")
 templates = Jinja2Templates(directory=str(Path(__file__).parent / "templates"), context_processors=[template_context])
 app.include_router(billing.router)
 app.include_router(api_v1_router)
 init_db()
+logging.getLogger("uvicorn.error").info(
+    "startup: build=%s mail=%s registration=%s invite_code=%s", (os.environ.get("RAILWAY_GIT_COMMIT_SHA") or "unknown")[:7], mail.transport(),
+    "open" if config.OPEN_REGISTRATION else "invitation-only" if config.INVITE_CODE else "open (no invite code, dev)",
+    f"configured ({len(invite.normalize(config.INVITE_CODE))} chars after normalisation)" if config.INVITE_CODE else "not set (registration open)")
+
+DB_KIND = "sqlite" if config.DB_URL.startswith("sqlite") else "postgresql"
+if DB_KIND == "sqlite" and config.APP_ENV == "production":
+    logging.getLogger("uvicorn.error").warning(
+        "DATABASE: SQLite at %s. Accounts survive a redeploy ONLY if a volume is mounted on %s; otherwise they are lost. Set DATABASE_URL (PostgreSQL).",
+        config.DB_URL.removeprefix("sqlite:///"), config.DATA_DIR)
 
 SEVERITY_ORDER = {"high": 0, "medium": 1, "low": 2, "info": 3}
 VERIFY_MAX_AGE = 2 * 86400
@@ -74,6 +88,29 @@ DASHBOARD_MESSAGES = {"verification_sent": "msg.verification_sent"}
 
 # --- cross-cutting: language, CSRF, security headers, rate limiting, errors -----------------------------
 
+# No inline scripts anywhere (behaviour lives in /static/app.js), so scripts are limited to this origin. Inline *styles* are still
+# used by the templates, hence 'unsafe-inline' for style-src only. form-action lists the payment provider's hosts because the
+# checkout/portal buttons are forms answered by a redirect to Stripe.
+def csp() -> str:
+    cf = f" {captcha.HOST}" if captcha.enabled() else ""  # the Turnstile widget: its script and its iframe
+    return (f"default-src 'self'; script-src 'self'{cf}; style-src 'self' 'unsafe-inline'; img-src 'self' data:; font-src 'self'; connect-src 'self'; "
+            f"frame-src 'self'{cf}; object-src 'none'; base-uri 'none'; frame-ancestors 'none'; form-action 'self' https://checkout.stripe.com https://billing.stripe.com")
+
+
+def secure_headers(resp: Response, lang: str | None = None) -> Response:
+    """The same protections on EVERY response: pages, redirects, 4xx/5xx errors, early refusals and static files."""
+    resp.headers.setdefault("X-Content-Type-Options", "nosniff")
+    resp.headers.setdefault("X-Frame-Options", "DENY")
+    resp.headers.setdefault("Referrer-Policy", "same-origin")
+    if lang:
+        resp.headers.setdefault("Content-Language", lang)
+    if config.COOKIE_SECURE:
+        resp.headers.setdefault("Strict-Transport-Security", "max-age=31536000; includeSubDomains")
+    if config.CSP_MODE != "off":
+        resp.headers.setdefault("Content-Security-Policy-Report-Only" if config.CSP_MODE == "report-only" else "Content-Security-Policy", csp())
+    return resp
+
+
 @app.middleware("http")
 async def lang_csrf_headers(request: Request, call_next):
     """Resolve the language, reject cross-site state-changing requests, add security headers.
@@ -85,15 +122,9 @@ async def lang_csrf_headers(request: Request, call_next):
     if request.method in {"POST", "PUT", "PATCH", "DELETE"}:
         src = request.headers.get("origin") or request.headers.get("referer")
         if src and urlparse(src).netloc != request.headers.get("host"):
-            return JSONResponse({"detail": i18n.t("err.cross_site", request.state.lang), "code": "err.cross_site"}, status_code=403)
-    resp = await call_next(request)
-    resp.headers.setdefault("X-Content-Type-Options", "nosniff")
-    resp.headers.setdefault("X-Frame-Options", "DENY")
-    resp.headers.setdefault("Referrer-Policy", "same-origin")
-    resp.headers.setdefault("Content-Language", request.state.lang)
-    if config.COOKIE_SECURE:
-        resp.headers.setdefault("Strict-Transport-Security", "max-age=31536000; includeSubDomains")
-    return resp
+            refusal = JSONResponse({"detail": i18n.t("err.cross_site", request.state.lang), "code": "err.cross_site"}, status_code=403)
+            return secure_headers(refusal, request.state.lang)
+    return secure_headers(await call_next(request), request.state.lang)
 
 
 _attempts: dict[str, deque] = defaultdict(deque)
@@ -114,6 +145,32 @@ def client_ip(request: Request) -> str:
     return request.client.host if request.client else "?"
 
 
+API_PREFIXES = ("/v1", "/billing/webhook", "/docs", "/openapi.json", "/redoc", "/static")
+
+
+def _wants_html(request: Request, exc: StarletteHTTPException) -> bool:
+    """Browsers always get a readable page. Clients that send no Accept header (curl, checkers) get one too for an unknown page
+    or method, but never on API paths, which keep their JSON errors."""
+    accept = request.headers.get("accept", "")
+    if "text/html" in accept:
+        return True
+    path = request.url.path
+    return (exc.status_code in (404, 405) and not isinstance(exc, AppError) and not path.startswith(API_PREFIXES)
+            and "application/json" not in accept and "x-api-key" not in request.headers)
+
+
+@app.exception_handler(Exception)
+async def unexpected_error(request: Request, exc: Exception):
+    """Last resort: a generic answer (never a stack trace), with the same security headers as every other response."""
+    logging.getLogger("uvicorn.error").exception("Unhandled error on %s %s", request.method, request.url.path)
+    lang = getattr(request.state, "lang", None) or "en"
+    if "text/html" in request.headers.get("accept", ""):
+        resp = templates.TemplateResponse(request, "error.html", {"status": 500, "detail": i18n.t("err.title.500", lang) if i18n.has("err.title.500") else "Error", "title": i18n.t("err.title.default", lang)}, status_code=500)
+    else:
+        resp = JSONResponse({"detail": "Internal error"}, status_code=500)
+    return secure_headers(resp, lang)
+
+
 @app.exception_handler(StarletteHTTPException)
 async def http_exc(request: Request, exc: StarletteHTTPException):
     lang = getattr(request.state, "lang", None) or resolve_lang(request)
@@ -121,7 +178,7 @@ async def http_exc(request: Request, exc: StarletteHTTPException):
         code, detail = exc.key, i18n.t(exc.key, lang, **exc.params)
     else:  # framework errors (unknown route, method not allowed…)
         code, detail = None, i18n.t(f"err.title.{exc.status_code}", lang) if i18n.has(f"err.title.{exc.status_code}") else str(exc.detail)
-    if "text/html" in request.headers.get("accept", ""):
+    if _wants_html(request, exc):
         if exc.status_code == 401:
             return RedirectResponse("/login", status_code=303)
         title = i18n.t(f"err.title.{exc.status_code}", lang) if i18n.has(f"err.title.{exc.status_code}") else i18n.t("err.title.default", lang)
@@ -133,7 +190,11 @@ async def http_exc(request: Request, exc: StarletteHTTPException):
 @app.get("/health")
 def health(db: Session = Depends(get_db)):
     db.execute(text("SELECT 1"))
-    return {"status": "ok", "ruleset": RULESET_VERSION}
+    return {"status": "ok", "ruleset": RULESET_VERSION, "build": (os.environ.get("RAILWAY_GIT_COMMIT_SHA") or "unknown")[:7],
+            "invite_required": bool(config.INVITE_CODE), "terms_version": legal.VERSION, "mail": mail.transport(),
+            "access_notifications": bool(config.CONTACT_EMAIL) and mail.transport() != "log",
+            "database": DB_KIND, "registration": "invitation-only" if config.INVITE_CODE else "open", "trial_days": config.TRIAL_DAYS,
+            "trial_days_individual": config.TRIAL_DAYS_INDIVIDUAL}
 
 
 @app.get("/about")
@@ -141,12 +202,129 @@ def about(request: Request):
     return templates.TemplateResponse(request, "about.html", {"base_url": config.BASE_URL})
 
 
+def _demo_case():
+    case = demo.build()
+    return case, sorted(case.findings, key=lambda f: (SEVERITY_ORDER.get(f.severity, 9), f.id))
+
+
+@app.get("/demo")
+def demo_report(request: Request):
+    """Public demonstration: the real engine on synthetic documents, with sources, limits and the action plan."""
+    lang = request.state.lang
+    case, findings = _demo_case()
+    return templates.TemplateResponse(request, "demo.html", {
+        "case": case, "base_url": config.BASE_URL, "prop": property_summary.build(case.documents, lang),
+        "reno": renovation.build(findings, case.documents, lang), "rules_validated": config.RULES_VALIDATED,
+        "findings": [finding_view(f, lang) for f in findings if f.severity != "info"][:6], "invite": bool(config.INVITE_CODE)})
+
+
+@app.get("/demo/report.pdf")
+def demo_pdf(request: Request):
+    case, _ = _demo_case()
+    return Response(build_pdf(case, request.state.lang), media_type="application/pdf", headers={"Content-Disposition": 'inline; filename="demo-report.pdf"'})
+
+
+def contact_context(request: Request, error: str | None = None, **form) -> dict:
+    lang = request.state.lang
+    return {"base_url": config.BASE_URL, "contact_email": config.CONTACT_EMAIL, "invite": bool(config.INVITE_CODE),
+            "company_address": config.COMPANY_ADDRESS, "enterprise_number": config.COMPANY_ENTERPRISE_NUMBER, "company_phone": config.COMPANY_PHONE,
+            "error": i18n.t(error, lang) if error else None, "form": form, "sent": request.query_params.get("sent") == "1"}
+
+
 @app.get("/contact")
 def contact(request: Request):
-    """Public contact page. Only configured details are shown; nothing is invented, and there is no form that could silently lose a message."""
-    return templates.TemplateResponse(request, "contact.html", {
-        "base_url": config.BASE_URL, "contact_email": config.CONTACT_EMAIL, "invite": bool(config.INVITE_CODE),
-        "company_address": config.COMPANY_ADDRESS, "enterprise_number": config.COMPANY_ENTERPRISE_NUMBER, "company_phone": config.COMPANY_PHONE})
+    """Public contact page: published details, plus a working access-request form so that no visitor reaches a dead end."""
+    return templates.TemplateResponse(request, "contact.html", contact_context(request))
+
+
+ACCOUNT_TYPES = ("individual", "professional")
+
+
+@app.post("/request-access")
+def request_access(request: Request, bg: BackgroundTasks, name: str = Form(""), email: str = Form(""), account_type: str = Form("professional"),
+                   organisation: str = Form(""), message: str = Form(""), consent: str = Form(""), hp_check: str = Form(""),
+                   db: Session = Depends(get_db)):
+    """Store a request for access (invitation-only beta) and tell the owner. A hidden 'hp_check' field catches simple bots."""
+    done = RedirectResponse("/contact?sent=1#access", status_code=303)
+    if hp_check.strip():  # honeypot: looks like success, stores nothing
+        return done
+    throttle(f"access:{client_ip(request)}", 3, 3600)
+    name, email, organisation, message = name.strip(), email.strip().lower(), organisation.strip(), message.strip()
+    form = {"name": name, "email": email, "account_type": account_type, "organisation": organisation, "message": message}
+
+    def refuse(key: str):
+        return templates.TemplateResponse(request, "contact.html", contact_context(request, key, **form), status_code=400)
+
+    if not name or len(name) > 120:
+        return refuse("access.err.name")
+    if not EMAIL_RE.fullmatch(email) or len(email) > 200:
+        return refuse("auth.err.email")
+    if consent != "1":
+        return refuse("access.err.consent")
+    if len(message) > 1000 or len(organisation) > 200:
+        return refuse("access.err.too_long")
+    if account_type not in ACCOUNT_TYPES:
+        account_type = "professional"
+    recent = dt.datetime.now(dt.timezone.utc) - dt.timedelta(hours=24)
+    if db.scalar(select(AccessRequest).where(AccessRequest.email == email, AccessRequest.created_at > recent)):
+        return done  # the same person asking again within a day: one request is enough
+    req = AccessRequest(name=name, email=email, account_type=account_type, organisation=organisation, message=message, lang=request.state.lang)
+    db.add(req)
+    db.commit()
+    logging.getLogger("uvicorn.error").info("access request #%s received (%s, %s)", req.id, account_type, request.state.lang)
+    if not config.CONTACT_EMAIL:
+        logging.getLogger("uvicorn.error").warning("access request #%s stored but NOT e-mailed: CONTACT_EMAIL is not set (read it at /admin/requests)", req.id)
+    elif mail.transport() == "log":
+        logging.getLogger("uvicorn.error").warning("access request #%s stored but NOT e-mailed: no RESEND_API_KEY or SMTP_HOST configured (read it at /admin/requests)", req.id)
+    if config.CONTACT_EMAIL:
+        bg.add_task(mail.send, config.CONTACT_EMAIL, i18n.t("mail.access.subject", "fr", name=name),
+                    i18n.t("mail.access.body", "fr", name=name, email=email, kind=i18n.t(f"access.type.{account_type}", "fr"),
+                           organisation=organisation or "-", message=message or "-", language=request.state.lang, base=config.BASE_URL))
+    return done
+
+
+def require_admin(user: User) -> None:
+    if user.email.lower() not in config.ADMIN_EMAILS:
+        raise AppError(404, "err.not_found.case")  # same answer as an unknown page: the admin area is not advertised
+
+
+@app.get("/admin/requests")
+def admin_requests(request: Request, user: User = Depends(current_user), db: Session = Depends(get_db)):
+    require_admin(user)
+    rows = db.scalars(select(AccessRequest).order_by(AccessRequest.status.desc(), AccessRequest.id.desc()).limit(200)).all()
+    return templates.TemplateResponse(request, "admin_requests.html", {"user": user, "rows": rows, "invite": bool(config.INVITE_CODE)})
+
+
+@app.post("/admin/requests/{request_id}/done")
+def admin_request_done(request_id: int, user: User = Depends(current_user), db: Session = Depends(get_db)):
+    require_admin(user)
+    row = db.get(AccessRequest, request_id)
+    if row:
+        row.status = "done"
+        db.commit()
+    return RedirectResponse("/admin/requests", status_code=303)
+
+
+def _legal_page(request: Request, doc: str):
+    lang = request.state.lang
+    return templates.TemplateResponse(request, "legal.html", {
+        "doc": doc, "doc_title": legal.titles(lang)[doc], "sections": legal.render(doc, lang), "version": legal.VERSION,
+        "reviewed": config.LEGAL_REVIEWED, "base_url": config.BASE_URL})
+
+
+@app.get("/legal")
+def legal_notice(request: Request):
+    return _legal_page(request, "legal")
+
+
+@app.get("/privacy")
+def privacy_policy(request: Request):
+    return _legal_page(request, "privacy")
+
+
+@app.get("/terms")
+def terms_page(request: Request):
+    return _legal_page(request, "terms")
 
 
 @app.get("/lang/{code}")
@@ -171,26 +349,42 @@ def send_verification(bg: BackgroundTasks, user: User, lang: str) -> None:
     bg.add_task(mail.send, user.email, i18n.t("mail.verify.subject", lang), i18n.t("mail.verify.body", lang, link=link))
 
 
-def login_context(request: Request, error: str | None = None, info: str | None = None) -> dict:
+def trial_context(org: Org | None) -> dict:
+    """Trial wording for templates: the exact length for a known account; for an anonymous visitor the single length, or both when they differ."""
+    ind, pro = config.TRIAL_DAYS_INDIVIDUAL, config.TRIAL_DAYS
+    if org is None:
+        if ind > 0 and pro > 0 and ind != pro:
+            return {"trial_days": 0, "trial_split": {"individual": ind, "professional": pro}}
+        return {"trial_days": pro or ind, "trial_split": None}
+    return {"trial_days": billing.trial_days_for(org) if billing.trial_available(org) else 0, "trial_split": None}
+
+
+def after_auth(raw: str) -> str:
+    """Where to go after signing in / registering: only the pricing page is allowed as a return target (no open redirect)."""
+    return "/pricing" if raw == "/pricing" else "/"
+
+
+def login_context(request: Request, error: str | None = None, info: str | None = None, next_url: str = "") -> dict:
     lang = request.state.lang
-    return {"error": i18n.t(error, lang) if error else None, "info": i18n.t(info, lang) if info else None, "invite": bool(config.INVITE_CODE)}
+    return {"next_url": after_auth(next_url) if next_url == "/pricing" else "", "error": i18n.t(error, lang) if error else None, "info": i18n.t(info, lang) if info else None, "invite": bool(config.INVITE_CODE),
+            "turnstile_site_key": config.TURNSTILE_SITE_KEY if captcha.enabled() else None, "free_credits": config.FREE_CREDITS}
 
 
 # --- auth -------------------------------------------------------------------------------------------
 
 @app.get("/login")
 def login_page(request: Request):
-    return templates.TemplateResponse(request, "login.html", login_context(request, info=LOGIN_MESSAGES.get(request.query_params.get("msg", ""))))
+    return templates.TemplateResponse(request, "login.html", login_context(request, info=LOGIN_MESSAGES.get(request.query_params.get("msg", "")), next_url=request.query_params.get("next", "")))
 
 
 @app.post("/register")
-def register(request: Request, bg: BackgroundTasks, org_name: str = Form(...), email: str = Form(...), password: str = Form(...),
-             invite_code: str = Form(""), db: Session = Depends(get_db)):
+def register(request: Request, bg: BackgroundTasks, email: str = Form(...), password: str = Form(...), org_name: str = Form(""),
+             account_type: str = Form("professional"), invite_code: str = Form(""), accept_terms: str = Form(""), next: str = Form(""), cf_turnstile_response: str = Form("", alias="cf-turnstile-response"), db: Session = Depends(get_db)):
     email = email.strip().lower()
     throttle(f"reg:{client_ip(request)}")
 
     def refuse(key: str, status: int):
-        return templates.TemplateResponse(request, "login.html", login_context(request, error=key), status_code=status)
+        return templates.TemplateResponse(request, "login.html", login_context(request, error=key, next_url=next), status_code=status)
 
     if config.INVITE_CODE and not invite.matches(invite_code, config.INVITE_CODE):
         # Diagnostic for the operator (Railway logs). Lengths only (after normalisation): the code itself is never logged.
@@ -199,34 +393,44 @@ def register(request: Request, bg: BackgroundTasks, org_name: str = Form(...), e
             "A difference usually means the dashboard value changed without a redeploy, or a different value was typed.",
             len(invite.normalize(invite_code)), len(invite.normalize(config.INVITE_CODE)))
         return refuse("auth.err.invite", 403)
+    if not captcha.verify(cf_turnstile_response, client_ip(request)):
+        return refuse("auth.err.captcha", 400)
     if not EMAIL_RE.fullmatch(email) or len(email) > 254:
         return refuse("auth.err.email", 400)
+    if accept_terms != "1":
+        return refuse("auth.err.terms", 400)
+    account_type = account_type if account_type in ACCOUNT_TYPES else "professional"
+    org_name = org_name.strip()
+    if account_type == "professional" and not org_name:
+        return refuse("auth.err.org_name", 400)  # a professional account is named after the agency / firm
     if len(password) < 10:
         return refuse("auth.err.password_short", 400)
     if db.scalar(select(User).where(User.email == email)):
         return refuse("auth.err.exists", 409)
-    org = Org(name=org_name.strip()[:200], credits=config.FREE_CREDITS)
+    throttle(f"regday:{client_ip(request)}", config.REGISTRATIONS_PER_IP_PER_DAY, 86400)  # counts completed registrations only
+    org = Org(name=(org_name or email.split("@")[0])[:200], account_type=account_type, credits=config.FREE_CREDITS)
     db.add(org)
     db.flush()
-    user = User(org_id=org.id, email=email, password_hash=hash_password(password), lang=request.state.lang)
+    user = User(org_id=org.id, email=email, password_hash=hash_password(password), lang=request.state.lang,
+                terms_accepted_at=dt.datetime.now(dt.timezone.utc), terms_version=legal.VERSION)
     db.add(user)
     db.flush()
     audit(db, user, "account.register")
     db.commit()
     send_verification(bg, user, request.state.lang)
     open_session(request, user)
-    return RedirectResponse("/", status_code=303)
+    return RedirectResponse(after_auth(next), status_code=303)
 
 
 @app.post("/login")
-def login(request: Request, email: str = Form(...), password: str = Form(...), db: Session = Depends(get_db)):
+def login(request: Request, email: str = Form(...), password: str = Form(...), next: str = Form(""), db: Session = Depends(get_db)):
     email = email.strip().lower()
     throttle(f"login:{client_ip(request)}:{email}")
     user = db.scalar(select(User).where(User.email == email))
     if not user or not verify_password(password, user.password_hash):
-        return templates.TemplateResponse(request, "login.html", login_context(request, error="auth.err.credentials"), status_code=400)
+        return templates.TemplateResponse(request, "login.html", login_context(request, error="auth.err.credentials", next_url=next), status_code=400)
     open_session(request, user)
-    resp = RedirectResponse("/", status_code=303)
+    resp = RedirectResponse(after_auth(next), status_code=303)
     if user.lang:  # the account's preferred language follows the person across devices
         resp.set_cookie(i18n.COOKIE, user.lang, max_age=365 * 86400, samesite="lax", secure=config.COOKIE_SECURE, httponly=True)
     return resp
@@ -297,11 +501,11 @@ def reset(request: Request, token: str = Form(...), password: str = Form(...), d
 
 # --- account: credits, API keys, erasure --------------------------------------------------------------
 
-def account_context(request: Request, user: User, db: Session, new_key: str | None = None, paid: str | None = None) -> dict:
+def account_context(request: Request, user: User, db: Session, new_key: str | None = None, paid: str | None = None, changed: str | None = None) -> dict:
     org = db.get(Org, user.org_id)
     keys = db.scalars(select(ApiKey).where(ApiKey.user_id == user.id, ApiKey.revoked == False).order_by(ApiKey.id)).all()  # noqa: E712
     bal = balance(org)
-    return {"user": user, "org": org, "bal": bal, "keys": keys, "new_key": new_key, "paid": paid, "base_url": config.BASE_URL,
+    return {"user": user, "org": org, "bal": bal, "keys": keys, "new_key": new_key, "paid": paid, "changed": changed, "base_url": config.BASE_URL,
             "stripe_ready": billing.configured(), "verification_on": config.REQUIRE_EMAIL_VERIFICATION,
             "cards": pricing.cards(request.state.lang), "max_documents": config.DOSSIER_MAX_DOCUMENTS, "vat": config.PRICES_VAT,
             "sub_name": billing.plan_name(bal["plan"], request.state.lang) if bal["plan"] else None,
@@ -310,7 +514,7 @@ def account_context(request: Request, user: User, db: Session, new_key: str | No
 
 @app.get("/account")
 def account(request: Request, user: User = Depends(current_user), db: Session = Depends(get_db)):
-    return templates.TemplateResponse(request, "account.html", account_context(request, user, db, paid=request.query_params.get("paid")))
+    return templates.TemplateResponse(request, "account.html", account_context(request, user, db, paid=request.query_params.get("paid"), changed=request.query_params.get("changed")))
 
 
 @app.post("/account/keys")
@@ -329,10 +533,11 @@ def pricing_page(request: Request, user: User | None = Depends(optional_user), d
     """Public pricing: pay per complete dossier (investors) or monthly subscription with a quota (agents)."""
     ctx = {"cards": pricing.cards(request.state.lang), "stripe_ready": billing.configured(), "free_credits": config.FREE_CREDITS,
            "max_documents": config.DOSSIER_MAX_DOCUMENTS, "vat": config.PRICES_VAT, "base_url": config.BASE_URL, "signed_in": user is not None,
-           "promise_minutes": config.PROCESSING_PROMISE_MINUTES}
+           "promise_minutes": config.PROCESSING_PROMISE_MINUTES, **trial_context(None),
+           "trial_dossiers": config.TRIAL_DOSSIERS}
     if user:
         org = db.get(Org, user.org_id)
-        ctx |= {"user": user, "org": org, "bal": balance(org)}
+        ctx |= {"user": user, "org": org, "bal": balance(org), **trial_context(org)}
     return templates.TemplateResponse(request, "pricing.html", ctx)
 
 
@@ -374,7 +579,8 @@ def home(request: Request, user: User | None = Depends(optional_user), db: Sessi
     if user is None:
         return templates.TemplateResponse(request, "landing.html", {
             "invite": bool(config.INVITE_CODE), "free_credits": config.FREE_CREDITS, "max_files": config.MAX_FILES_PER_REQUEST,
-            "max_mb": config.MAX_UPLOAD_MB, "base_url": config.BASE_URL})
+            "max_mb": config.MAX_UPLOAD_MB, "base_url": config.BASE_URL, "promise_minutes": config.PROCESSING_PROMISE_MINUTES,
+            **trial_context(None)})
     cases = db.scalars(select(Case).where(Case.org_id == user.org_id).order_by(Case.id.desc())).all()
     org = db.get(Org, user.org_id)
     return templates.TemplateResponse(request, "dashboard.html", {
@@ -397,7 +603,9 @@ def create_case(title: str = Form(...), user: User = Depends(current_user), db: 
 def case_page(request: Request, case_id: int, user: User = Depends(current_user), db: Session = Depends(get_db)):
     case = get_case(db, user, case_id)
     return templates.TemplateResponse(request, "case.html", {
-        "case": case, "user": user, "org": db.get(Org, user.org_id), "version": RULESET_VERSION, "doc_types": DOC_TYPES,
+        "case": case, "user": user, "org": db.get(Org, user.org_id), "version": RULESET_VERSION, "promise_minutes": config.PROCESSING_PROMISE_MINUTES, "doc_types": DOC_TYPES, "rules_validated": config.RULES_VALIDATED,
+        "prop": property_summary.build(case.documents, request.state.lang), "events": property_summary.timeline(case.documents, request.state.lang),
+        "reno": renovation.build([f for f in case.findings if f.review_status != "dismissed"], case.documents, request.state.lang),
         "findings": [finding_view(f, request.state.lang) | {"comments": f.comments}
                      for f in sorted(case.findings, key=lambda f: (SEVERITY_ORDER.get(f.severity, 9), f.id))],
         "preview": billing_preview(db.get(Org, user.org_id), case), "bal": balance(db.get(Org, user.org_id)),

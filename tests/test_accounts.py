@@ -60,7 +60,7 @@ def test_forgot_and_reset_flow_single_use(outbox):
     assert c.post("/reset", data={"token": token, "password": "another-password-1"}).status_code == 400
     # old password dead, new one works
     other = new_client("r1@x.be", register=False)
-    assert other.post("/login", data={"email": "r1@x.be", "password": "supersecret12"}).status_code == 400
+    assert other.post("/login", data={"email": "r1@x.be", "password": "supersecret12", "accept_terms": "1"}).status_code == 400
     assert other.post("/login", data={"email": "r1@x.be", "password": "brand-new-password"}, follow_redirects=False).status_code == 303
 
 
@@ -83,10 +83,10 @@ def test_reset_token_cannot_be_used_as_verify_token(outbox):
 
 def test_registration_validation():
     c = new_client("x", register=False)
-    bad_mail = c.post("/register", data={"org_name": "O", "email": "not-an-email", "password": "supersecret12"})
+    bad_mail = c.post("/register", data={"org_name": "O", "email": "not-an-email", "password": "supersecret12", "accept_terms": "1"})
     assert bad_mail.status_code == 400
-    assert c.post("/register", data={"org_name": "O", "email": "dup@x.be", "password": "supersecret12"}, follow_redirects=False).status_code == 303
-    assert c.post("/register", data={"org_name": "O", "email": "DUP@x.be", "password": "supersecret12"}).status_code == 409
+    assert c.post("/register", data={"org_name": "O", "email": "dup@x.be", "password": "supersecret12", "accept_terms": "1"}, follow_redirects=False).status_code == 303
+    assert c.post("/register", data={"org_name": "O", "email": "DUP@x.be", "password": "supersecret12", "accept_terms": "1"}).status_code == 409
 
 
 def test_account_deletion_erases_everything():
@@ -98,7 +98,7 @@ def test_account_deletion_erases_everything():
     c.post(f"/cases/{cid}/documents", files=[("files", ("akte.pdf", pdf(DEED), "application/pdf"))])
     folder = next(cfg.UPLOAD_DIR.glob(f"*/{cid}"))
     assert c.post("/account/delete", data={"password": "wrong-password"}).status_code == 403
-    assert c.post("/account/delete", data={"password": "supersecret12"}, follow_redirects=False).status_code == 303
+    assert c.post("/account/delete", data={"password": "supersecret12", "accept_terms": "1"}, follow_redirects=False).status_code == 303
     assert not folder.exists()
     assert c.get(f"/api/cases/{cid}").status_code == 401
-    assert new_client("gone@x.be", register=False).post("/login", data={"email": "gone@x.be", "password": "supersecret12"}).status_code == 400
+    assert new_client("gone@x.be", register=False).post("/login", data={"email": "gone@x.be", "password": "supersecret12", "accept_terms": "1"}).status_code == 400

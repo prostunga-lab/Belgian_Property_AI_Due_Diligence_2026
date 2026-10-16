@@ -1,17 +1,26 @@
 {% extends "base.html" %}{% from "_macros.html" import password_field with context %}{% block content %}
 <p><a href="/">← {{ _('nav.cases') }}</a></p><h2>{{ _('acct.title') }}</h2>
+{% if changed %}<p class="ok">{{ _('acct.changed_ok') }}</p>{% endif %}
 {% if paid %}<p class="ok">{{ _('acct.paid_thanks') }}</p>{% endif %}
 <div class="card"><b>{{ org.name }}</b> · {{ user.email }} {% if user.email_verified %}<span class="badge ok">{{ _('acct.verified') }}</span>{% elif verification_on %}<span class="badge warn">{{ _('acct.unverified') }}</span>{% endif %}</div>
 
 <div class="card"><b>{{ _('acct.plan_title') }}</b>
 {% if bal.subscribed %}<p>{{ _('acct.sub_line', name=sub_name, period=_('period.' ~ (bal.period or 'monthly')), used=bal.used, quota=bal.quota) }}
 <span class="badge ok">{{ _('acct.sub_status.' ~ bal.status) }}</span></p>
+{% if bal.trialing and bal.trial_ends_at %}<p role="note" class="card" style="margin:8px 0">{{ _('acct.trial_line', date=bal.trial_ends_at.date().isoformat(), quota=bal.quota) }}</p>{% endif %}
 {% if bal.renews_on %}<p class="mut">{{ _('acct.quota_renews', date=bal.renews_on.date().isoformat()) }}</p>{% endif %}
 {% if bal.cancel_at_period_end %}<p class="mut">{{ _('acct.sub_cancel_at_end') }}</p>{% endif %}
 {% elif org.subscription_status %}<p>{{ _('acct.sub_none') }} <span class="badge {{ 'warn' if org.subscription_status in ('past_due', 'unpaid') else 'info' }}">{{ _('acct.sub_status.' ~ org.subscription_status) }}</span></p>
 {% else %}<p class="mut">{{ _('acct.sub_none') }}</p>{% endif %}
 <p>{{ _('acct.credits_line') }} <b>{{ _('ui.credits', n=bal.credits) }}</b> <span class="mut">({{ _('acct.credit_rule', max=max_documents) }})</span></p>
 {% if has_customer and stripe_ready %}<form method="post" action="/billing/portal"><button class="sec">{{ _('acct.manage_sub') }}</button></form>{% endif %}</div>
+
+{% if bal.subscribed and stripe_ready and has_customer %}
+<div class="card"><b>{{ _('acct.change_title') }}</b>
+<p class="mut">{{ _('acct.change_hint') }}</p>
+<div class="row">{% for c in cards.subscription %}{% for o in c.offers %}{% if c.id == org.plan and o.period == (org.billing_period or 'monthly') %}<span class="badge ok">{{ _('acct.change_current') }}: {{ c.name }} · {{ _('period.' ~ o.period) }}</span>{% else %}
+<form method="post" action="/billing/change" data-confirm="{{ _('acct.change_confirm') }}"><input type="hidden" name="plan_id" value="{{ c.id }}"><input type="hidden" name="period" value="{{ o.period }}"><button class="sec">{{ _('acct.change_btn', name=c.name ~ ' · ' ~ _('period.' ~ o.period), price=_('pricing.per_month', price=o.per_month)) }}</button></form>{% endif %}{% endfor %}{% endfor %}</div></div>
+{% endif %}
 
 <div class="card"><b>{{ _('acct.buy_title') }}</b>
 {% if stripe_ready %}
@@ -33,6 +42,6 @@
 
 <div class="card"><b>{{ _('acct.delete_title') }}</b>
 <p class="mut">{{ _('acct.delete_hint') }}</p>
-<form method="post" action="/account/delete" class="row" onsubmit='return confirm({{ _("acct.delete_confirm")|tojson }})'>
+<form method="post" action="/account/delete" class="row" data-confirm="{{ _('acct.delete_confirm') }}">
 {{ password_field('password', _('auth.password'), 'current-password', None, 'min-width:220px') }}<button class="sec">{{ _('acct.delete_btn') }}</button></form></div>
 {% endblock %}

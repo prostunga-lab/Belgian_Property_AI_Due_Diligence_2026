@@ -46,12 +46,12 @@ def test_every_rule_has_text_in_every_language():
 
 def test_rule_ids_list_matches_the_rules_source():
     src = Path("app/rules.py").read_text()
-    used = set(re.findall(r'F\(\s*"([A-Z][A-Z\-]+)"', src)) | {f"DOC-{t}" for t in ("EPC", "ASBESTOS", "ELECTRICAL", "SOIL", "DEED")}
+    used = set(re.findall(r'F\(\s*"([A-Z][A-Z\-]+)"', src)) | {f"DOC-{t}" for t in ("EPC", "ASBESTOS", "ELECTRICAL", "SOIL", "DEED", "URBANISM")}
     assert used <= set(RULE_IDS), f"rules emit ids missing from RULE_IDS: {used - set(RULE_IDS)}"
 
 
 def test_dynamic_label_keys_exist():
-    for prefix, values in {"doctype": ["epc", "deed", "asbestos", "electrical", "cadastre", "soil", "unknown"],
+    for prefix, values in {"doctype": ["epc", "deed", "asbestos", "electrical", "cadastre", "soil", "plan", "invoice", "urbanism", "copro", "photo", "unknown"],
                            "domain": ["legal", "urbanistic", "energy", "technical", "environmental", "documentation"],
                            "kind": ["fact", "inference", "risk", "action"], "level": ["low", "medium", "high"],
                            "severity": ["high", "medium", "low", "info"], "review": ["pending", "confirmed", "dismissed"],
@@ -102,7 +102,7 @@ def test_switcher_sets_cookie_persists_on_account_and_is_safe():
     assert html_lang(c) == "nl" and "Taal" in page_text(c.get("/account"))
     # stored on the account: a fresh browser logging in gets the same language
     other = TestClient(app)
-    other.post("/login", data={"email": "lang1@x.be", "password": "supersecret12"}, follow_redirects=False)
+    other.post("/login", data={"email": "lang1@x.be", "password": "supersecret12", "accept_terms": "1"}, follow_redirects=False)
     assert html_lang(other) == "nl"
     # open-redirect attempts fall back to "/"
     for evil in ("https://evil.example", "//evil.example", "/\\evil.example", "javascript:alert(1)"):
@@ -228,7 +228,7 @@ def test_emails_are_sent_in_the_users_language(monkeypatch, lang, subject, greet
     box = []
     monkeypatch.setattr(mail, "send", lambda to, subj, body: box.append((to, subj, body)))
     c = TestClient(app, cookies={"lang": lang})
-    c.post("/register", data={"org_name": "O", "email": f"mail-{lang}@x.be", "password": "supersecret12"})
+    c.post("/register", data={"org_name": "O", "email": f"mail-{lang}@x.be", "password": "supersecret12", "accept_terms": "1"})
     assert box[0][1] == subject and box[0][2].startswith(greeting) and link_in(box[0][2], "/verify")
     box.clear()
     c.post("/forgot", data={"email": f"mail-{lang}@x.be"})

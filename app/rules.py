@@ -11,6 +11,8 @@ import datetime as dt
 import re
 from dataclasses import dataclass, field
 
+from . import regions
+
 RULESET_VERSION = "VL-2026.1"  # region-date versioning; bump when regulation changes
 
 
@@ -66,13 +68,15 @@ REQUIRED = {  # doc type -> (domain, default severity, party to ask)
     "electrical": ("technical", "medium", "seller"),
     "soil": ("environmental", "medium", "seller"),
     "deed": ("legal", "medium", "notary"),
+    "urbanism": ("urbanistic", "high", "notary"),  # required in Brussels only (see regions.py): the notary asks the commune for it before the compromise
 }
 
 
 def r_missing_docs(docs, ctx):
     present = {d.doc_type for d in docs}
+    required = regions.get((ctx or {}).get("region")).required
     for t, (domain, sev, party) in REQUIRED.items():
-        if t in present:
+        if t in present or t not in required:
             continue
         params: dict = {}
         if t == "asbestos":
@@ -88,6 +92,8 @@ OCR_LOW_CONFIDENCE = 75.0
 def r_unreadable(docs, ctx):
     for d in docs:
         whole = [{"doc_id": d.id, "filename": d.filename, "page": 1, "excerpt": ""}]
+        if d.doc_type == "photo":  # photos carry no text by nature: reported once by r_photos, never as unreadable
+            continue
         if sum(len(p) for p in d.pages) < 80:
             params = {"filename": d.filename, "warnings": list(d.warnings), "variant": "warned" if d.warnings else "empty"}
             yield F("DOC-OCR", "documentation", "medium", "risk", params, "", whole)
@@ -135,12 +141,15 @@ def r_epc_label(docs, ctx):
     if not d:
         return
     score, label = val(d, "epc_score"), val(d, "epc_label")
-    if score is not None and label and _label_for(score) != label[0]:
+    # The label/score consistency check uses the FLEMISH thresholds (A..F): it is not applied to Brussels or Walloon certificates,
+    # whose scales differ (A..G), where it would raise false alarms.
+    if (ctx or {}).get("region") in (None, "flanders") and score is not None and label and _label_for(score) != label[0]:
         yield F("EPC-LABEL-MISMATCH", "energy", "medium", "inference",
                 {"score": f"{score:.0f}", "expected": _label_for(score), "label": label}, "seller", [src(d, "epc_score"), src(d, "epc_label")])
-    lab = (label or (_label_for(score) if score is not None else "") or "")[:1]
-    if lab in ("E", "F"):
-        sev = "high" if lab == "F" else "medium"
+    flemish = (ctx or {}).get("region") in (None, "flanders")
+    lab = (label or (_label_for(score) if score is not None and flemish else "") or "")[:1]
+    if lab in ("E", "F", "G"):
+        sev = "high" if lab in ("F", "G") else "medium"
         yield F("EPC-POOR", "energy", sev, "risk", {"label": lab}, "notary",
                 [src(d, "epc_label" if "epc_label" in d.fields else "epc_score")])
 
@@ -235,14 +244,14 @@ def r_extension_permit(docs, ctx):
     ext_doc = next((d for d in (epc, deed) if d and (val(d, "extension_m2") or val(d, "extension_mentioned"))), None)
     if not ext_doc:
         return
-    if not (deed and (val(deed, "permit_mentioned") or val(deed, "urbanism_info"))):
+    if not (by_type(docs, "urbanism") or (deed and (val(deed, "permit_mentioned") or val(deed, "urbanism_info")))):
         name = "extension_m2" if "extension_m2" in ext_doc.fields else "extension_mentioned"
         yield F("URB-EXT-NOPERMIT", "urbanistic", "high", "risk", {}, "notary", [src(ext_doc, name)])
 
 
 def r_urbanism_info(docs, ctx):
     deed = by_type(docs, "deed")
-    if deed and not (val(deed, "urbanism_info") or val(deed, "permit_mentioned")):
+    if deed and not (by_type(docs, "urbanism") or val(deed, "urbanism_info") or val(deed, "permit_mentioned")):
         yield F("URB-NO-INFO", "urbanistic", "medium", "risk", {}, "notary",
                 [{"doc_id": deed.id, "filename": deed.filename, "page": 1, "excerpt": ""}])
 
@@ -281,23 +290,123 @@ def r_deed_after_docs(docs, ctx):
                     [src(d, "attest_date"), src(deed, "deed_date")])
 
 
+
+# --- timeline, urbanism, co-ownership, region, photos ---------------------------------------
+
+ENERGY_WORKS = {"roof", "windows", "heating", "insulation"}  # works that can change an EPC
+
+
+def _invoices(docs):
+    for d in docs:
+        if d.doc_type == "invoice" and val(d, "invoice_date"):
+            yield d, val(d, "invoice_date"), set(val(d, "works_kinds") or [])
+
+
+def r_works_epc(docs, ctx):
+    epc = by_type(docs, "epc")
+    issue = val(epc, "epc_issue_date")
+    if not issue:
+        return
+    for d, date, kinds in _invoices(docs):
+        if kinds & ENERGY_WORKS and date > issue:
+            yield F("WORK-EPC-STALE", "energy", "low", "inference", {"file": d.filename, "date": date, "epc": issue}, "seller",
+                    [src(d, "invoice_date"), src(epc, "epc_issue_date")])
+
+
+def r_works_electrical(docs, ctx):
+    elec = by_type(docs, "electrical")
+    ins = val(elec, "inspection_date")
+    if not ins:
+        return
+    for d, date, kinds in _invoices(docs):
+        if "electricity" in kinds and date > ins:
+            yield F("WORK-ELEC-STALE", "technical", "medium", "inference", {"file": d.filename, "date": date, "inspection": ins}, "seller",
+                    [src(d, "invoice_date"), src(elec, "inspection_date")])
+
+
+def r_works_before_build(docs, ctx):
+    by = next((val(d, "build_year") for d in docs if val(d, "build_year")), None)
+    if not by:
+        return
+    for d, date, _ in _invoices(docs):
+        if int(date[:4]) < by:
+            src_doc = next(x for x in docs if val(x, "build_year") == by)
+            yield F("X-WORKS-BEFORE-BUILD", "documentation", "low", "inference", {"file": d.filename, "date": date, "year": by}, "seller",
+                    [src(d, "invoice_date"), src(src_doc, "build_year")])
+
+
+def r_urbanism_doc(docs, ctx):
+    d = by_type(docs, "urbanism")
+    if not d:
+        return
+    if val(d, "infraction") is True:
+        yield F("URB-INFRACTION", "urbanistic", "high", "risk", {}, "notary", [src(d, "infraction")])
+    if val(d, "flood_risk") is True:
+        yield F("URB-FLOOD", "environmental", "medium", "risk", {}, "notary", [src(d, "flood_risk")])
+    if val(d, "heritage") is True:
+        yield F("URB-HERITAGE", "urbanistic", "medium", "risk", {}, "notary", [src(d, "heritage")])
+
+
+def r_copro(docs, ctx):
+    d = by_type(docs, "copro")
+    if not d:
+        return
+    if val(d, "dispute") is True:
+        yield F("COPRO-DISPUTE", "legal", "medium", "risk", {}, "seller", [src(d, "dispute")])
+    if val(d, "arrears") is True:
+        yield F("COPRO-ARREARS", "legal", "medium", "risk", {}, "seller", [src(d, "arrears")])
+    ag = val(d, "assembly_date")
+    if ag and dt.date.fromisoformat(ag) < _today() - dt.timedelta(days=548):
+        yield F("COPRO-OLD-AG", "documentation", "low", "action", {"date": ag}, "seller", [src(d, "assembly_date")])
+
+
+def r_photos(docs, ctx):
+    photos = [d for d in docs if d.doc_type == "photo"]
+    if photos:
+        yield F("DOC-PHOTO", "documentation", "info", "fact", {"n": len(photos)}, "",
+                [{"doc_id": photos[0].id, "filename": photos[0].filename, "page": 1, "excerpt": ""}])
+
+
+def r_region(docs, ctx):
+    """Tell the reader which region's rules were applied; Brussels and Wallonia are flagged as preliminary."""
+    info = (ctx or {}).get("region_info") or {}
+    code = info.get("code")
+    if not docs:
+        return
+    if not code:
+        yield F("REG-UNKNOWN", "documentation", "info", "fact", {}, "")
+        return
+    src_list = [info["source"]] if info.get("source") else []
+    if info.get("conflict"):
+        yield F("REG-CONFLICT", "documentation", "medium", "inference", {"postcode": info["postcode"]}, "notary", src_list)
+    if not regions.get(code).verified:
+        yield F("REG-PRELIM", "documentation", "medium", "action", {"variant": code, "postcode": info["postcode"]}, "notary", src_list)
+
 # Every rule id a finding can carry; tests check that each one has title/detail text in every language.
 RULE_IDS = [
-    "DOC-EPC", "DOC-ASBESTOS", "DOC-ELECTRICAL", "DOC-SOIL", "DOC-DEED", "DOC-OCR", "DOC-OCR-LOWQ", "DOC-OCR-USED", "DOC-WARN",
+    "DOC-EPC", "DOC-ASBESTOS", "DOC-ELECTRICAL", "DOC-SOIL", "DOC-DEED", "DOC-URBANISM", "DOC-OCR", "DOC-OCR-LOWQ", "DOC-OCR-USED", "DOC-WARN",
     "DOC-UNK", "EPC-EXPIRED", "EPC-OLD", "EPC-LABEL-MISMATCH", "EPC-POOR", "ASB-PRESENT", "ASB-CLEAR", "ASB-UNCLEAR",
     "ASB-OLD-NEG", "ELEC-NONCONFORM", "ELEC-OLD", "SOIL-POLLUTION", "SOIL-CLEAR", "SOIL-UNCLEAR", "CAD-UNBUILT", "X-CADASTRE",
     "X-ADDRESS", "X-SURFACE", "URB-EXT-NOPERMIT", "URB-NO-INFO", "X-BUILDYEAR", "LEG-CADASTRE", "X-DATES",
+    "WORK-EPC-STALE", "WORK-ELEC-STALE", "X-WORKS-BEFORE-BUILD", "URB-INFRACTION", "URB-FLOOD", "URB-HERITAGE", "COPRO-DISPUTE", "COPRO-ARREARS",
+    "COPRO-OLD-AG", "DOC-PHOTO", "REG-UNKNOWN", "REG-CONFLICT", "REG-PRELIM",
 ]
 
 RULES = [
     r_missing_docs, r_unreadable, r_epc_validity, r_epc_label, r_asbestos, r_electrical, r_address,
     r_surface, r_extension_permit, r_urbanism_info, r_build_year, r_old_house_asbestos,
-    r_cadastre_owner_facts, r_deed_after_docs, r_soil, r_cadastre,
+    r_cadastre_owner_facts, r_deed_after_docs, r_soil, r_cadastre, r_works_epc, r_works_electrical, r_works_before_build,
+    r_urbanism_doc, r_copro, r_photos, r_region,
 ]
 
 
 def run_rules(docs: list[DocView], ctx: dict | None = None) -> list[F]:
+    """``ctx['region_info']`` (see regions.detect) selects the region; without it the region is detected from the documents."""
+    ctx = dict(ctx or {})
+    if "region_info" not in ctx:
+        ctx["region_info"] = regions.detect(docs)
+    ctx["region"] = ctx["region_info"].get("code")
     out: list[F] = []
     for rule in RULES:
-        out.extend(rule(docs, ctx or {}))
+        out.extend(rule(docs, ctx))
     return out

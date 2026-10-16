@@ -1,15 +1,21 @@
 {% extends "base.html" %}{% from "_macros.html" import password_field with context %}{% block content %}
 {% if error %}<p class="high" role="alert">{{ error }}</p>{% endif %}{% if info %}<p class="ok">{{ info }}</p>{% endif %}
 <div class="row" style="align-items:flex-start">
-<form method="post" action="/login" id="login" class="card" style="flex:1;min-width:260px"><h3>{{ _('auth.login.title') }}</h3>
+<form method="post" action="/login" id="login" class="card" style="flex:1;min-width:260px">{% if next_url %}<input type="hidden" name="next" value="{{ next_url }}">{% endif %}<h3>{{ _('auth.login.title') }}</h3>
 <p><input name="email" type="email" placeholder="{{ _('auth.email') }}" aria-label="{{ _('auth.email') }}" autocomplete="username" required style="width:100%"></p>
 <p>{{ password_field('password', _('auth.password'), 'current-password') }}</p>
 <div class="row"><button>{{ _('auth.login.button') }}</button><a href="/forgot" class="mut">{{ _('auth.forgot_link') }}</a></div></form>
-<form method="post" action="/register" id="register" class="card" style="flex:1;min-width:260px"><h3>{{ _('auth.register.title') }}</h3>
-<p class="mut">{{ _('auth.register.hint') }}</p>
-<p><input name="org_name" placeholder="{{ _('auth.org_name') }}" aria-label="{{ _('auth.org_name') }}" required style="width:100%"></p>
+<form method="post" action="/register" id="register" class="card" style="flex:1;min-width:260px">{% if next_url %}<input type="hidden" name="next" value="{{ next_url }}">{% endif %}<h3>{{ _('auth.register.title') }}</h3>
+<p class="mut">{% if free_credits %}<b>{{ _('landing.free_note', n=free_credits) }}</b> {% endif %}{{ _('auth.register.hint') }}</p>
+<fieldset style="border:0;padding:0;margin:0 0 10px"><legend class="mut" style="padding:0 0 4px">{{ _('auth.account_type') }}</legend>
+<label style="margin-right:14px"><input type="radio" name="account_type" value="individual"> {{ _('access.type.individual') }}</label>
+<label><input type="radio" name="account_type" value="professional" checked> {{ _('access.type.professional') }}</label></fieldset>
+<p><input name="org_name" placeholder="{{ _('auth.org_name') }}" aria-label="{{ _('auth.org_name') }}" style="width:100%"><span class="mut">{{ _('auth.org_name_hint') }}</span></p>
 <p><input name="email" type="email" placeholder="{{ _('auth.email') }}" aria-label="{{ _('auth.email') }}" autocomplete="username" required style="width:100%"></p>
 {% if invite %}<p><input name="invite_code" placeholder="{{ _('auth.invite_code') }}" aria-label="{{ _('auth.invite_code') }}" autocomplete="off" autocapitalize="characters" autocorrect="off" spellcheck="false" required style="width:100%"></p>{% endif %}
+{% if invite %}<p class="mut" style="margin-top:-6px"><a href="/contact#access">{{ _('auth.request_access') }}</a></p>{% endif %}
 <p>{{ password_field('password', _('auth.password_new'), 'new-password', 10) }}</p>
+<p style="display:flex;gap:8px;align-items:flex-start"><input type="checkbox" name="accept_terms" value="1" id="accept_terms" required style="width:auto;margin-top:3px"><label for="accept_terms">{{ _('auth.accept_terms', terms='@T@', privacy='@P@')|e|replace('@T@', '<a href="/terms" target="_blank" rel="noopener">'|safe ~ _('nav.terms') ~ '</a>'|safe)|replace('@P@', '<a href="/privacy" target="_blank" rel="noopener">'|safe ~ _('nav.privacy') ~ '</a>'|safe) }}</label></p>
+{% if turnstile_site_key %}<div class="cf-turnstile" data-sitekey="{{ turnstile_site_key }}" style="margin:0 0 10px"></div><script src="https://challenges.cloudflare.com/turnstile/v0/api.js" async defer></script>{% endif %}
 <button>{{ _('auth.register.button') }}</button></form>
 </div>{% endblock %}

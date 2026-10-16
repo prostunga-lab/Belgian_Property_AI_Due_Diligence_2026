@@ -93,7 +93,7 @@ def test_displayed_price_and_stripe_price_come_from_the_same_source(monkeypatch)
 def test_visitors_are_sent_to_registration_and_buyers_get_checkout_buttons(monkeypatch):
     monkeypatch.setattr(config, "STRIPE_SECRET_KEY", "sk_test_1")
     anon = TestClient(app).get("/pricing").text
-    assert anon.count('href="/login#register"') >= 3 and "/billing/checkout/" not in anon
+    assert anon.count('href="/login?next=/pricing#register"') >= 3 and "/billing/checkout/" not in anon
     c = new_client("pp-buy@x.be")
     signed_in = c.get("/pricing").text
     for pid in ("single", "pack5", "agent"):

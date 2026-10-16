@@ -50,10 +50,11 @@ def test_about_only_states_facts_about_the_product():
 
 def test_nothing_is_shown_for_unconfigured_identity():
     body = page_text(get("en", "/contact"))
-    assert CATALOGS["en"]["contact.unavailable"] in body and "mailto:" not in body
+    assert "mailto:" not in body
     assert CATALOGS["en"]["contact.company.title"] not in body
     assert "Published by" not in page_text(get("en", "/about"))
-    assert "<form" not in get("en", "/contact").text.split("</header>")[1]  # no form that could silently lose a message
+    body_html = get("en", "/contact").text.split("</header>")[1]
+    assert 'action="/request-access"' in body_html  # no dead end: the visitor can always ask for access through a form that stores the request
 
 
 def test_configured_details_are_displayed_and_escaped(monkeypatch):
@@ -71,13 +72,10 @@ def test_configured_details_are_displayed_and_escaped(monkeypatch):
 
 
 @pytest.mark.parametrize("lang", LANGS)
-def test_mailto_link_has_translated_subject_and_the_exact_address(monkeypatch, lang):
+def test_the_contact_address_is_never_displayed_on_the_contact_page(monkeypatch, lang):
     monkeypatch.setattr(config, "CONTACT_EMAIL", "info@example.be")
     body = get(lang, "/contact").text
-    href = re.search(r'href="(mailto:[^"]+)"', body).group(1)
-    assert href.startswith("mailto:info@example.be?subject=")
-    assert unquote(href.split("subject=")[1]) == html.unescape(CATALOGS[lang]["contact.mail_subject"])
-    assert "?" not in href.split("?subject=")[0] and href.count("?") == 1
+    assert "info@example.be" not in body and "mailto:" not in body and 'action="/request-access"' in body
 
 
 def test_invalid_contact_email_values_are_ignored(monkeypatch):
@@ -100,17 +98,36 @@ def test_invite_hint_only_in_invite_mode_and_privacy_note_present(monkeypatch):
     assert CATALOGS["en"]["contact.invite"] in body and CATALOGS["en"]["contact.privacy"] in body and "secret-code-123" not in body
 
 
-def test_footer_links_on_every_kind_of_page():
+def test_about_and_contact_are_in_the_header_menu_not_the_footer_on_every_kind_of_page():
     c = new_client("foot@x.be")
     pages = {"landing": TestClient(app).get("/"), "login": TestClient(app).get("/login"), "about": TestClient(app).get("/about"),
              "contact": TestClient(app).get("/contact"), "dashboard": c.get("/"), "account": c.get("/account"),
              "404": c.get("/cases/9999", headers={"accept": "text/html"})}
     for name, r in pages.items():
         footer = r.text.split("<footer>")[1]
-        assert 'href="/about"' in footer and 'href="/contact"' in footer, f"{name}: footer links missing"
-        assert f"© {dt.date.today().year} Belgian Property Due Diligence" in html.unescape(footer)
+        assert 'href="/about"' not in footer and 'href="/contact"' not in footer, f"{name}: footer must not link About/Contact"
+        header = r.text.split("<header>")[1].split("</header>")[0]
+        assert 'href="/about"' in header and 'href="/contact"' in header, f"{name}: header menu links missing"
+        assert f"© {dt.date.today().year} Belgian Immo Due Diligence" in html.unescape(footer)
 
 
 def test_footer_uses_the_company_name_when_set(monkeypatch):
     monkeypatch.setattr(config, "COMPANY_NAME", "Acme BV")
     assert f"© {dt.date.today().year} Acme BV" in html.unescape(get("nl", "/").text.split("<footer>")[1])
+
+
+def test_header_menu_order_is_about_pricing_contact():
+    for lang in ("fr", "nl", "en"):
+        header = get(lang, "/").text.split("<header>")[1].split("</nav>")[0]
+        assert header.index('href="/about"') < header.index('href="/pricing"') < header.index('href="/contact"'), lang
+
+
+def test_the_brand_is_belgian_immo_due_diligence_everywhere_users_see_it():
+    from pathlib import Path
+    for lang in ("fr", "nl", "en"):
+        for path in ("/", "/about", "/pricing", "/contact", "/legal", "/terms", "/demo"):
+            html = get(lang, path).text
+            assert "Belgian Immo Due Diligence" in html and "Belgian Property" not in html, (lang, path)
+    for path in Path("app").rglob("*"):
+        if path.suffix in (".py", ".html", ".js"):
+            assert "Belgian Property Due Diligence" not in path.read_text(encoding="utf-8"), path

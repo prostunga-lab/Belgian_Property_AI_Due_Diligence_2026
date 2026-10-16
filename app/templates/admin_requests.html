@@ -1,0 +1,8 @@
+{% extends "base.html" %}{% block title %}{{ _('admin.requests.title') }}{% endblock %}{% block content %}
+<h2>{{ _('admin.requests.title') }}</h2>
+<p class="mut">{{ _('admin.requests.hint') }}</p>
+{% if rows %}<div class="card tablecard"><table><thead><tr><th>#</th><th>{{ _('access.f.name') }}</th><th>{{ _('auth.email') }}</th><th>{{ _('access.f.type') }}</th><th>{{ _('access.f.message') }}</th><th></th></tr></thead><tbody>
+{% for r in rows %}<tr{% if r.status == 'done' %} style="opacity:.55"{% endif %}><td>{{ r.id }}<br><span class="mut">{{ r.created_at.strftime('%Y-%m-%d') }}</span></td><td>{{ r.name }}{% if r.organisation %}<br><span class="mut">{{ r.organisation }}</span>{% endif %}</td>
+<td><a href="mailto:{{ r.email }}">{{ r.email }}</a></td><td>{{ _('access.type.' ~ r.account_type) }}</td><td style="max-width:22em">{{ r.message }}</td>
+<td>{% if r.status != 'done' %}<form method="post" action="/admin/requests/{{ r.id }}/done"><button class="sec">{{ _('admin.requests.done') }}</button></form>{% else %}✓{% endif %}</td></tr>{% endfor %}
+</tbody></table></div>{% else %}<p>{{ _('admin.requests.empty') }}</p>{% endif %}{% endblock %}

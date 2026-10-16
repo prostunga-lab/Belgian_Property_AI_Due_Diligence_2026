@@ -7,7 +7,7 @@
 <style>
 .hero{padding:40px 0 24px}.eyebrow{color:var(--acc);font-weight:600;font-size:13px;letter-spacing:.06em;text-transform:uppercase;margin:0 0 8px}
 .hero h1{font-size:clamp(28px,5vw,42px);line-height:1.15;margin:0 0 14px;max-width:18em}.hero .lead{font-size:17px;max-width:46em;color:var(--mut);margin:0 0 20px}
-.cta{display:flex;flex-wrap:wrap;gap:10px;align-items:center}.cta a.btn{display:inline-block;padding:10px 18px;border-radius:8px;background:var(--btn);color:#fff;text-decoration:none;font-weight:600}
+.cta{display:flex;flex-wrap:wrap;gap:10px;align-items:center}.cta a.btn{display:inline-block;padding:10px 18px;border-radius:8px;background:var(--hi);color:var(--hi-fg);text-decoration:none;font-weight:600}
 .cta a.btn.sec{background:var(--card);color:var(--fg);border:1px solid var(--bd)}.cta a.btn:focus-visible{outline:2px solid var(--fg);outline-offset:2px}
 .note{margin:12px 0 0;font-size:14px}.grid{display:grid;gap:12px;grid-template-columns:repeat(auto-fit,minmax(230px,1fr))}
 section.block{margin:36px 0}section.block>h2{font-size:22px;margin:0 0 12px}.step{position:relative}.step .n{display:inline-flex;width:28px;height:28px;border-radius:50%;background:var(--btn);color:#fff;align-items:center;justify-content:center;font-weight:700;margin-bottom:6px}
@@ -21,8 +21,10 @@ section.block{margin:36px 0}section.block>h2{font-size:22px;margin:0 0 12px}.ste
   <p class="eyebrow">{{ _('landing.eyebrow') }}</p>
   <h1>{{ _('landing.h1') }}</h1>
   <p class="lead">{{ _('landing.lead') }}</p>
-  <div class="cta"><a class="btn" href="/login#register">{{ _('landing.cta_register') }}</a><a class="btn sec" href="/login#login">{{ _('landing.cta_login') }}</a></div>
+  <div class="cta"><a class="btn" href="/login#register">{{ _('landing.cta_register') }}</a><a class="btn sec" href="/login#login">{{ _('landing.cta_login') }}</a>{% if invite %}<a class="btn sec" href="/contact#access">{{ _('landing.cta_request') }}</a>{% endif %}<a class="btn sec" href="/demo">{{ _('demo.cta') }}</a></div>
+  <p class="note mut">📍 {{ _('landing.region_note') }}</p>
   {% if invite %}<p class="note mut">🔒 {{ _('landing.invite_note') }}</p>{% endif %}
+  <p class="note mut">⏱ {{ _('landing.promise', minutes=promise_minutes) }}</p>
   {% if free_credits %}<p class="note mut">{{ _('landing.free_note', n=free_credits) }}</p>{% endif %}
 </div>
 
@@ -34,7 +36,8 @@ section.block{margin:36px 0}section.block>h2{font-size:22px;margin:0 0 12px}.ste
   <ul class="ticks">{% for i in (1, 2, 3, 4, 5, 6) %}<li>{{ _('landing.checks.' ~ i) }}</li>{% endfor %}</ul></div>
   <div class="card example"><h2 style="margin-top:0;font-size:20px">{{ _('landing.example.title') }}</h2>
   <p class="mut">{{ _('landing.example.text') }}</p>
-  <div class="card" style="margin:12px 0 0"><div class="row"><span class="badge high">{{ _('severity.high') }}</span><b>{{ _('rule.X-SURFACE.title') }}</b></div>
+  <div class="card" style="margin:12px 0 0"><div class="row"><span class="badge high" title="{{ _('severity.explain') }}">{{ _('severity.high') }}</span><b>{{ _('rule.X-SURFACE.title') }}</b><span class="mut">{{ _('kind.inference') }}</span></div>
+  <p class="mut" style="margin:2px 0 6px">{{ _('kind.explain.inference') }} {{ _('severity.explain') }}</p>
   <p>{{ _('rule.X-SURFACE.detail', a=185, fa='akte.pdf', pa=1, b=240, fb='epc.pdf', pb=1, diff=30) }}</p>
   <p><b>{{ _('finding.recommendation') }} :</b> {{ _('rule.X-SURFACE.rec') }}</p></div></div>
 </section>
@@ -44,7 +47,7 @@ section.block{margin:36px 0}section.block>h2{font-size:22px;margin:0 0 12px}.ste
 
 <section class="block two">
   <div class="card"><h2 style="margin-top:0;font-size:20px">{{ _('landing.coverage.title') }}</h2><p class="mut">{{ _('landing.coverage.text') }}</p></div>
-  <div class="card"><h2 style="margin-top:0;font-size:20px">{{ _('landing.pricing.title') }}</h2><p class="mut">{{ _('landing.pricing.text') }}</p><p style="margin:10px 0 0"><a href="/pricing">{{ _('landing.pricing.link') }} →</a></p></div>
+  <div class="card"><h2 style="margin-top:0;font-size:20px">{{ _('landing.pricing.title') }}</h2><p class="mut">{{ _('landing.pricing.text') }}</p>{% if trial_days %}<p><b>{{ _('landing.trial', n=trial_days, days=trial_days) }}</b></p>{% elif trial_split %}<p><b>{{ _('landing.trial_split', ind=trial_split.individual, pro=trial_split.professional) }}</b></p>{% endif %}<p style="margin:10px 0 0"><a href="/pricing">{{ _('landing.pricing.link') }} →</a></p></div>
 </section>
 
 <section class="block faq" aria-labelledby="faq"><h2 id="faq">{{ _('landing.faq.title') }}</h2>

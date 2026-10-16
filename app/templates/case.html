@@ -1,13 +1,13 @@
 {% extends "base.html" %}{% block content %}
 <p><a href="/">← {{ _('nav.cases') }}</a></p>
 <div class="row" style="justify-content:space-between"><h2>{{ case.title }}</h2>
-<form method="post" action="/cases/{{ case.id }}/delete" onsubmit='return confirm({{ _("case.delete_confirm")|tojson }})'><button class="sec">🗑 {{ _('case.delete') }}</button></form></div>
+<form method="post" action="/cases/{{ case.id }}/delete" data-confirm="{{ _('case.delete_confirm') }}"><button class="sec">🗑 {{ _('case.delete') }}</button></form></div>
 <p class="mut">{{ case.address or _('case.address_unknown') }} · {{ _('case.region') }} {{ _('region.' ~ case.region) }} · {{ _('case.ruleset') }} {{ version }}</p>
 
 <div class="card"><b>{{ _('case.documents') }}</b>
 <table>{% for d in case.documents %}<tr><td>{{ d.filename }}</td><td>
 <form method="post" action="/cases/{{ case.id }}/documents/{{ d.id }}/type" class="row">
-<select name="doc_type" aria-label="{{ _('case.doc_type') }}" onchange="this.form.submit()">{% for k in doc_types %}<option value="{{ k }}" {{ "selected" if d.doc_type==k }}>{{ _('doctype.' ~ k) }}</option>{% endfor %}</select>
+<select name="doc_type" aria-label="{{ _('case.doc_type') }}" data-autosubmit>{% for k in doc_types %}<option value="{{ k }}" {{ "selected" if d.doc_type==k }}>{{ _('doctype.' ~ k) }}</option>{% endfor %}</select>
 <span class="mut">{{ (d.classification_confidence*100)|round|int }}% · {{ _('case.fields', n=d.fields|length) }}{% if d.ocr_pages %} · {{ _('case.ocr_pages', pages=d.ocr_pages|map(attribute="page")|join(", ")) }}{% endif %}{% if case.billed %} · {{ _('case.analysed') }}{% endif %}</span></form></td></tr>
 {% else %}<tr><td class="mut">{{ _('case.no_documents') }}</td></tr>{% endfor %}</table>
 <form method="post" action="/cases/{{ case.id }}/documents" enctype="multipart/form-data" class="row" style="margin-top:8px">
@@ -18,11 +18,38 @@
 <p class="mut" style="margin:6px 0 0">{{ _('case.max_documents', max=max_documents) }}</p></div>
 
 {% if case.status == "analyzed" %}
-<div class="card"><div class="row" style="justify-content:space-between"><b>{{ _('case.score') }} :
+{% if not rules_validated %}<div class="card" role="note" style="border-left:4px solid var(--medium)">{{ _('rules.unvalidated') }}</div>{% endif %}
+<div class="card">{% if case.analysis_seconds is not none %}<p class="mut" style="margin:0 0 8px">⏱ {{ _('case.duration', seconds=case.analysis_seconds|round(1), minutes=promise_minutes) }}</p>{% endif %}<div class="row" style="justify-content:space-between"><b>{{ _('case.score') }} :
 <span class="{{ case.scores.level }}">{{ case.scores.overall }}/100 ({{ _('level.' ~ case.scores.level) }})</span></b>
 <a href="/cases/{{ case.id }}/report.pdf"><button class="sec" type="button">{{ _('case.pdf') }}</button></a></div>
 {% for dom, v in case.scores.domains.items() %}<div class="row"><span style="width:130px">{{ _('domain.' ~ dom) }}</span><div class="bar" style="flex:1"><i style="width:{{ v }}%"></i></div><span class="mut">{{ v }}</span></div>{% endfor %}</div>
 
+{% if prop.items %}
+<div class="card" id="summary"><b>{{ _('summary.title') }}</b>
+{% if prop.headline %}<p style="margin:6px 0;font-size:16px"><b>{{ prop.headline }}</b></p>{% endif %}
+<table class="kv"><tbody>{% for it in prop['items'] %}<tr><th scope="row">{{ it.label }}</th><td class="{{ it.flag }}">{{ it.value }}{% if it.sources %} <span class="mut">{% for s in it.sources[:3] %}{{ s.filename }}, {{ _('ui.page_abbr') }}{{ s.page }}{% if not loop.last %} · {% endif %}{% endfor %}</span>{% endif %}</td></tr>{% endfor %}</tbody></table>
+<p class="mut" style="margin:6px 0 0">{{ _('summary.disclaimer') }}</p></div>
+{% endif %}
+{% if events %}
+<div class="card" id="timeline"><b>{{ _('timeline.title') }}</b>
+<ol class="tl">{% for e in events %}<li{% if "before_build" in e.flags or "expired" in e.flags %} class="flagged"{% endif %}><time>{{ e.date }}</time> <b>{{ e.label }}</b> <span class="mut">{{ e.filename }}, {{ _('ui.page_abbr') }}{{ e.page }}</span>{% for l in e.flag_labels %} <span class="badge {{ 'high' if e.flags[loop.index0] == 'before_build' or e.flags[loop.index0] == 'expired' else 'info' }}">{{ l }}</span>{% endfor %}</li>{% endfor %}</ol>
+<p class="mut" style="margin:6px 0 0">{{ _('timeline.disclaimer') }}</p></div>
+{% endif %}
+{% if reno.rows %}
+<div class="card" id="renovation"><b>{{ _('reno.title') }}</b>
+<table class="reno"><thead><tr><th scope="col">{{ _('reno.col.work') }}</th><th scope="col">{{ _('reno.col.priority') }}</th><th scope="col" class="num">{{ _('reno.col.estimate') }}</th></tr></thead><tbody>
+{% for it in reno.rows %}<tr><td>{{ it.title }}</td><td><span class="dot {{ it.priority }}" aria-hidden="true"></span> {{ it.priority_label }}</td><td class="num"><b>{{ it.cost }}</b></td></tr>{% endfor %}
+{% if reno.total %}<tr class="total"><td colspan="2"><b>{{ _('reno.total') }}</b> <span class="mut">{{ reno.unestimated_text }}</span></td><td class="num"><b>{{ reno.total }}</b></td></tr>{% endif %}
+</tbody></table>
+<p class="mut" style="margin:8px 0 0">{{ _('reno.priority_legend') }} {{ _('reno.disclaimer') }}</p>
+<details style="margin-top:8px"><summary>{{ _('reno.details') }}</summary>
+{% for ph in reno.phases %}<h3 style="margin:12px 0 2px;font-size:15px">{{ ph.label }}{% if ph.cost %} <span class="mut" style="font-weight:400">— {{ ph.cost }}</span>{% endif %}</h3>
+{% for it in ph['items'] %}<div style="border-top:1px solid var(--bd);padding:6px 0"><div class="row" style="justify-content:space-between"><b>{{ it.title }}</b><span>{{ it.cost_full }}</span></div>
+<p style="margin:2px 0">{{ it.what }}</p>
+<p class="mut" style="margin:2px 0">{% if it.basis and it.low is not none %}{{ _('reno.basis_label') }} : {{ it.basis }} · {% endif %}{{ it.confidence_label }}{% if it.note %} — {{ it.note }}{% endif %}</p>
+{% for s in it.sources %}<blockquote>{{ s.filename }}, {{ _('ui.page_abbr') }}{{ s.page }}{% if s.excerpt %} — {{ _('ui.quoted', text=s.excerpt) }}{% endif %}</blockquote>{% endfor %}</div>{% endfor %}{% endfor %}
+<p class="mut" style="margin:8px 0 0">{{ _('reno.price_basis', date=reno.price_basis) }}</p></details></div>
+{% endif %}
 {% if case.ai_summary or case.documents|selectattr("ai_analysis")|list %}
 <div class="card"><b>{{ _('ai.title') }}</b> <span class="badge warn">{{ _('ai.disclaimer') }}</span>
 {% set ai_lang = (case.ai_summary or {}).get("_lang") %}{% if ai_lang and ai_lang != lang %}<p class="mut">{{ _('ai.other_language', lang=lang_names.get(ai_lang, ai_lang)) }}</p>{% endif %}
@@ -35,7 +62,8 @@
 
 {% for f in findings %}
 <div class="card" id="f{{ f.id }}" {% if f.review_status=="dismissed" %}style="opacity:.5"{% endif %}>
-<div class="row"><span class="badge {{ f.severity }}">{{ _('severity.' ~ f.severity) }}</span><b>{{ f.title }}</b><span class="mut">{{ _('kind.' ~ f.kind) }} · {{ _('domain.' ~ f.domain) }} · {{ f.rule_id }}</span></div>
+<div class="row"><span class="badge {{ f.severity }}" title="{{ _('severity.explain') }}">{{ _('severity.' ~ f.severity) }}</span><b>{{ f.title }}</b><span class="mut">{{ _('kind.' ~ f.kind) }} · {{ _('domain.' ~ f.domain) }} · {{ f.rule_id }}</span></div>
+<p class="mut" style="margin:2px 0 6px">{{ _('kind.explain.' ~ f.kind) }}</p>
 <p>{{ f.detail }}</p>{% if f.recommendation %}<p><b>{{ _('finding.recommendation') }} :</b> {{ f.recommendation }}</p>{% endif %}
 {% for s in f.sources %}<blockquote>{{ s.filename }}, {{ _('ui.page_abbr') }}{{ s.page }}{% if s.excerpt %} — {{ _('ui.quoted', text=s.excerpt) }}{% endif %}</blockquote>{% endfor %}
 <form method="post" action="/cases/{{ case.id }}/findings/{{ f.id }}/review" class="row">

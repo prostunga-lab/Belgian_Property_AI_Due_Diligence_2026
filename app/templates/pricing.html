@@ -22,7 +22,7 @@ ul.notes{margin:10px 0 0;padding-left:18px;color:var(--mut);font-size:14px}ul.no
 @media (prefers-color-scheme:dark){.save{background:#14532d;color:#dcfce7}}</style>
 {% endblock %}
 {% block content %}
-<article class="prose"><h1>{{ _('pricing.h1') }}</h1><p>{{ _('pricing.intro') }}</p></article>
+<article class="prose"><h1>{{ _('pricing.h1') }}</h1><p>{{ _('pricing.intro') }}</p><p class="mut">⏱ {{ _('landing.promise', minutes=promise_minutes) }}</p><p class="mut">📍 {{ _('landing.region_note') }} <a href="/demo">{{ _('demo.cta') }} →</a></p></article>
 <div class="card" style="max-width:46em"><p style="margin:0">{{ _('pricing.what_is_case', max=max_documents) }}</p></div>
 <p class="mut">{{ _('pricing.vat.' ~ vat) }}{% if free_credits %} {{ _('pricing.free', n=free_credits) }}{% endif %}</p>
 
@@ -37,18 +37,21 @@ ul.notes{margin:10px 0 0;padding-left:18px;color:var(--mut);font-size:14px}ul.no
       {% for c in cards.payg %}<div class="offer"><b>{{ c.name }}</b><p class="price">{{ c.price }}</p>
         <p class="sub">{% if c.dossiers > 1 %}{{ _('pricing.per_case', price=c.per_case) }}{% else %}&nbsp;{% endif %}</p>
         {% if stripe_ready and signed_in %}<form method="post" action="/billing/checkout/{{ c.id }}"><button class="btn">{{ _('pricing.cta_buy') }}</button></form>
-        {% elif not signed_in %}<a class="btn" href="/login#register">{{ _('pricing.cta_register') }}</a>{% endif %}</div>{% endfor %}
+        {% elif not signed_in %}<a class="btn" href="/login?next=/pricing#register">{{ _('pricing.cta_choose') }}</a>{% endif %}</div>{% endfor %}
     </section>
 
     {% for c in cards.subscription %}
     <section class="card plan" aria-labelledby="plan-{{ c.id }}"><h2 id="plan-{{ c.id }}">{{ _('pricing.' ~ c.id ~ '.title') }}</h2><p class="lead">{{ _('pricing.' ~ c.id ~ '.text') }}</p>
-      <div class="offer"><b>{{ c.name }}</b>
+      <div class="offer"><b>{{ c.name }}</b>{% if trial_days %} <span class="save">{{ _('pricing.trial_badge', n=trial_days, days=trial_days) }}</span>{% elif trial_split %} <span class="save">{{ _('pricing.trial_badge_any') }}</span>{% endif %}
         {% for o in c.offers %}<div class="pv pv-{{ o.period }}">
           <p class="price">{{ _('pricing.per_month', price=o.per_month) }}{% if o.discount_pct %}<span class="save">{{ _('pricing.discount', pct=o.discount_pct) }}</span>{% endif %}</p>
           <p class="sub">{% if o.months == 1 %}{{ _('pricing.billed.monthly') }}{% else %}{{ _('pricing.billed.' ~ o.period, total=o.total, list=o.list_total) }}{% endif %}</p>
-          {% if stripe_ready and signed_in and not (bal is defined and bal.subscribed) %}<form method="post" action="/billing/checkout/{{ c.id }}"><input type="hidden" name="period" value="{{ o.period }}"><button class="btn">{{ _('pricing.cta_subscribe') }}</button></form>
-          {% elif signed_in and bal is defined and bal.subscribed %}<a class="btn" href="/account">{{ _('acct.manage_sub') }}</a>
-          {% elif not signed_in %}<a class="btn" href="/login#register">{{ _('pricing.cta_register') }}</a>{% endif %}</div>{% endfor %}
+          {% if stripe_ready and signed_in and not (bal is defined and bal.subscribed) %}<form method="post" action="/billing/checkout/{{ c.id }}"><input type="hidden" name="period" value="{{ o.period }}"><button class="btn">{{ _('pricing.cta_trial', n=trial_days, days=trial_days) if trial_days else _('pricing.cta_subscribe') }}</button></form>
+          {% elif signed_in and bal is defined and bal.subscribed %}{% if c.id == org.plan and o.period == (org.billing_period or 'monthly') %}<span class="save">{{ _('pricing.current_plan') }}</span>
+          {% elif stripe_ready %}<form method="post" action="/billing/change" data-confirm="{{ _('acct.change_confirm') }}"><input type="hidden" name="plan_id" value="{{ c.id }}"><input type="hidden" name="period" value="{{ o.period }}"><button class="btn">{{ _('pricing.cta_change') }}</button></form>
+          {% else %}<a class="btn" href="/account">{{ _('acct.manage_sub') }}</a>{% endif %}
+          {% elif not signed_in %}<a class="btn" href="/login?next=/pricing#register">{{ _('pricing.cta_choose') }}</a>{% endif %}</div>{% endfor %}
+        {% if trial_days %}<p class="sub" style="margin-top:8px">{{ _('pricing.trial_note', n=trial_days, days=trial_days, dossiers=trial_dossiers) }}</p>{% elif trial_split %}<p class="sub" style="margin-top:8px">{{ _('pricing.trial_split', ind=trial_split.individual, pro=trial_split.professional, dossiers=trial_dossiers) }}</p>{% endif %}
         <p class="sub" style="margin-top:8px">{{ _('pricing.sub_includes', n=c.dossiers) }}</p></div>
     </section>{% endfor %}
   </div>

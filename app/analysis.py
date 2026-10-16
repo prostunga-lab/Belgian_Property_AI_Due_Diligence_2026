@@ -1,9 +1,10 @@
 from __future__ import annotations
 
 import datetime as dt
+from pathlib import Path
 from sqlalchemy.orm import Session
 
-from . import classify, extract, ingest, llm, render, storage
+from . import classify, extract, ingest, llm, ocr, regions, render, storage
 from .models import Case, Document, Finding
 from .rules import DocView, run_rules
 from .scoring import score
@@ -15,6 +16,11 @@ def process_document(doc: Document) -> None:
     pages = res.pages
     doc.pages, doc.ocr_pages, doc.warnings = pages, res.ocr_pages, res.warnings
     doc.doc_type, doc.classification_confidence = classify.classify(pages, doc.filename)
+    if doc.doc_type == "unknown" and Path(doc.filename).suffix.lower() in ocr.IMAGE_EXT:
+        text_len = sum(len(p) for p in pages)
+        conf = [o["confidence"] for o in (res.ocr_pages or [])]
+        if text_len < 80 or (conf and sum(conf) / len(conf) < 60):
+            doc.doc_type, doc.classification_confidence = "photo", 1.0  # a picture, not an unreadable scan
     doc.fields = extract.extract(doc.doc_type, pages)
 
 
@@ -32,7 +38,9 @@ def analyze_case(db: Session, case: Case, lang: str = "en") -> None:
         if not d.pages:
             process_document(d)
     views = [DocView(d.id, d.filename, d.doc_type, d.pages, d.fields, d.ocr_pages, d.warnings) for d in case.documents]
-    results = run_rules(views)
+    region_info = regions.detect(views)
+    case.region = region_info["code"] or "flanders"  # rules default to the Flemish set when the region is unknown
+    results = run_rules(views, {"region_info": region_info})
     existing = {_key(f.rule_id, f.sources): f for f in case.findings}
     keep = set()
     for r in results:

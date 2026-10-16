@@ -11,7 +11,7 @@ CODE = "K6ZW-VQ8P-VYN5-FH2D"  # what the generator prints (no I, L, O, U)
 
 
 def register(code, email):
-    return TestClient(app).post("/register", data={"org_name": "O", "email": email, "password": "supersecret12", "invite_code": code}, follow_redirects=False)
+    return TestClient(app).post("/register", data={"org_name": "O", "email": email, "password": "supersecret12", "invite_code": code, "accept_terms": "1"}, follow_redirects=False)
 
 
 @pytest.fixture(autouse=True)
@@ -108,3 +108,10 @@ def test_comparison_time_does_not_depend_on_how_much_of_the_code_matches():
         return time.perf_counter() - t
     near, far = best("K6ZWVQ8PVYN5FH2E"), best("AAAAAAAAAAAAAAAA")
     assert near < far * 1.5 + 0.05 and far < near * 1.5 + 0.05
+
+
+def test_health_reports_build_and_whether_an_invite_code_is_required(monkeypatch):
+    monkeypatch.setenv("RAILWAY_GIT_COMMIT_SHA", "abcdef1234567")
+    monkeypatch.setattr(config, "INVITE_CODE", "x-y-z")
+    body = TestClient(app).get("/health").json()
+    assert body["build"] == "abcdef1" and body["invite_required"] is True and "x-y-z" not in str(body)
